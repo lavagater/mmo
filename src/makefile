@@ -8,7 +8,7 @@ ERASE=rm
 DATABASE_OBJECTS=$(OUTDIR)database.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
-GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o
+GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out
@@ -51,6 +51,8 @@ $(OUTDIR)load_balancer.o  : load_balancer.cpp
 $(OUTDIR)wyatt_sock.o : wyatt_sock.cpp wyatt_sock.h
 	$(CC) -o $(OUTDIR)wyatt_sock.o $(CFLAGS) wyatt_sock.cpp
 
+$(OUTDIR)config.o : config.cpp config.h
+	$(CC) -o $(OUTDIR)config.o $(CFLAGS) config.cpp
 
 clean :
 	$(ERASE) $(OUTDIR)$(DATABASE) $(OUTDIR)$(ZONE) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(UNIT) $(ALL_OBJECTS)

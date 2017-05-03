@@ -33,7 +33,6 @@ int main()
 	}
 	if (num_failed)
 	{
-		std::cout << "wewewewwewe";
 		getchar();
 	}
   return 1337;

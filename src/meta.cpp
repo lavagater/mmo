@@ -132,3 +132,45 @@ int InferType(const char *str)
 	}
 	return type_unknown;
 }
+
+VoidWrapper StringToValue(const char *str)
+{
+	int type = InferType(str);
+	VoidWrapper res;
+	switch (type)
+	{
+		case type_int:
+		res.set<int>(0, type);
+		break;
+	}
+	return res;
+}
+
+VoidWrapper::operator int()
+{
+	return *reinterpret_cast<int*>(data);
+}
+VoidWrapper::operator unsigned()
+{
+	return *reinterpret_cast<unsigned*>(data);
+}
+VoidWrapper::operator float()
+{
+	return *reinterpret_cast<float*>(data);
+}
+VoidWrapper::operator double()
+{
+	return *reinterpret_cast<double*>(data);
+}
+VoidWrapper::operator char()
+{
+	return *reinterpret_cast<char*>(data);
+}
+VoidWrapper::operator bool()
+{
+	return *reinterpret_cast<bool*>(data);
+}
+VoidWrapper::operator long()
+{
+	return *reinterpret_cast<long*>(data);
+}

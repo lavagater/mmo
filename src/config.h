@@ -5,6 +5,8 @@
   Used to read in config properties from a config file
 
 */
+#include <unordered_map>
+#include <string>
 namespace config
 {
     /*!
@@ -14,5 +16,6 @@ namespace config
       \param name
         The name of the config file to load
     */
-	void Init(const char *name = "config.txt");
+		void Init(const char *name = "config.txt");
+		//std::unordered_map<std::string, Param> 
 }

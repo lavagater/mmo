@@ -125,18 +125,49 @@ bool test_infer_type()
 		}
 	}
 	//check char
-	char temp[] = "\'a\'";
-	temp[1] = 1;
-	for (int i = 0; i < 127; ++i)
-	{
-		type = InferType(temp);
-		if (type != type_char)
+	{//start a scope so i can copy pasta
+		char temp[] = "\'a\'";
+		temp[1] = 1;
+		for (int i = 0; i < 127; ++i)
 		{
-			PRINT_ERROR
-			std::cout << "str is "<< temp << std::endl;
-			std::cout << "type is " << type << std::endl;
+			type = InferType(temp);
+			if (type != type_char)
+			{
+				PRINT_ERROR
+				std::cout << "str is "<< temp << std::endl;
+				std::cout << "type is " << type << std::endl;
+			}
+			temp[1] += 1;
 		}
-		temp[1] += 1;
+	}//end scope
+	//check string
+	{//start a scope so i can copy pasta
+		char temp[] = "\"baby sitter\"";
+		for (int i = 0; i < 1337; ++i)
+		{
+			type = InferType(temp);
+			if (type != type_string)
+			{
+				PRINT_ERROR
+				std::cout << "str is "<< temp << std::endl;
+				std::cout << "type is " << type << std::endl;
+			}
+			temp[i%11+1] += i % 77;
+			if (temp[i%11+1] == 0)
+			{
+				temp[i%11+1] = 'a';
+			}
+
+		}
+	}//endscope
+
+  //test nothing
+  type = InferType("");
+	if (type != type_null)
+	{
+		PRINT_ERROR
+		std::cout << "type is " << type << std::endl;
+		return false;
 	}
 
 	return true;

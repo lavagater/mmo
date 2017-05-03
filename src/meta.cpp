@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <string>
 
 #include "meta.h"
 
@@ -49,7 +51,7 @@ int InferType(const char *str)
 		return type_null;
 	}
 	//check for string
-	if (start[0] == '"' && start[length-1] == '"')
+	if (length >= 2 && start[0] == '"' && start[length-1] == '"')
 	{
 		return type_string;
 	}
@@ -139,11 +141,48 @@ VoidWrapper StringToValue(const char *str)
 	VoidWrapper res;
 	switch (type)
 	{
+		case type_null:
 		case type_int:
-		res.set<int>(0, type);
+		res.set<int>(atoi(str), type);
 		break;
+		case type_long:
+		res.set<long>(atol(str), type);
+		break;
+		case type_unsigned:
+		res.set<unsigned>((unsigned)atol(str), type);
+		break;
+		case type_hex:
+		res.set<unsigned>((unsigned)std::stoi(str, 0, 16), type);
+		break;
+		case type_float:
+		res.set<float>((float)atof(str), type);
+		break;
+		case type_double:
+		res.set<double>(atof(str), type);
+		break;
+		case type_bool:
+		res.set<bool>(*str != 0 ? true : false, type);
+		break;
+		case type_char:
+		res.set<char>(str[1], type);
+		break;
+		case type_string:
+		{
+			unsigned len = strlen(str);
+			char *temp = new char[len];
+			strcpy(temp, str+1);
+			temp[len-2] = 0;
+			res.set_string(temp, type);
+		  break;
+		}
 	}
 	return res;
+}
+
+VoidWrapper::VoidWrapper()
+{
+	data = 0;
+	type = type_unknown;
 }
 
 VoidWrapper::operator int()
@@ -173,4 +212,8 @@ VoidWrapper::operator bool()
 VoidWrapper::operator long()
 {
 	return *reinterpret_cast<long*>(data);
+}
+char *VoidWrapper::str()
+{
+	return (char*)data;
 }

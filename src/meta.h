@@ -5,6 +5,7 @@
   When reading info from a file its all in strings this file will help make the strings
   into variables and types
 */
+#include <stdlib.h>
 
 enum
 {
@@ -51,18 +52,57 @@ private:
 public:
 	/*!
 	  \brief
-	    sets the data
+	    Initalize things to zero
+	*/
+	VoidWrapper();
+	/*!
+	  \brief
+	    deletes the previous data and sets the data to a new value. does not work for char *
+	    use set_string for char * instead
 	  
 	  \param value
 	    The value of the data to set
-	  \param type
+	  \param ntype
 	    The enum value of what type this wrapper is for
 	*/
 	template <typename T>
-	void set(T value, int type)
+	void set(T value, int ntype)
 	{
-		memcpy(data, &value, sizeof(T));
-		type = type;
+		//if the type was string then we need to delete pointer differently
+		if (type == type_string)
+		{
+			delete [] (char*)data;
+		}
+		else
+		{
+			delete (int*)data;
+		}
+		data = new T(value);
+		type = ntype;
+	}
+	/*!
+	  \brief
+	    same as set but for char *
+	  
+	  \param value
+	    The value of the data to set
+	  \param ntype
+	    The enum value of what type this wrapper is for
+	*/
+	void set_string(char *value, int ntype)
+	{
+		//if the type was string then we need to delete pointer differently
+		if (type == type_string)
+		{
+			delete [] (char*)data;
+		}
+		else
+		{
+			delete (int*)data;
+		}
+		data = new char[strlen(value)];
+		strcpy((char*)data, value);
+		type = ntype;
 	}
 	int type; /*!< The variable type that this class is representing*/
 	/*!
@@ -100,6 +140,11 @@ public:
 	    turns the data pointed to by the void pointer into an long
 	*/
 	explicit operator long();
+	/*!
+	  \brief
+	    returns the char *
+	*/
+	char *str();
 };
 
 /*!

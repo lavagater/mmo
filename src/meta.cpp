@@ -161,7 +161,7 @@ VoidWrapper StringToValue(const char *str)
 		res.set<double>(atof(str), type);
 		break;
 		case type_bool:
-		res.set<bool>(*str != 0 ? true : false, type);
+		res.set<bool>(*str == 't' || *str == 'T' ? true : false, type);
 		break;
 		case type_char:
 		res.set<char>(str[1], type);
@@ -170,9 +170,12 @@ VoidWrapper StringToValue(const char *str)
 		{
 			unsigned len = strlen(str);
 			char *temp = new char[len];
+			//skip the first double quote
 			strcpy(temp, str+1);
+			//skip the secon double qoute
 			temp[len-2] = 0;
 			res.set_string(temp, type);
+			delete [] temp;
 		  break;
 		}
 	}
@@ -185,35 +188,107 @@ VoidWrapper::VoidWrapper()
 	type = type_unknown;
 }
 
+VoidWrapper::~VoidWrapper()
+{
+	//if the type was string then we need to delete pointer differently
+	if (type == type_string)
+	{
+		delete [] (char*)data;
+	}
+	else
+	{
+		delete (int*)data;
+	}
+}
+
+//instead of copy pasting i put this into a macro. better, worse, idk
+#define CASES(type) case type_int:\
+		                return static_cast<type>(*reinterpret_cast<int*>(data));\
+		                case type_float:\
+		                return static_cast<type>(*reinterpret_cast<float*>(data));\
+		                case type_double:\
+		                return static_cast<type>(*reinterpret_cast<double*>(data));\
+		                case type_long:\
+		                return static_cast<type>(*reinterpret_cast<long*>(data));\
+		                case type_unsigned:\
+		                return static_cast<type>(*reinterpret_cast<unsigned*>(data));\
+		                case type_char:\
+		                return static_cast<type>(*reinterpret_cast<char*>(data));\
+		                case type_bool:\
+		                return static_cast<type>(*reinterpret_cast<bool*>(data));\
+		                case type_string:\
+		                return strlen((char*)data);\
+
 VoidWrapper::operator int()
 {
-	return *reinterpret_cast<int*>(data);
+	switch(type)
+	{
+		CASES(int);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator unsigned()
 {
-	return *reinterpret_cast<unsigned*>(data);
+	switch(type)
+	{
+		CASES(unsigned);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator float()
 {
-	return *reinterpret_cast<float*>(data);
+	switch(type)
+	{
+		CASES(float);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator double()
 {
-	return *reinterpret_cast<double*>(data);
+	switch(type)
+	{
+		CASES(double);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator char()
 {
-	return *reinterpret_cast<char*>(data);
+	switch(type)
+	{
+		CASES(char);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator bool()
 {
-	return *reinterpret_cast<bool*>(data);
+	switch(type)
+	{
+		CASES(bool);
+	}
+	//should not get here
+	return 0;
 }
 VoidWrapper::operator long()
 {
-	return *reinterpret_cast<long*>(data);
+  switch(type)
+	{
+		CASES(long);
+	}
+	//should not get here
+	return 0;
 }
 char *VoidWrapper::str()
 {
-	return (char*)data;
+	char *res = new char[strlen((char*)data)+1];
+	strcpy(res, (char*)data);
+	return res;
+}
+void VoidWrapper::str(char *p)
+{
+	strcpy(p, (char*)data);
 }

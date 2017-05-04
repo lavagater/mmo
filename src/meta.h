@@ -6,6 +6,8 @@
   into variables and types
 */
 #include <stdlib.h>
+#include <string.h>
+#include <cassert>
 
 enum
 {
@@ -57,6 +59,11 @@ public:
 	VoidWrapper();
 	/*!
 	  \brief
+	    Deletes the data
+	*/
+	~VoidWrapper();
+	/*!
+	  \brief
 	    deletes the previous data and sets the data to a new value. does not work for char *
 	    use set_string for char * instead
 	  
@@ -89,7 +96,7 @@ public:
 	  \param ntype
 	    The enum value of what type this wrapper is for
 	*/
-	void set_string(char *value, int ntype)
+	void set_string(char *value, int ntype = type_string)
 	{
 		//if the type was string then we need to delete pointer differently
 		if (type == type_string)
@@ -100,7 +107,7 @@ public:
 		{
 			delete (int*)data;
 		}
-		data = new char[strlen(value)];
+		data = new char[strlen(value)+1];
 		strcpy((char*)data, value);
 		type = ntype;
 	}
@@ -142,9 +149,16 @@ public:
 	explicit operator long();
 	/*!
 	  \brief
-	    returns the char *
+	    copies the string and returns that. the string will have to be deleted
 	*/
 	char *str();
+	/*!
+	  \brief
+	    copies the data int the pointer p
+	  \param p
+	  	The char * to store the string in
+	*/
+	void str(char *p);
 };
 
 /*!

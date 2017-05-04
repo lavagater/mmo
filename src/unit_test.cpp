@@ -9,16 +9,18 @@
 /*****************************************************************************/
 #include <iostream>
 #include <sstream>
+#include <string.h>
 
 #include "wyatt_sock.h"
 #include "meta.h"
 
 #define PRINT_ERROR std::cout << "line " << __LINE__ << std::endl; 
 
-bool test_infer_type();
+bool TestInferType();
+bool TestStringToValue();
 
 bool (*tests[])() = { 
-    test_infer_type
+    TestInferType, TestStringToValue
 }; 
 
 int main()
@@ -39,7 +41,7 @@ int main()
 }
 
 //test cases
-bool test_infer_type()
+bool TestInferType()
 {
 	//check int
 	for (int i = 0; i < 999999; i += 13)
@@ -56,7 +58,7 @@ bool test_infer_type()
 		}
 	}
 	//check negative
-	for (long i = -9999999999; i < -9998999999; i += 753)
+	for (long i = -9999999999; i < -9999998999; i += 753)
 	{
 		std::stringstream s;
 		s << i;
@@ -169,5 +171,99 @@ bool test_infer_type()
 		return false;
 	}
 
+	return true;
+}
+
+bool TestStringToValue()
+{
+	//test int
+	if ((int)StringToValue("14") != 14)
+	{
+		PRINT_ERROR
+		std::cout << "14 gives " << (int)StringToValue("14") << std::endl; 
+		return false;
+	}
+	//test negative
+	if ((int)StringToValue("-2") != -2)
+	{
+		PRINT_ERROR
+		std::cout << "-2 gives " << (int)StringToValue("-2") << std::endl; 
+		return false;
+	}
+	//test big number
+	if ((long)StringToValue("1234567890") != 1234567890)
+	{
+		PRINT_ERROR
+		std::cout << "1234567890 gives " << (long)StringToValue("1234567890") << std::endl; 
+		return false;
+	}
+	//test floating points
+	if ((double)StringToValue("1234.567890") != 1234.567890)
+	{
+		PRINT_ERROR
+		std::cout << "1234.567890 gives " << (double)StringToValue("1234.567890") << std::endl; 
+		return false;
+	}
+	//test empty string
+	if ((int)StringToValue("") != 0)
+	{
+		PRINT_ERROR
+		std::cout << "\"\" = " << (int)StringToValue("") << std::endl; 
+		return false;
+	}
+	//test boolean
+	if ((bool)StringToValue("true") != true)
+	{
+		PRINT_ERROR
+		std::cout << "true gives " << (bool)StringToValue("true") << std::endl; 
+		return false;
+	}
+	//test boolean
+	if ((bool)StringToValue("TRUE") != true)
+	{
+		PRINT_ERROR
+		std::cout << "TRUE gives " << (bool)StringToValue("TRUE") << std::endl; 
+		return false;
+	}
+	//test boolean
+	if ((bool)StringToValue("false") != false)
+	{
+		PRINT_ERROR
+		std::cout << "false gives " << (bool)StringToValue("false") << std::endl; 
+		return false;
+	}
+	//test boolean
+	if ((bool)StringToValue("FALSE") != false)
+	{
+		PRINT_ERROR
+		std::cout << "FALSE gives " << (bool)StringToValue("FALSE") << std::endl; 
+		return false;
+	}
+	//test char
+	if ((char)StringToValue("'f'") != 'f')
+	{
+		PRINT_ERROR
+		std::cout << "'f' gives " << (char)StringToValue("'f'") << std::endl; 
+		return false;
+	}
+	//test string
+	char * str = StringToValue("\"huehuehue\"").str();
+	if (strcmp(str, "huehuehue") != 0)
+	{
+		PRINT_ERROR
+		std::cout << "huehuehue !=" << str << std::endl; 
+		return false;
+	}
+	delete [] str;
+	str = new char[100];
+	//test string
+	StringToValue("\"abcdefghijklmnopqrstuvwxyzzzz\"").str(str);
+	if (strcmp(str, "abcdefghijklmnopqrstuvwxyzzzz") != 0)
+	{
+		PRINT_ERROR
+		std::cout << "abcdefghijklmnopqrstuvwxyzzzz !=" << str << std::endl; 
+		return false;
+	}
+	delete [] str;
 	return true;
 }

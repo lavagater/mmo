@@ -1,0 +1,24 @@
+item1 : 34.5
+item2: 34.5
+item3 :34.5
+item4:34.5
+item5  :  34.5
+item6    :34.5
+
+
+
+item7 :    34.5
+item8:     34.5
+name with spaces : 34.5
+test_bool1 : true
+test_bool2 : TRUE
+test_bool3 : FALSE
+test_bool4 : false
+test_negative : -4
+test_string : "Hello World"
+test_string_of_numbers : "123"
+test_hex : 0x7F
+test_long : 123456789101112
+test_char : 'a'
+test_empty_value :
+: "Empty name"

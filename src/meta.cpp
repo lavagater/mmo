@@ -16,6 +16,7 @@ int InferType(const char *str)
 	int double_quotes = 0;
 	int negative_signs = 0;
 	int hex = 0;
+	bool x = 0;
 	int length = 0;
 	while(*str)
 	{
@@ -42,6 +43,10 @@ int InferType(const char *str)
 		else if (*str == '-')
 		{
 			negative_signs += 1;
+		}
+		else if (*str == 'x' || *str == 'X')
+		{
+			x += 1;
 		}
 		length += 1;
 		str += 1;
@@ -114,11 +119,11 @@ int InferType(const char *str)
 		}
 	}
 	//check for hexadecimal
-	if (hex)
+	if (hex || x == 1)
 	{
 		//hex could be in to formats 1) FF or 2) 0xFF
 		//for format 2 the first zero is counted in the digits so we need add one 
-		if (start[0] == '0' && (start[1] == 'x' || start[1] == 'X') && hex + digits + 1 == length)
+		if (start[0] == '0' && x == 1 && hex + digits + 1 == length)
 		{
 			return type_hex;
 		}
@@ -185,20 +190,17 @@ VoidWrapper StringToValue(const char *str)
 VoidWrapper::VoidWrapper()
 {
 	data = 0;
-	type = type_unknown;
+	type = type_null;
 }
-
+VoidWrapper::VoidWrapper(const VoidWrapper &rhs)
+{
+	data = 0;
+	type = type_null;
+	copy(rhs);
+}
 VoidWrapper::~VoidWrapper()
 {
-	//if the type was string then we need to delete pointer differently
-	if (type == type_string)
-	{
-		delete [] (char*)data;
-	}
-	else
-	{
-		delete (int*)data;
-	}
+	clear();
 }
 
 //instead of copy pasting i put this into a macro. better, worse, idk
@@ -210,6 +212,7 @@ VoidWrapper::~VoidWrapper()
 		                return static_cast<type>(*reinterpret_cast<double*>(data));\
 		                case type_long:\
 		                return static_cast<type>(*reinterpret_cast<long*>(data));\
+		                case type_hex:\
 		                case type_unsigned:\
 		                return static_cast<type>(*reinterpret_cast<unsigned*>(data));\
 		                case type_char:\
@@ -218,8 +221,12 @@ VoidWrapper::~VoidWrapper()
 		                return static_cast<type>(*reinterpret_cast<bool*>(data));\
 		                case type_string:\
 		                return strlen((char*)data);\
+		                case type_null:\
+		                return 0;\
+		                case type_unknown:\
+		                assert(false && "Cant cast unknown type");
 
-VoidWrapper::operator int()
+VoidWrapper::operator int() const
 {
 	switch(type)
 	{
@@ -228,7 +235,7 @@ VoidWrapper::operator int()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator unsigned()
+VoidWrapper::operator unsigned() const
 {
 	switch(type)
 	{
@@ -237,7 +244,7 @@ VoidWrapper::operator unsigned()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator float()
+VoidWrapper::operator float() const
 {
 	switch(type)
 	{
@@ -246,7 +253,7 @@ VoidWrapper::operator float()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator double()
+VoidWrapper::operator double() const
 {
 	switch(type)
 	{
@@ -255,7 +262,7 @@ VoidWrapper::operator double()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator char()
+VoidWrapper::operator char() const
 {
 	switch(type)
 	{
@@ -264,7 +271,7 @@ VoidWrapper::operator char()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator bool()
+VoidWrapper::operator bool() const
 {
 	switch(type)
 	{
@@ -273,7 +280,7 @@ VoidWrapper::operator bool()
 	//should not get here
 	return 0;
 }
-VoidWrapper::operator long()
+VoidWrapper::operator long() const
 {
   switch(type)
 	{
@@ -282,13 +289,85 @@ VoidWrapper::operator long()
 	//should not get here
 	return 0;
 }
-char *VoidWrapper::str()
+VoidWrapper::operator std::string() const
 {
-	char *res = new char[strlen((char*)data)+1];
-	strcpy(res, (char*)data);
-	return res;
+	return std::string((char*)data);
 }
-void VoidWrapper::str(char *p)
+VoidWrapper &VoidWrapper::operator=(const VoidWrapper &rhs)
 {
-	strcpy(p, (char*)data);
+	copy(rhs);
+	return *this;
+}
+void VoidWrapper::copy(const VoidWrapper &rhs)
+{
+	type = rhs.type;
+	switch(rhs.type)
+	{
+		case type_int:
+		data = new int((int)rhs);
+		break;
+		case type_float:
+		data = new float((float)rhs);
+		break;
+		case type_double:
+		data = new double((double)rhs);
+		break;
+		case type_hex:
+		case type_unsigned:
+		data = new unsigned((unsigned)rhs);
+		break;
+		case type_long:
+		data = new long((long)rhs);
+		break;
+		case type_char:
+		data = new char((char)rhs);
+		break;
+		case type_bool:
+		data = new bool((bool)rhs);
+		break;
+		case type_string:
+		{
+			//casting a voidwrapper of type string to an int gives the length
+			data = new char[(int)rhs+1];
+			strcpy((char*)data, (char*)rhs.data);
+			break;
+		}
+		case type_null:
+		case type_unknown:
+		data = 0;
+		break;
+	}
+}
+void VoidWrapper::clear()
+{
+	//type null and unknown dont have memory allocated
+	switch(type)
+	{
+		case type_int:
+		delete reinterpret_cast<int*>(data);
+		break;
+		case type_float:
+		delete reinterpret_cast<float*>(data);
+		break;
+		case type_double:
+		delete reinterpret_cast<double*>(data);
+		break;
+		case type_hex:
+		case type_unsigned:
+		delete reinterpret_cast<unsigned*>(data);
+		break;
+		case type_long:
+		delete reinterpret_cast<long*>(data);
+		break;
+		case type_char:
+		delete reinterpret_cast<char*>(data);
+		break;
+		case type_bool:
+		delete reinterpret_cast<bool*>(data);
+		break;
+		case type_string:
+		delete [] reinterpret_cast<char*>(data);
+		break;
+	}
+	type = type_null;	
 }

@@ -13,14 +13,16 @@
 
 #include "wyatt_sock.h"
 #include "meta.h"
+#include "config.h"
 
 #define PRINT_ERROR std::cout << "line " << __LINE__ << std::endl; 
 
 bool TestInferType();
 bool TestStringToValue();
+bool TestConfig();
 
 bool (*tests[])() = { 
-    TestInferType, TestStringToValue
+    TestInferType, TestStringToValue, TestConfig
 }; 
 
 int main()
@@ -171,6 +173,22 @@ bool TestInferType()
 		return false;
 	}
 
+	//test hex
+	type = InferType("0x77");
+	if (type != type_hex)
+	{
+		PRINT_ERROR
+		std::cout << "type is " << type << std::endl;
+		return false;
+	}
+	//test hex
+	type = InferType("ABCDEF");
+	if (type != type_hex)
+	{
+		PRINT_ERROR
+		std::cout << "type is " << type << std::endl;
+		return false;
+	}
 	return true;
 }
 
@@ -246,24 +264,94 @@ bool TestStringToValue()
 		std::cout << "'f' gives " << (char)StringToValue("'f'") << std::endl; 
 		return false;
 	}
-	//test string
-	char * str = StringToValue("\"huehuehue\"").str();
-	if (strcmp(str, "huehuehue") != 0)
+	if ((std::string)StringToValue("\"huehuehue\"") != "huehuehue")
 	{
 		PRINT_ERROR
-		std::cout << "huehuehue !=" << str << std::endl; 
+		std::cout << "huehuehue !=" << (std::string)StringToValue("\"huehuehue\"") << std::endl; 
 		return false;
 	}
-	delete [] str;
-	str = new char[100];
-	//test string
-	StringToValue("\"abcdefghijklmnopqrstuvwxyzzzz\"").str(str);
-	if (strcmp(str, "abcdefghijklmnopqrstuvwxyzzzz") != 0)
+
+	//check hex
+	if ((int)StringToValue("0x5") != 5)
 	{
 		PRINT_ERROR
-		std::cout << "abcdefghijklmnopqrstuvwxyzzzz !=" << str << std::endl; 
+		std::cout << "0x5 is " << (int)StringToValue("0x5") << std::endl;
 		return false;
 	}
-	delete [] str;
+	//check hex more
+	if ((int)StringToValue("0x45") != 69)
+	{
+		PRINT_ERROR
+		std::cout << "0x45 is " << (int)StringToValue("0x45") << std::endl;
+		return false;
+	}
+	//check impropper casting
+	if ((int)StringToValue("3.14159") != 3)
+	{
+		PRINT_ERROR
+		std::cout << "3.14159 is casted as int to " << (int)StringToValue("3.14159") << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool TestConfig()
+{
+	config::Init("test_conf.txt");
+	if ((float)config::properties["item1"] != 34.5)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((float)config::properties["name with spaces"] != 34.5)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((bool)config::properties["test_bool2"] != true)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((int)config::properties["test_negative"] != -4)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((std::string)config::properties[""] != "Empty name")
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((std::string)config::properties["test_string"] != "Hello World")
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((std::string)config::properties["test_string_of_numbers"] != "123")
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((unsigned)config::properties["test_hex"] != 0x7F)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((long)config::properties["test_long"] != 123456789101112)
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((char)config::properties["test_char"] != 'a')
+	{
+		PRINT_ERROR
+		return false;
+	}
+	if ((int)config::properties["test_empty_value"] != 0)
+	{
+		PRINT_ERROR
+		return false;
+	}
 	return true;
 }

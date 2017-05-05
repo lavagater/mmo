@@ -5,6 +5,8 @@
   When reading info from a file its all in strings this file will help make the strings
   into variables and types
 */
+#ifndef META_H
+#define META_H
 #include <stdlib.h>
 #include <string.h>
 #include <cassert>
@@ -33,7 +35,8 @@ enum
 
 /*!
   \brief
-    Guesses the type of a string
+    Guesses the type of a string. Note that hex must be capital and spaces are not ignored
+    strings must be inside double quotes. Gibberish will result in type_unknown
   
   \param str
     The string representation of a built in type
@@ -64,6 +67,32 @@ public:
 	~VoidWrapper();
 	/*!
 	  \brief
+	    Copy constructor
+	  \param rhs
+	    the object to copy
+	*/
+	VoidWrapper(const VoidWrapper &rhs);
+	/*!
+	  \brief
+	    deep copy another void wrapper
+	  \param rhs
+	    the object being copied
+	*/
+	 VoidWrapper &operator=(const VoidWrapper &rhs);
+	 /*!
+	  \brief
+	    deep copy another void wrapper
+	  \param rhs
+	    the object being copied
+	*/
+	 void copy(const VoidWrapper &rhs);
+	 /*!
+	  \brief
+	    frees the memory and resets the type
+	*/
+	 void clear();
+	/*!
+	  \brief
 	    deletes the previous data and sets the data to a new value. does not work for char *
 	    use set_string for char * instead
 	  
@@ -75,17 +104,11 @@ public:
 	template <typename T>
 	void set(T value, int ntype)
 	{
-		//if the type was string then we need to delete pointer differently
-		if (type == type_string)
-		{
-			delete [] (char*)data;
-		}
-		else
-		{
-			delete (int*)data;
-		}
-		data = new T(value);
+		clear();
 		type = ntype;
+		if (ntype == type_null || ntype == type_unknown)
+			return;
+		data = new T(value);
 	}
 	/*!
 	  \brief
@@ -98,15 +121,7 @@ public:
 	*/
 	void set_string(char *value, int ntype = type_string)
 	{
-		//if the type was string then we need to delete pointer differently
-		if (type == type_string)
-		{
-			delete [] (char*)data;
-		}
-		else
-		{
-			delete (int*)data;
-		}
+		clear();
 		data = new char[strlen(value)+1];
 		strcpy((char*)data, value);
 		type = ntype;
@@ -116,49 +131,43 @@ public:
 	  \brief
 	    turns the data pointed to by the void pointer into an int
 	*/
-	explicit operator int();
+	explicit operator int() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an unsigned
 	*/
-	explicit operator unsigned();
+	explicit operator unsigned() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an float
 	*/
-	explicit operator float();
+	explicit operator float() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an double
 	*/
-	explicit operator double();
+	explicit operator double() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an char
 	*/
-	explicit operator char();
+	explicit operator char() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an bool
 	*/
-	explicit operator bool();
+	explicit operator bool() const;
 	/*!
 	  \brief
 	    turns the data pointed to by the void pointer into an long
 	*/
-	explicit operator long();
+	explicit operator long() const;
 	/*!
 	  \brief
-	    copies the string and returns that. the string will have to be deleted
+	    turns the data from a char * to an std::string. Only works if type is type_string
+	    otherwise behaviour is undefiened
 	*/
-	char *str();
-	/*!
-	  \brief
-	    copies the data int the pointer p
-	  \param p
-	  	The char * to store the string in
-	*/
-	void str(char *p);
+	explicit operator std::string() const;
 };
 
 /*!
@@ -172,3 +181,4 @@ public:
     returns a wrapper around a void pointer that points at the correct type and value
 */
 VoidWrapper StringToValue(const char *str);
+#endif

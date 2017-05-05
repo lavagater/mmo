@@ -36,7 +36,7 @@ $(OUTDIR)$(DATABASE) : $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)$(DATABASE) $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 
 
-$(OUTDIR)unit_test.o  : unit_test.cpp
+$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)unit_test.o $(CFLAGS) unit_test.cpp
 
 $(OUTDIR)zone.o  : zone.cpp

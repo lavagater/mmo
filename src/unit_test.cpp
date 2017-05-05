@@ -14,15 +14,17 @@
 #include "wyatt_sock.h"
 #include "meta.h"
 #include "config.h"
+#include "channel.h"
 
 #define PRINT_ERROR std::cout << "line " << __LINE__ << std::endl; 
 
 bool TestInferType();
 bool TestStringToValue();
 bool TestConfig();
+bool TestHashFunction();
 
 bool (*tests[])() = { 
-    TestInferType, TestStringToValue, TestConfig
+    TestInferType, TestStringToValue, TestConfig, TestHashFunction
 }; 
 
 int main()
@@ -352,6 +354,48 @@ bool TestConfig()
 	{
 		PRINT_ERROR
 		return false;
+	}
+	return true;
+}
+
+bool TestHashFunction()
+{
+	SockAddrHash hashfunc;
+	//testing hash to same value
+	sockaddr_in tester;
+	CreateAddress("127.0.0.1", 7327, &tester);
+	if (hashfunc(tester) != hashfunc(tester))
+	{
+		PRINT_ERROR
+		return false;
+	}
+	sockaddr_in tester2;
+	CreateAddress("127.0.0.1", 7327, &tester2);
+	if (hashfunc(tester) != hashfunc(tester2))
+	{
+		PRINT_ERROR
+		return false;
+	}
+	//test different ports only
+	for (unsigned i = 1; i < 1000; ++i)
+	{
+		CreateAddress("127.0.0.1", 7327+i, &tester2);
+		if (hashfunc(tester) == hashfunc(tester2))
+		{
+			PRINT_ERROR
+			return false;
+		}
+	}
+	//test different ip only
+	for (unsigned i = 2; i < 1000; ++i)
+	{
+		std::string new_ip = (std::string("127.0.0.") + std::to_string(i));
+		CreateAddress(new_ip.c_str(), 7327, &tester2);
+		if (hashfunc(tester) == hashfunc(tester2))
+		{
+			PRINT_ERROR
+			return false;
+		}
 	}
 	return true;
 }

@@ -26,6 +26,7 @@ int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest);
 int Receive(SOCKET sock, char* buffer, int maxBytes);
 int Bind(SOCKET sock, sockaddr_in* addr);
 sockaddr_in* CreateAddress(const char* ip, int port);
+void CreateAddress(const char* ip, int port, sockaddr_in *res);
 SOCKET CreateSocket(int protocol);
 int Connect(SOCKET sock, sockaddr_in* address);
 int SendTCP(SOCKET sock, const char* buffer, int bytes);

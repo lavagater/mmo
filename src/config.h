@@ -6,13 +6,13 @@
   Format of the config file is property name followed by any number of spces
   followed by a colon followed by any number of spaces then the value followed by
   any number of newlines
-  example
-  name : "bob"
-  age:12
-
-  is cool  :  true
-  id : 0x7F7F
-
+  example\n
+  name : "bob"\n
+  age:12\n
+  \n
+  is cool  :  true\n
+  id : 0x7F7F\n
+  \n
   For more examples see test_conf.txt
 
 

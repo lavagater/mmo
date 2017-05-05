@@ -1,3 +1,5 @@
+#include "string.h"
+
 #include "wyatt_sock.h"
 
 int GetError()
@@ -95,26 +97,32 @@ int Bind(SOCKET sock, sockaddr_in* addr)
   return 0;
 }
 
-
-
-sockaddr_in* CreateAddress(const char* ip, int port)
+void CreateAddress(const char* ip, int port, sockaddr_in *res)
 {
-  sockaddr_in* result = (sockaddr_in*)calloc(sizeof(*result), 1);
+  //clear the memory
+  memset(res, sizeof(*res), 0);
 
-  result->sin_family = AF_INET;
-  result->sin_port = htons(port);
+  res->sin_family = AF_INET;
+  res->sin_port = htons(port);
 
   if (ip == NULL)
-    result->sin_addr.s_addr = INADDR_ANY;
+    res->sin_addr.s_addr = INADDR_ANY;
   else
   {
 #ifdef _WIN32
-    result->sin_addr.S_un.S_addr = inet_addr(ip);
+    res->sin_addr.S_un.S_addr = inet_addr(ip);
 #else
-    inet_pton(result->sin_family, ip,
-      &(result->sin_addr));
+    inet_pton(res->sin_family, ip,
+      &(res->sin_addr));
 #endif
   }
+}
+
+sockaddr_in* CreateAddress(const char* ip, int port)
+{
+  sockaddr_in* result = (sockaddr_in*)malloc(sizeof(*result));
+
+  CreateAddress(ip, port, result);
 
   return result;
   // Caller will be responsible for free()

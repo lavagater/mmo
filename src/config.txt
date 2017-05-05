@@ -1,0 +1,12 @@
+//load balancers, 18 kinda looks lie lb for load balancer so im going to use
+//1800's ports for the load balancers
+load_balancer_1_ip : "127.0.0.1"
+load_balancer_1_port : 1800
+
+//zone servers, 3 closest i can get to a z
+zone-server_1_ip : "127.0.0.1"
+zone-server_1_port : 3000
+
+//databases, 69 looks like db maybe?
+data_base_1_ip : "127.0.0.1"
+data_base_1_port : 6900

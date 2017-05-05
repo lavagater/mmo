@@ -9,9 +9,11 @@ item6    :34.5
 
 item7 :    34.5
 item8:     34.5
+any line without a colon is considered a comment
 name with spaces : 34.5
 test_bool1 : true
 test_bool2 : TRUE
+//comments should have // or # just to be more readable
 test_bool3 : FALSE
 test_bool4 : false
 test_negative : -4

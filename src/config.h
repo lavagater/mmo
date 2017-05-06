@@ -23,8 +23,13 @@
 #include <string>
 
 #include "meta.h"
-namespace config
+/*!
+  \brief
+    Config class reads in properties from a file
+*/
+class Config
 {
+public:
     /*!
       \brief
         Reads in the config file and sets parameters and stores them in properties. If called twice it will
@@ -36,8 +41,8 @@ namespace config
 		void Init(const char *name = "config.txt");
 		/*!
 		  \brief
-		    Global map that contains properties from config file
+		    The properties
 		*/
-		extern std::unordered_map<std::string, VoidWrapper> properties;
-}
+		std::unordered_map<std::string, VoidWrapper> properties;
+};
 #endif

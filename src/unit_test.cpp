@@ -299,58 +299,59 @@ bool TestStringToValue()
 
 bool TestConfig()
 {
-	config::Init("test_conf.txt");
-	if ((float)config::properties["item1"] != 34.5)
+	Config config;
+	config.Init("test_conf.txt");
+	if ((float)config.properties["item1"] != 34.5)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((float)config::properties["name with spaces"] != 34.5)
+	if ((float)config.properties["name with spaces"] != 34.5)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((bool)config::properties["test_bool2"] != true)
+	if ((bool)config.properties["test_bool2"] != true)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((int)config::properties["test_negative"] != -4)
+	if ((int)config.properties["test_negative"] != -4)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((std::string)config::properties[""] != "Empty name")
+	if ((std::string)config.properties[""] != "Empty name")
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((std::string)config::properties["test_string"] != "Hello World")
+	if ((std::string)config.properties["test_string"] != "Hello World")
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((std::string)config::properties["test_string_of_numbers"] != "123")
+	if ((std::string)config.properties["test_string_of_numbers"] != "123")
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((unsigned)config::properties["test_hex"] != 0x7F)
+	if ((unsigned)config.properties["test_hex"] != 0x7F)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((long)config::properties["test_long"] != 123456789101112)
+	if ((long)config.properties["test_long"] != 123456789101112)
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((char)config::properties["test_char"] != 'a')
+	if ((char)config.properties["test_char"] != 'a')
 	{
 		PRINT_ERROR
 		return false;
 	}
-	if ((int)config::properties["test_empty_value"] != 0)
+	if ((int)config.properties["test_empty_value"] != 0)
 	{
 		PRINT_ERROR
 		return false;

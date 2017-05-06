@@ -1,6 +1,6 @@
 /*!
 \author Wyatt Lavigueure
-\date   5/2/2017
+\date   5/4/2017
 \brief  
   The lowest part of the network stack before the operating system takes over. The channel layer 
   is responsible for connection state and authentication

@@ -15,6 +15,7 @@
 #include "meta.h"
 #include "config.h"
 #include "channel.h"
+#include "frame_rate.h"
 
 #define PRINT_ERROR std::cout << "line " << __LINE__ << std::endl; 
 
@@ -22,9 +23,10 @@ bool TestInferType();
 bool TestStringToValue();
 bool TestConfig();
 bool TestHashFunction();
+bool TestFrameRate();
 
 bool (*tests[])() = { 
-    TestInferType, TestStringToValue, TestConfig, TestHashFunction
+    TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate
 }; 
 
 int main()
@@ -397,6 +399,32 @@ bool TestHashFunction()
 			PRINT_ERROR
 			return false;
 		}
+	}
+	return true;
+}
+
+bool TestFrameRate()
+{
+	FrameRate ft;
+  double jj = 0;
+	ft.GetTime();
+	for (unsigned i = 0; i < 10000000; ++i)
+	{
+		jj = jj + i * i / jj - 16 + (1 - jj) * i;
+	}
+	double first = ft.GetTime();
+	jj = 0;
+	ft.GetTime();
+	for (unsigned i = 0; i < 1000000; ++i)
+	{
+		jj = jj + i * i / jj - 16 + (1 - jj) * i;
+	}
+	double second = ft.GetTime();
+  //check to make sure that the second for loop ran 10 times faster +-1 percent
+	if (abs(second / first - 0.1) > 0.01)
+	{
+		PRINT_ERROR
+		return false;
 	}
 	return true;
 }

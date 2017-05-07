@@ -24,8 +24,6 @@ public:
 	  \brief
 	    Send function does not actually send anything over the wire but what ever changes it makes
 	    to the packet are kept and will be sent.
-	  \param sock
-	    the socket to send from
 	  \param buffer
 	    the data that wants to be sent. important! must have extra room in the buffer for added on things.
 	  \param bytes
@@ -35,20 +33,18 @@ public:
 	  \return
 	    The number of bytes "sent" wich is just the new size of the buffer
 	*/
-	virtual int Send(SOCKET sock, char* buffer, int bytes, sockaddr_in* dest);
+	virtual int Send(char* buffer, int bytes, sockaddr_in* dest);
 	/*!
 	  \brief
 	    recieve function similar to the send function but for sending things.
-	  \param sock
-	    The socket to recieve from
 	  \param buffer
 	    The location to plop the data
-	  \param max_bytes
-	    The largest packet that fits into the buffer
+	  \param bytes
+	    The number of bytes in the packet
 	  \return
 	    The number of bytes "recieved" which is how much of the buffer is left
 	*/
-	virtual int Receive(SOCKET sock, char* buffer, int max_bytes);
+	virtual int Receive(char* buffer, int bytes);
 	/*!
 	  \brief
 	    This is ment to be called every frame
@@ -105,14 +101,12 @@ public:
 	  \return
 	    The number of bytes that are in buffer, not the number of bytes read from the wire
 	*/
-	virtual int Receive(SOCKET sock, char* buffer, int max_bytes);
+	int Receive(SOCKET sock, char* buffer, int max_bytes);
 	/*!
 	  \brief
 	    This is ment to be called every frame
-	  \param dt
-	    the time since the last updae called
 	*/
-	virtual void Update(float dt);
+	void Update();
 private:
 };
 

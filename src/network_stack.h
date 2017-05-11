@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "wyatt_sock.h"
+#include "frame_rate.h"
 
 //forward decleration so that NetworkLayer can use
 class NetworkStack;
@@ -88,7 +89,7 @@ public:
 	  \return
 	    The number of bytes sent on the wire, almost garanteed to be different from bytes
 	*/
-	int Send(SOCKET sock, char* buffer, int bytes, sockaddr_in* dest, int start_layer = -1);
+	int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, int start_layer = -1);
 	/*!
 	  \brief
 	    Recieves data from wire then sends it through every layers Receive function in opposite order
@@ -108,6 +109,7 @@ public:
 	*/
 	void Update();
 private:
+	FrameRate timer;
 };
 
 #endif

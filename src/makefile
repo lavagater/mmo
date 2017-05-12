@@ -8,7 +8,8 @@ ERASE=rm
 DATABASE_OBJECTS=$(OUTDIR)database.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
-GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o $(OUTDIR)channel.o $(OUTDIR)frame_rate.o
+GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o\
+                $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out
@@ -59,6 +60,9 @@ $(OUTDIR)config.o : config.cpp config.h meta.h
 
 $(OUTDIR)meta.o : meta.cpp meta.h
 	$(CC) -o $(OUTDIR)meta.o $(CFLAGS) meta.cpp
+
+$(OUTDIR)blowfish.o : blowfish.cpp blowfish.h
+	$(CC) -o $(OUTDIR)blowfish.o $(CFLAGS) blowfish.cpp
 
 $(OUTDIR)frame_rate.o : frame_rate.cpp frame_rate.h
 	$(CC) -o $(OUTDIR)frame_rate.o $(CFLAGS) frame_rate.cpp

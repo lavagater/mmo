@@ -10,27 +10,31 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <time.h>
 
 #include "wyatt_sock.h"
 #include "meta.h"
 #include "config.h"
 #include "channel.h"
 #include "frame_rate.h"
+#include "blowfish.h"
 
-#define PRINT_ERROR std::cout << "line " << __LINE__ << std::endl; 
+#define PRINT_ERROR(x) std::cout << "line " << __LINE__ << " function " << __FUNCTION__ << std::endl;
 
 bool TestInferType();
 bool TestStringToValue();
 bool TestConfig();
 bool TestHashFunction();
 bool TestFrameRate();
+bool TestBlowFish();
 
 bool (*tests[])() = { 
-    TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate
+    TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish
 }; 
 
 int main()
 {
+	srand(time(0));
 	int num_failed = 0;
 	for (unsigned i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i)
 	{
@@ -57,7 +61,7 @@ bool TestInferType()
 		int type = InferType(s.str().c_str());
 		if (type != type_int)
 		{
-			PRINT_ERROR
+			PRINT_ERROR();
 			std::cout << "str = " << s.str() << std::endl;
 			std::cout << "type is " << type << std::endl;
 			return false;
@@ -71,7 +75,7 @@ bool TestInferType()
 		int type = InferType(s.str().c_str());
 		if (type != type_int && type != type_long)
 		{
-			PRINT_ERROR
+			PRINT_ERROR();
 			std::cout << "str = " << s.str() << std::endl;
 			std::cout << "type is " << type << std::endl;
 			return false;
@@ -81,28 +85,28 @@ bool TestInferType()
 	int type = InferType("TRUE");
 	if (type != type_bool)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
 	type = InferType("false");
 	if (type != type_bool)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
 	type = InferType("FALSE");
 	if (type != type_bool)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
 	type = InferType("true");
 	if (type != type_bool)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
@@ -124,7 +128,7 @@ bool TestInferType()
 			int type = InferType(s.str().c_str());
 			if (type != type_float && type != type_double)
 			{
-				PRINT_ERROR
+				PRINT_ERROR();
 				std::cout << "str = " << s.str() << std::endl;
 				std::cout << "type is " << type << std::endl;
 				return false;
@@ -140,7 +144,7 @@ bool TestInferType()
 			type = InferType(temp);
 			if (type != type_char)
 			{
-				PRINT_ERROR
+				PRINT_ERROR();
 				std::cout << "str is "<< temp << std::endl;
 				std::cout << "type is " << type << std::endl;
 			}
@@ -155,7 +159,7 @@ bool TestInferType()
 			type = InferType(temp);
 			if (type != type_string)
 			{
-				PRINT_ERROR
+				PRINT_ERROR();
 				std::cout << "str is "<< temp << std::endl;
 				std::cout << "type is " << type << std::endl;
 			}
@@ -172,7 +176,7 @@ bool TestInferType()
   type = InferType("");
 	if (type != type_null)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
@@ -181,7 +185,7 @@ bool TestInferType()
 	type = InferType("0x77");
 	if (type != type_hex)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
@@ -189,7 +193,7 @@ bool TestInferType()
 	type = InferType("ABCDEF");
 	if (type != type_hex)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "type is " << type << std::endl;
 		return false;
 	}
@@ -201,76 +205,76 @@ bool TestStringToValue()
 	//test int
 	if ((int)StringToValue("14") != 14)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "14 gives " << (int)StringToValue("14") << std::endl; 
 		return false;
 	}
 	//test negative
 	if ((int)StringToValue("-2") != -2)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "-2 gives " << (int)StringToValue("-2") << std::endl; 
 		return false;
 	}
 	//test big number
 	if ((long)StringToValue("1234567890") != 1234567890)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "1234567890 gives " << (long)StringToValue("1234567890") << std::endl; 
 		return false;
 	}
 	//test floating points
 	if ((double)StringToValue("1234.567890") != 1234.567890)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "1234.567890 gives " << (double)StringToValue("1234.567890") << std::endl; 
 		return false;
 	}
 	//test empty string
 	if ((int)StringToValue("") != 0)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "\"\" = " << (int)StringToValue("") << std::endl; 
 		return false;
 	}
 	//test boolean
 	if ((bool)StringToValue("true") != true)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "true gives " << (bool)StringToValue("true") << std::endl; 
 		return false;
 	}
 	//test boolean
 	if ((bool)StringToValue("TRUE") != true)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "TRUE gives " << (bool)StringToValue("TRUE") << std::endl; 
 		return false;
 	}
 	//test boolean
 	if ((bool)StringToValue("false") != false)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "false gives " << (bool)StringToValue("false") << std::endl; 
 		return false;
 	}
 	//test boolean
 	if ((bool)StringToValue("FALSE") != false)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "FALSE gives " << (bool)StringToValue("FALSE") << std::endl; 
 		return false;
 	}
 	//test char
 	if ((char)StringToValue("'f'") != 'f')
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "'f' gives " << (char)StringToValue("'f'") << std::endl; 
 		return false;
 	}
 	if ((std::string)StringToValue("\"huehuehue\"") != "huehuehue")
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "huehuehue !=" << (std::string)StringToValue("\"huehuehue\"") << std::endl; 
 		return false;
 	}
@@ -278,21 +282,21 @@ bool TestStringToValue()
 	//check hex
 	if ((int)StringToValue("0x5") != 5)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "0x5 is " << (int)StringToValue("0x5") << std::endl;
 		return false;
 	}
 	//check hex more
 	if ((int)StringToValue("0x45") != 69)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "0x45 is " << (int)StringToValue("0x45") << std::endl;
 		return false;
 	}
 	//check impropper casting
 	if ((int)StringToValue("3.14159") != 3)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		std::cout << "3.14159 is casted as int to " << (int)StringToValue("3.14159") << std::endl;
 		return false;
 	}
@@ -305,57 +309,57 @@ bool TestConfig()
 	config.Init("test_conf.txt");
 	if ((float)config.properties["item1"] != 34.5)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((float)config.properties["name with spaces"] != 34.5)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((bool)config.properties["test_bool2"] != true)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((int)config.properties["test_negative"] != -4)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((std::string)config.properties[""] != "Empty name")
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((std::string)config.properties["test_string"] != "Hello World")
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((std::string)config.properties["test_string_of_numbers"] != "123")
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((unsigned)config.properties["test_hex"] != 0x7F)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((long)config.properties["test_long"] != 123456789101112)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((char)config.properties["test_char"] != 'a')
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	if ((int)config.properties["test_empty_value"] != 0)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	return true;
@@ -369,14 +373,14 @@ bool TestHashFunction()
 	CreateAddress("127.0.0.1", 7327, &tester);
 	if (hashfunc(tester) != hashfunc(tester))
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	sockaddr_in tester2;
 	CreateAddress("127.0.0.1", 7327, &tester2);
 	if (hashfunc(tester) != hashfunc(tester2))
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
 	}
 	//test different ports only
@@ -385,7 +389,7 @@ bool TestHashFunction()
 		CreateAddress("127.0.0.1", 7327+i, &tester2);
 		if (hashfunc(tester) == hashfunc(tester2))
 		{
-			PRINT_ERROR
+			PRINT_ERROR();
 			return false;
 		}
 	}
@@ -396,7 +400,7 @@ bool TestHashFunction()
 		CreateAddress(new_ip.c_str(), 7327, &tester2);
 		if (hashfunc(tester) == hashfunc(tester2))
 		{
-			PRINT_ERROR
+			PRINT_ERROR();
 			return false;
 		}
 	}
@@ -423,8 +427,42 @@ bool TestFrameRate()
   //check to make sure that the second for loop ran 10 times faster +-1 percent
 	if (abs(second / first - 0.1) > 0.01)
 	{
-		PRINT_ERROR
+		PRINT_ERROR();
 		return false;
+	}
+	return true;
+}
+
+bool TestBlowFish()
+{
+	//make a key
+	unsigned key[18];
+	for (unsigned i = 0; i < 18; ++i)
+	{
+		key[i] = rand();
+	}
+	BlowFish bf(key, 18);
+	for (int i = 0; i < 1337; ++i)
+	{
+		unsigned lhs = rand();
+		unsigned rhs = rand();
+		unsigned prev_lhs = lhs;
+		unsigned prev_rhs = rhs;
+		bf.encrypt(lhs, rhs);
+		//make sure it did something
+		if (rhs == prev_lhs || lhs == prev_rhs)
+		{
+			PRINT_ERROR();
+			std::cout << "blowfish did not encrypt..." << std::endl;
+			return false;
+		}
+		bf.decrypt(lhs, rhs);
+		if (lhs != prev_lhs || rhs!= prev_rhs)
+		{
+			PRINT_ERROR();
+			std::cout << "blowfish did not decrypt..." << std::endl;
+			return false;
+		}
 	}
 	return true;
 }

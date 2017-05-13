@@ -2,10 +2,20 @@
 
 #include "network_stack.h"
 
+NetworkLayer::~NetworkLayer(){}
+
+NetworkStack::~NetworkStack()
+{
+	for (unsigned i = 0; i < layers.size(); ++i)
+	{
+		delete layers[i];
+	}
+}
+
 int NetworkStack::Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, int start_layer)
 {
 	//create a new buffer that can be added too
-	char new_buf[2048];
+	char new_buf[MAXSOCKETSIZE];
 	memcpy(new_buf, buffer, bytes);
 
 	int sent = bytes;
@@ -16,16 +26,18 @@ int NetworkStack::Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* 
 	}
 	for (;i >= 0; --i)
 	{
-		sent = layers[i].Send(new_buf, sent, dest);
+		sent = layers[i]->Send(new_buf, sent, dest);
 	}
-	return Send(sock, new_buf, sent, dest);
+	//calling the socket library send function
+	return ::Send(sock, new_buf, sent, dest);
 }
-int NetworkStack::Receive(SOCKET sock, char* buffer, int max_bytes)
+int NetworkStack::Receive(SOCKET sock, char* buffer, int max_bytes, sockaddr_in* location)
 {
-	int recv = Receive(sock, buffer, max_bytes);
+	//calling the socket library Receive function
+	int recv = ::Receive(sock, buffer, max_bytes);
 	for (unsigned i = 0; i < layers.size(); ++i)
 	{
-		recv = layers[i].Receive(buffer, recv);
+		recv = layers[i]->Receive(buffer, recv, location);
 	}
 	return recv;
 }
@@ -34,6 +46,6 @@ void NetworkStack::Update()
 	double dt = timer.GetTime();
 	for (unsigned i = 0; i < layers.size(); ++i)
 	{
-		layers[i].Update(dt);
+		layers[i]->Update(dt);
 	}
 }

@@ -63,19 +63,25 @@ int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest)
     return result;
 }
 
-
-int Receive(SOCKET sock, char* buffer, int maxBytes)
+int Receive(SOCKET sock, char* buffer, int maxBytes, sockaddr_in *addr)
 {
-  sockaddr sender;
-  unsigned int size = sizeof(sockaddr);
+#ifdef _WIN32
+  int size = sizeof(sockaddr);
+#else
+  unsigned size = sizeof(sockaddr);
+#endif
 
-  int bytes = recvfrom(sock, buffer, maxBytes, 0, &sender, &size);
+  int bytes = recvfrom(sock, buffer, maxBytes, 0, reinterpret_cast<sockaddr*>(addr), &size);
   if (bytes == SOCKET_ERROR)
     return -1;
 
-  // Sender’s IP address is now in sender.sa_data
-
   return bytes;
+}
+
+int Receive(SOCKET sock, char* buffer, int maxBytes)
+{
+  sockaddr_in sender;
+  return Receive(sock, buffer, maxBytes, &sender);
 }
 
 int ReceiveTCP(SOCKET sock, char* buffer, int maxBytes)
@@ -100,7 +106,7 @@ int Bind(SOCKET sock, sockaddr_in* addr)
 void CreateAddress(const char* ip, int port, sockaddr_in *res)
 {
   //clear the memory
-  memset(res, sizeof(*res), 0);
+  memset(res, 0, sizeof(*res));
 
   res->sin_family = AF_INET;
   res->sin_port = htons(port);

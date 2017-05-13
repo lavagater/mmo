@@ -11,6 +11,12 @@
 #include "wyatt_sock.h"
 #include "frame_rate.h"
 
+/*!
+  \brief
+    This is what all packet buffers should be set to to insure that they are large enough. No checks are made so dont be stupid
+*/
+#define MAXSOCKETSIZE 2048
+
 //forward decleration so that NetworkLayer can use
 class NetworkStack;
 
@@ -21,6 +27,11 @@ class NetworkStack;
 class NetworkLayer
 {
 public:
+	/*!
+	  \brief
+	    Destructor for network layer, virtual so that NetworkLayer babies destructors also get called
+	*/
+  virtual ~NetworkLayer();
 	/*!
 	  \brief
 	    Send function does not actually send anything over the wire but what ever changes it makes
@@ -34,7 +45,7 @@ public:
 	  \return
 	    The number of bytes "sent" wich is just the new size of the buffer
 	*/
-	virtual int Send(char* buffer, int bytes, sockaddr_in* dest);
+	virtual int Send(char* buffer, int bytes, sockaddr_in* dest) = 0;
 	/*!
 	  \brief
 	    recieve function similar to the send function but for sending things.
@@ -42,17 +53,19 @@ public:
 	    The location to plop the data
 	  \param bytes
 	    The number of bytes in the packet
+	  \param location
+	    The entity that we recieved from
 	  \return
 	    The number of bytes "recieved" which is how much of the buffer is left
 	*/
-	virtual int Receive(char* buffer, int bytes);
+	virtual int Receive(char* buffer, int bytes, sockaddr_in* location) = 0;
 	/*!
 	  \brief
 	    This is ment to be called every frame
 	  \param dt
 	    the time since the last updae called
 	*/
-	virtual void Update(float dt);
+	virtual void Update(float dt) = 0;
 private:
 	//pointer back to the network stack that its a part of
 	NetworkStack *stack;
@@ -69,9 +82,14 @@ class NetworkStack
 public:
 	/*!
 	  \brief
+	    Frees the network layers
+	*/
+	~NetworkStack();
+	/*!
+	  \brief
 	    The layers of the network stack
 	*/
-  std::vector<NetworkLayer> layers;
+  std::vector<NetworkLayer*> layers;
 	/*!
 	  \brief
 	    Calls the send functions of each layer, then actaully sends the data
@@ -99,10 +117,12 @@ public:
 	    The location to plop the data
 	  \param max_bytes
 	    The largest packet that fits into the buffer
+	  \param location
+	    The entity that we recieved from
 	  \return
 	    The number of bytes that are in buffer, not the number of bytes read from the wire
 	*/
-	int Receive(SOCKET sock, char* buffer, int max_bytes);
+	int Receive(SOCKET sock, char* buffer, int max_bytes, sockaddr_in *location);
 	/*!
 	  \brief
 	    This is ment to be called every frame

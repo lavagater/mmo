@@ -23,6 +23,7 @@ void SetNonBlocking(SOCKET sock);
 int GetError();
 void Close(SOCKET sock, bool now);
 int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest);
+int Receive(SOCKET sock, char* buffer, int maxBytes, sockaddr_in *location);
 int Receive(SOCKET sock, char* buffer, int maxBytes);
 int Bind(SOCKET sock, sockaddr_in* addr);
 sockaddr_in* CreateAddress(const char* ip, int port);

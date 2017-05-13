@@ -18,6 +18,9 @@
 #include "channel.h"
 #include "frame_rate.h"
 #include "blowfish.h"
+#include "network_stack.h"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 #define PRINT_ERROR(x) std::cout << "line " << __LINE__ << " function " << __FUNCTION__ << std::endl;
 
@@ -27,9 +30,11 @@ bool TestConfig();
 bool TestHashFunction();
 bool TestFrameRate();
 bool TestBlowFish();
+bool TestNetworkLayer();
 
 bool (*tests[])() = { 
-    TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish
+    TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
+    TestNetworkLayer
 }; 
 
 int main()
@@ -466,3 +471,192 @@ bool TestBlowFish()
 	}
 	return true;
 }
+
+//this baby on send adds 1 to every byte, just to test the network stack functionality
+class TestLayer1 : public NetworkLayer
+{
+public:
+	~TestLayer1()
+	{
+		//nothing to do..
+	}
+	TestLayer1()
+	{
+		count_sent = 0;
+		count_recv = 0;
+	}
+	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest)
+	{
+		memcpy(save_buf[count_sent], buffer, bytes);
+		for (int i = 0; i < bytes; ++i)
+		{
+			buffer[i] += 1;
+		}
+		count_sent += 1;
+		return bytes;
+	}
+	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location)
+	{
+		for (int i = 0; i < bytes; ++i)
+		{
+			buffer[i] -= 1;
+			if (buffer[i] != save_buf[count_recv][i])
+			{
+				PRINT_ERROR();
+			}
+		}
+		count_recv += 1;
+		return bytes;
+	}
+	void Update(__attribute__((unused))float dt)
+	{
+
+	}
+private:
+	//save the originals here
+	char save_buf[5][MAXSOCKETSIZE];
+	//these never get reset so only 5 sends can be tested
+	int count_sent;
+	int count_recv;
+};
+
+//this baby on send adds a header to the packet, just to test the network stack functionality
+class TestLayer2 : public NetworkLayer
+{
+public:
+	~TestLayer2()
+	{
+		//nothing to do.., but did test that this got called properly trust meee
+	}
+	TestLayer2()
+	{
+		count_sent = 0;
+		count_recv = 0;
+	}
+	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest)
+	{
+		//shift the buffer over by 8 bytes
+		for (int i = bytes - 1; i >=0; --i)
+		{
+			buffer[i+8] = buffer[i];
+		}
+		//fill the header with random stuff
+		for (int i = 0; i < 8; ++i)
+		{
+			buffer[i] = rand();
+		}
+		//save buffer with the header attached
+		memcpy(save_buf[count_sent], buffer, bytes+8);
+		count_sent += 1;
+		return bytes+8;
+	}
+	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location)
+	{
+		//check that the buffer still has the header and its the same as we sent it
+		for (int i = 0; i < bytes; ++i)
+		{
+			if (buffer[i] != save_buf[count_recv][i])
+			{
+				PRINT_ERROR();
+			}
+		}
+		//remove the header by shifting the buffer back over by 8 bytes
+		for (int i = 0; i < bytes; ++i)
+		{
+			buffer[i] = buffer[i+8];
+		}
+		count_recv += 1;
+		return bytes-8;
+	}
+	void Update(__attribute__((unused))float dt)
+	{
+
+	}
+private:
+	//save the originals here
+	char save_buf[5][MAXSOCKETSIZE];
+	//these never get reset so only 5 sends can be tested
+	int count_sent;
+	int count_recv;
+};
+
+bool TestNetworkLayer()
+{
+	//set up a connection with ourself
+	sockaddr_in sender;
+	sockaddr_in reciever;
+	Init();
+	CreateAddress("127.0.0.1", 6900, &sender);
+	CreateAddress("127.0.0.1", 6901, &reciever);
+	SOCKET send_sock = CreateSocket(IPPROTO_UDP);
+	SOCKET recieve_sock = CreateSocket(IPPROTO_UDP);
+	Bind(send_sock, &sender);
+	Bind(recieve_sock, &reciever);
+	SetNonBlocking(send_sock);
+	SetNonBlocking(recieve_sock);
+
+	//now create our network stack
+	NetworkStack net;
+	// sandwhich the layers on each other
+	net.layers.push_back(new TestLayer1());
+	net.layers.push_back(new TestLayer2());
+	net.layers.push_back(new TestLayer1());
+	net.layers.push_back(new TestLayer2());
+	//send some data
+	std::string data = "this is data";
+	net.Send(send_sock, data.c_str(), data.size()+1, &reciever);
+	//recieve the data
+	char buf[MAXSOCKETSIZE] = "Not the DATA i sent!";
+	sockaddr_in location;
+	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
+	if (data != buf)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	//send a couple times then recieve a couple of times
+	std::string data1 = "data one";
+	net.Send(send_sock, data1.c_str(), data1.size()+1, &reciever);
+	//large amount of data
+	std::string data2;
+	for (int i = 0; i < 1; ++i)
+	{
+		data2 += 'a';
+	}
+	net.Send(send_sock, data2.c_str(), data2.size()+1, &reciever);
+	std::string data3 = "data three";
+	net.Send(send_sock, data3.c_str(), data3.size()+1, &reciever);
+	std::string data4 = "last";
+	net.Send(send_sock, data4.c_str(), data4.size()+1, &reciever);
+	//recieve the sent data
+	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
+	if (data1 != buf)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
+	if (data2 != buf)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
+	if (data3 != buf)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
+	if (data4 != buf)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	Close(send_sock, true);
+	Close(recieve_sock, true);
+	Deinit();
+	return true;
+}
+
+#endif //DOXYGEN_SHOULD_SKIP_THIS

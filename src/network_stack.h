@@ -180,6 +180,8 @@ public:
 	*/
 	std::unordered_map<std::string, bool> options;
   /*!
+    \brief
+      The connection information for ever entity we have communicated with
   */
   std::unordered_map<sockaddr_in, ConnectionState, SockAddrHash> connections;
 private:

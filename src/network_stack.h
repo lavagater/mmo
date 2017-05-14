@@ -181,14 +181,6 @@ public:
 	    This is ment to be called every frame
 	*/
 	void Update();
-	/*!
-	  \brief
-	    These are the options for the packets being sent, for example options["reliable"] = true; makes all future packets
-	    sent reliable untell options["reliable"] is set to false.
-	    For making a network layer that uses an option all you have to do is check the option by using options["your option"]
-	    if it has not been set than it is false
-	*/
-	std::unordered_map<std::string, bool> options;
   /*!
     \brief
       The connection information for ever entity we have communicated with

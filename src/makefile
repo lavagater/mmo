@@ -9,7 +9,7 @@ DATABASE_OBJECTS=$(OUTDIR)database.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
 GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o\
-                $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o
+                $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o $(OUTDIR)reliability.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out
@@ -54,6 +54,9 @@ $(OUTDIR)wyatt_sock.o : wyatt_sock.cpp wyatt_sock.h
 
 $(OUTDIR)channel.o : channel.cpp channel.h wyatt_sock.h
 	$(CC) -o $(OUTDIR)channel.o $(CFLAGS) channel.cpp
+
+$(OUTDIR)reliability.o : reliability.cpp reliability.h wyatt_sock.h
+	$(CC) -o $(OUTDIR)reliability.o $(CFLAGS) reliability.cpp
 
 $(OUTDIR)config.o : config.cpp config.h meta.h
 	$(CC) -o $(OUTDIR)config.o $(CFLAGS) config.cpp

@@ -598,10 +598,10 @@ bool TestNetworkLayer()
 	//now create our network stack
 	NetworkStack net;
 	// sandwhich the layers on each other
-	net.layers.push_back(new TestLayer1());
-	net.layers.push_back(new TestLayer2());
-	net.layers.push_back(new TestLayer1());
-	net.layers.push_back(new TestLayer2());
+	net.AddLayer(new TestLayer1());
+	net.AddLayer(new TestLayer2());
+	net.AddLayer(new TestLayer1());
+	net.AddLayer(new TestLayer2());
 	//send some data
 	std::string data = "this is data";
 	net.Send(send_sock, data.c_str(), data.size()+1, &reciever);

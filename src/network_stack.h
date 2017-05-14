@@ -68,6 +68,8 @@ public:
 	*/
 	virtual void Update(double dt) = 0;
 private:
+	//let the network stack set the stack pointer and id
+	friend class NetworkStack;
 	//pointer back to the network stack that its a part of
 	NetworkStack *stack;
 	//the index into the array of layers
@@ -133,6 +135,14 @@ public:
 	    The layers of the network stack
 	*/
   std::vector<NetworkLayer*> layers;
+  /*!
+    \brief
+      Adds a layer to the top of network stack (i.e calls push_back) and sets the layers layer number
+      and sets the networkstack pointer
+    \param layer
+      A pointer to the layer to add
+  */
+  void AddLayer(NetworkLayer *layer);
 	/*!
 	  \brief
 	    Calls the send functions of each layer, then actaully sends the data

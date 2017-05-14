@@ -69,3 +69,9 @@ void NetworkStack::Update()
 		layers[i]->Update(dt);
 	}
 }
+void NetworkStack::AddLayer(NetworkLayer *layer)
+{
+	layer->layer_id = layers.size();
+	layer->stack = this;
+	layers.push_back(layer);
+}

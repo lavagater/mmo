@@ -8,7 +8,7 @@ ERASE=rm
 DATABASE_OBJECTS=$(OUTDIR)database.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
-GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o\
+GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o \
                 $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o $(OUTDIR)reliability.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
@@ -37,7 +37,7 @@ $(OUTDIR)$(DATABASE) : $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)$(DATABASE) $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 
 
-$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS)
+$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
 	$(CC) -o $(OUTDIR)unit_test.o $(CFLAGS) unit_test.cpp
 
 $(OUTDIR)zone.o  : zone.cpp

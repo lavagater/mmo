@@ -19,6 +19,7 @@
 #include "frame_rate.h"
 #include "blowfish.h"
 #include "network_stack.h"
+#include "bit_array.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -31,10 +32,11 @@ bool TestHashFunction();
 bool TestFrameRate();
 bool TestBlowFish();
 bool TestNetworkLayer();
+bool TestBitArray();
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
-    TestNetworkLayer
+    TestNetworkLayer, TestBitArray
 }; 
 
 int main()
@@ -656,6 +658,41 @@ bool TestNetworkLayer()
 	Close(send_sock, true);
 	Close(recieve_sock, true);
 	Deinit();
+	return true;
+}
+
+bool TestBitArray()
+{
+	BitArray<13> one;
+	BitArray<32> two;
+	if (sizeof(one) != 2)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	if (sizeof(two) != 4)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	bool bools[101];
+	BitArray<101> bits;
+	//set bools and bits to the same data
+	for (unsigned i = 0; i < 101; ++i)
+	{
+		bool temp = rand() % 2 == 0;
+		bools[i] = temp;
+		bits.SetBit(i, temp);
+	}
+	//check that they are the same
+	for (unsigned i = 0; i < 101; ++i)
+	{
+		if (bits[i] != bools[i])
+		{
+			PRINT_ERROR();
+			return false;
+		}
+	}
 	return true;
 }
 

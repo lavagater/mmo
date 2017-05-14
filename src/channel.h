@@ -13,13 +13,25 @@
 
 /*!
 	\brief
-	  The class that handles all of the connection state
+	  This class might do something in the future
 */
 class Channel : public NetworkLayer
 {
 public:
+	/*!
+	  \brief
+	    The channel send does not do anything atm
+	*/
 	int Send(char* buffer, int bytes, sockaddr_in* dest);
+	/*!
+	  \brief
+	    The channel recieve does nothing
+	*/
 	int Receive(char* buffer, int bytes, sockaddr_in* location);
+	/*!
+	  \brief
+	    The channel updates nothing
+	*/
 	void Update(double dt);
 private:
 };

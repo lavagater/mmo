@@ -508,7 +508,7 @@ public:
 		count_recv += 1;
 		return bytes;
 	}
-	void Update(__attribute__((unused))float dt)
+	void Update(__attribute__((unused))double dt)
 	{
 
 	}
@@ -568,7 +568,7 @@ public:
 		count_recv += 1;
 		return bytes-8;
 	}
-	void Update(__attribute__((unused))float dt)
+	void Update(__attribute__((unused))double dt)
 	{
 
 	}

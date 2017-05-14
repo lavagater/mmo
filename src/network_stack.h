@@ -7,6 +7,7 @@
 #ifndef NTSTCK_H
 #define NTSTCK_H
 #include <vector>
+#include <unordered_map>
 
 #include "wyatt_sock.h"
 #include "frame_rate.h"
@@ -65,12 +66,54 @@ public:
 	  \param dt
 	    the time since the last updae called
 	*/
-	virtual void Update(float dt) = 0;
+	virtual void Update(double dt) = 0;
 private:
 	//pointer back to the network stack that its a part of
 	NetworkStack *stack;
 	//the index into the array of layers
 	int layer_id;
+};
+
+/*!
+	\brief
+	  A functor for hashing a connection state
+*/
+class SockAddrHash
+{
+public:
+	/*!
+		\brief
+		  Hash function for unordered map
+	*/
+	size_t operator()(const sockaddr_in &rhs) const;
+};
+
+/*!
+	\brief
+	  Comparison for sockaddr_in so that it can be used as a key
+*/
+bool operator==(const sockaddr_in &lhs, const sockaddr_in &rhs);
+
+/*!
+	\brief
+	  The connection state of a connection also stores the address and the authentication and id
+*/
+class ConnectionState
+{
+public:
+	// An enum of type of connections
+	enum
+	{
+		NotConnected,
+		Connected,
+		AuthedPlayer,
+		AuthedServer,
+		AuthedAdmin,
+		num
+	};
+	int auth_level; /*!< The level of authentication*/
+	sockaddr_in *addr; /*!< The address*/
+	unsigned connection_id; /*!< This is a unique id for this connection shared along all the onnections*/
 };
 
 /*!
@@ -128,6 +171,17 @@ public:
 	    This is ment to be called every frame
 	*/
 	void Update();
+	/*!
+	  \brief
+	    These are the options for the packets being sent, for example options["reliable"] = true; makes all future packets
+	    sent reliable untell options["reliable"] is set to false.
+	    For making a network layer that uses an option all you have to do is check the option by using options["your option"]
+	    if it has not been set than it is false
+	*/
+	std::unordered_map<std::string, bool> options;
+  /*!
+  */
+  std::unordered_map<sockaddr_in, ConnectionState, SockAddrHash> connections;
 private:
 	FrameRate timer;
 };

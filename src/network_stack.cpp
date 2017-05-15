@@ -32,11 +32,12 @@ size_t SockAddrHash::operator()(const sockaddr_in &rhs) const
 	return SimpleHash(rhs.sin_addr.s_addr) ^ SimpleHash(rhs.sin_port);
 }
 
-int NetworkStack::Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, int start_layer)
+int NetworkStack::Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer)
 {
 	//create a new buffer that can be added too
 	char new_buf[MAXSOCKETSIZE];
-	memcpy(new_buf, buffer, bytes);
+	//leave room in buffer for header
+	memcpy(new_buf+HEADERSIZE/8, buffer, bytes);
 
 	int sent = bytes;
 	int i = start_layer;
@@ -46,8 +47,15 @@ int NetworkStack::Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* 
 	}
 	for (;i >= 0; --i)
 	{
-		sent = layers[i]->Send(new_buf, sent, dest);
+		//leave room in buffer for header
+		sent = layers[i]->Send(new_buf+HEADERSIZE/8, sent, dest, flags);
 	}
+	//put flags into buffer
+	for (unsigned i = 0; i < HEADERSIZE/8; ++i)
+	{
+		new_buf[i] = flags.buffer[i];
+	}
+	sent += HEADERSIZE/8;
 	//calling the socket library send function
 	return ::Send(sock, new_buf, sent, dest);
 }
@@ -55,9 +63,27 @@ int NetworkStack::Receive(SOCKET sock, char* buffer, int max_bytes, sockaddr_in*
 {
 	//calling the socket library Receive function
 	int recv = ::Receive(sock, buffer, max_bytes);
+	//packet cant be less than the header size, the packet must be bad
+	if (recv < HEADERSIZE/8)
+	{
+		return 0;
+	}
+	//set the flags
+	BitArray<HEADERSIZE> flags;
+	for (unsigned i = 0; i < HEADERSIZE/8; ++i)
+	{
+		flags.buffer[i] = buffer[i];
+	}
+	//shift the packet
+	for (int i = 0; i < recv - HEADERSIZE/8; ++i)
+	{
+		buffer[i] = buffer[i+HEADERSIZE/8];
+	}
+	recv -= HEADERSIZE/8;
+	//call the rest of the layers
 	for (unsigned i = 0; i < layers.size(); ++i)
 	{
-		recv = layers[i]->Receive(buffer, recv, location);
+		recv = layers[i]->Receive(buffer, recv, location, flags);
 	}
 	return recv;
 }

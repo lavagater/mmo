@@ -22,12 +22,12 @@ public:
 	  \brief
 	    The channel send does not do anything atm
 	*/
-	int Send(char* buffer, int bytes, sockaddr_in* dest);
+	int Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags);
 	/*!
 	  \brief
 	    The channel recieve does nothing
 	*/
-	int Receive(char* buffer, int bytes, sockaddr_in* location);
+	int Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags);
 	/*!
 	  \brief
 	    The channel updates nothing

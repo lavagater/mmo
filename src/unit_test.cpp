@@ -487,7 +487,7 @@ public:
 		count_sent = 0;
 		count_recv = 0;
 	}
-	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest)
+	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		memcpy(save_buf[count_sent], buffer, bytes);
 		for (int i = 0; i < bytes; ++i)
@@ -497,7 +497,7 @@ public:
 		count_sent += 1;
 		return bytes;
 	}
-	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location)
+	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		for (int i = 0; i < bytes; ++i)
 		{
@@ -535,7 +535,7 @@ public:
 		count_sent = 0;
 		count_recv = 0;
 	}
-	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest)
+	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		//shift the buffer over by 8 bytes
 		for (int i = bytes - 1; i >=0; --i)
@@ -552,7 +552,7 @@ public:
 		count_sent += 1;
 		return bytes+8;
 	}
-	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location)
+	int Receive(char *buffer, int bytes, __attribute__((unused))sockaddr_in *location, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		//check that the buffer still has the header and its the same as we sent it
 		for (int i = 0; i < bytes; ++i)
@@ -606,7 +606,8 @@ bool TestNetworkLayer()
 	net.AddLayer(new TestLayer2());
 	//send some data
 	std::string data = "this is data";
-	net.Send(send_sock, data.c_str(), data.size()+1, &reciever);
+	BitArray<HEADERSIZE> flags;
+	net.Send(send_sock, data.c_str(), data.size()+1, &reciever, flags);
 	//recieve the data
 	char buf[MAXSOCKETSIZE] = "Not the DATA i sent!";
 	sockaddr_in location;
@@ -614,22 +615,23 @@ bool TestNetworkLayer()
 	if (data != buf)
 	{
 		PRINT_ERROR();
+		std::cout << data << " != " << buf << std::endl;
 		return false;
 	}
 	//send a couple times then recieve a couple of times
 	std::string data1 = "data one";
-	net.Send(send_sock, data1.c_str(), data1.size()+1, &reciever);
+	net.Send(send_sock, data1.c_str(), data1.size()+1, &reciever, flags);
 	//large amount of data
 	std::string data2;
 	for (int i = 0; i < 1; ++i)
 	{
 		data2 += 'a';
 	}
-	net.Send(send_sock, data2.c_str(), data2.size()+1, &reciever);
+	net.Send(send_sock, data2.c_str(), data2.size()+1, &reciever, flags);
 	std::string data3 = "data three";
-	net.Send(send_sock, data3.c_str(), data3.size()+1, &reciever);
+	net.Send(send_sock, data3.c_str(), data3.size()+1, &reciever, flags);
 	std::string data4 = "last";
-	net.Send(send_sock, data4.c_str(), data4.size()+1, &reciever);
+	net.Send(send_sock, data4.c_str(), data4.size()+1, &reciever, flags);
 	//recieve the sent data
 	net.Receive(recieve_sock, buf, MAXSOCKETSIZE, &location);
 	if (data1 != buf)

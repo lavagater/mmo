@@ -11,12 +11,18 @@
 
 #include "wyatt_sock.h"
 #include "frame_rate.h"
+#include "bit_array.h"
 
 /*!
   \brief
     This is what all packet buffers should be set to to insure that they are large enough. No checks are made so dont be stupid
 */
 #define MAXSOCKETSIZE 2048
+/*!
+  \brief
+    The number of flags in each packet
+*/
+#define HEADERSIZE 8
 
 //forward decleration so that NetworkLayer can use
 class NetworkStack;
@@ -43,10 +49,13 @@ public:
 	    the number of bytes in buffer
 	  \param dest
 	    The address of the entity being sent to
+	  \param flags
+	    The flags for the packet to have, example would be reliable flag or a encrypt flag. These are added onto the packet
+	    right before its sent
 	  \return
 	    The number of bytes "sent" wich is just the new size of the buffer
 	*/
-	virtual int Send(char* buffer, int bytes, sockaddr_in* dest) = 0;
+	virtual int Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags) = 0;
 	/*!
 	  \brief
 	    recieve function similar to the send function but for sending things.
@@ -56,10 +65,13 @@ public:
 	    The number of bytes in the packet
 	  \param location
 	    The entity that we recieved from
+	  \param flags
+	    The flags that the packet was sent with, example would be reliable flag or a encrypt flag.
+	    These are extracted when the packet is received 
 	  \return
 	    The number of bytes "recieved" which is how much of the buffer is left
 	*/
-	virtual int Receive(char* buffer, int bytes, sockaddr_in* location) = 0;
+	virtual int Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags) = 0;
 	/*!
 	  \brief
 	    This is ment to be called every frame
@@ -154,13 +166,15 @@ public:
 	    the number of bytes in buffer
 	  \param dest
 	    The address of the entity being sent to
+	  \param flags
+	    The flags for the packet to have, example would be reliable flag or a encrypt flag
 	  \param start_layer
 	    The layer to start sending from so that one can skip layers, usually for reliability layer
 	    so that when it resends a packet it can start from itself.
 	  \return
 	    The number of bytes sent on the wire, almost garanteed to be different from bytes
 	*/
-	int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, int start_layer = -1);
+	int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer = -1);
 	/*!
 	  \brief
 	    Recieves data from wire then sends it through every layers Receive function in opposite order

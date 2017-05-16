@@ -17,7 +17,7 @@
   \brief
     This is what all packet buffers should be set to to insure that they are large enough. No checks are made so dont be stupid
 */
-#define MAXSOCKETSIZE 2048
+#define MAXPACKETSIZE 2048
 /*!
   \brief
     The number of flags in each packet
@@ -79,12 +79,15 @@ public:
 	    the time since the last updae called
 	*/
 	virtual void Update(double dt) = 0;
-private:
-	//let the network stack set the stack pointer and id
-	friend class NetworkStack;
-	//pointer back to the network stack that its a part of
+	/*!
+	  \brief
+	    The network stack that this layer is a part of
+	*/
 	NetworkStack *stack;
-	//the index into the array of layers
+	/*!
+	  \brief
+	    the index into the array of layers
+	*/
 	int layer_id;
 };
 
@@ -139,6 +142,13 @@ class NetworkStack
 public:
 	/*!
 	  \brief
+	    Sets the socket to use
+	  \param socket
+	    the socket for this network stack to use
+	*/
+	NetworkStack(SOCKET socket);
+	/*!
+	  \brief
 	    Frees the network layers
 	*/
 	~NetworkStack();
@@ -158,8 +168,6 @@ public:
 	/*!
 	  \brief
 	    Calls the send functions of each layer, then actaully sends the data
-	  \param sock
-	    the socket to send from
 	  \param buffer
 	    the data that wants to be sent. important! must have extra room in the buffer for added on things.
 	  \param bytes
@@ -174,12 +182,10 @@ public:
 	  \return
 	    The number of bytes sent on the wire, almost garanteed to be different from bytes
 	*/
-	int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer = -1);
+	int Send(const char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer = -1);
 	/*!
 	  \brief
 	    Recieves data from wire then sends it through every layers Receive function in opposite order
-	  \param sock
-	    The socket to recieve from
 	  \param buffer
 	    The location to plop the data
 	  \param max_bytes
@@ -189,7 +195,7 @@ public:
 	  \return
 	    The number of bytes that are in buffer, not the number of bytes read from the wire
 	*/
-	int Receive(SOCKET sock, char* buffer, int max_bytes, sockaddr_in *location);
+	int Receive(char* buffer, int max_bytes, sockaddr_in *location);
 	/*!
 	  \brief
 	    This is ment to be called every frame
@@ -200,8 +206,13 @@ public:
       The connection information for ever entity we have communicated with
   */
   std::unordered_map<sockaddr_in, ConnectionState, SockAddrHash> connections;
-private:
+  /*!
+    \brief
+      The timer used to update network layers and time ping 
+  */
 	FrameRate timer;
+private:
+	SOCKET sock;
 };
 
 #endif

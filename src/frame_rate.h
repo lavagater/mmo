@@ -35,9 +35,18 @@ public:
 	    Time in seconds since the last call
 	*/
 	double GetPrevTime();
+  /*!
+    \brief
+      Gets the time since the frame rate object was created.
+    \return
+      Time since the frame rate object was created
+  */
+  double GetTotalTime();
 private:
 	//the previous time, for GetPrevTime
 	double last_time;
+  //the time at the creation of the frame rate
+  timespec start;
   //the time at the last GetTime call
 	timespec prev;
 };

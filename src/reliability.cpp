@@ -1,8 +1,29 @@
 #include <string.h>
+#include <iostream>
 
 #include "reliability.h"
 
-int Reliability::Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags)
+Reliability::~Reliability()
+{
+  for (auto it = resends.begin(); it != resends.end(); ++it)
+  {
+    if (it->second)
+    {
+      for (unsigned i = 0; i < RESENDSIZE; ++i)
+      {
+        //delete any packets that wernt acked
+        delete [] it->second[i].packet;
+      }
+    }
+    delete [] it->second;
+  }
+  for (auto it = client_acks.begin(); it != client_acks.end(); ++it)
+  {
+    delete [] it->second;
+  }
+}
+
+int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags)
 {
   //fisrt flag is the reliability
   if (flags[0])
@@ -38,6 +59,8 @@ int Reliability::Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADE
     {
       packets[index].packet[i] = buffer[i];
     }
+    //save the number of bytes to send
+    packets[index].bytes = bytes + ACKSIZE;
     //save the flags
     packets[index].flags = flags;
     //save the time sent
@@ -61,10 +84,11 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       //make sure the number of bytes is correct
       if (bytes != ACKSIZE)
       {
+        stack->last_error = MALEFORMEDPACKET;
         return -1;
       }
       //remove the saved message for the ack
-      unsigned ack;
+      unsigned ack = 0;
       memcpy(&ack, buffer, ACKSIZE);
       if (resends[*location])
       {
@@ -82,7 +106,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
         return -1;
       }
       //extract the ack
-      unsigned ack;
+      unsigned ack = 0;
       memcpy(&ack, buffer, ACKSIZE);
       for (int i = 0; i < bytes-ACKSIZE; ++i)
       {
@@ -94,7 +118,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       {
         acks = new unsigned[RESENDSIZE];
         client_acks[*location] = acks;
-        memset(acks, 0, RESENDSIZE);
+        memset(acks, RESENDSIZE+1, RESENDSIZE*sizeof(unsigned));
       }
       if (acks[ack%RESENDSIZE] == ack)
       {
@@ -103,7 +127,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
         BitArray<HEADERSIZE> temp;
         temp.SetBit(0);
         temp.SetBit(1);
-        stack->Send(reinterpret_cast<char*>(&ack), ACKSIZE, location, temp);
+        stack->Send(reinterpret_cast<char*>(&ack), ACKSIZE, location, temp, layer_id-1);
         return 0;
       }
       //save ack
@@ -112,7 +136,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       BitArray<HEADERSIZE> temp;
       temp.SetBit(0);
       temp.SetBit(1);
-      stack->Send(reinterpret_cast<char*>(&ack), ACKSIZE, location, temp);
+      stack->Send(reinterpret_cast<char*>(&ack), ACKSIZE, location, temp, layer_id-1);
       return bytes - ACKSIZE;
     }
   }
@@ -122,8 +146,31 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
     return bytes;
   }
 }
-void Reliability::Update(double dt)
+void Reliability::Update(__attribute__((unused))double dt)
 {
-  dt += 1;
+  double cur_time = stack->timer.GetTotalTime();
   //resend messages if they have expired
+  for (auto it = resends.begin(); it != resends.end(); ++it)
+  {
+    if (it->second)
+    {
+      for (unsigned i = 0; i < RESENDSIZE; ++i)
+      {
+        //check if there is a reliable message
+        if (it->second[i].packet)
+        {
+          //get the time to send message, a fraction of the ping time
+          float resend_time = stack->connections[it->first].ping * RESENDFRACTION;
+          //check if the time the message was sent was more than resend_tme ago
+          if (cur_time - it->second[i].time >= resend_time)
+          {
+            //reset the send time
+            it->second[i].time = cur_time;
+            //resend the message
+            stack->Send(it->second[i].packet, it->second[i].bytes, &it->first, it->second[i].flags, layer_id-1);
+          }
+        }
+      }
+    }
+  }
 }

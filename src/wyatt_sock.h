@@ -19,10 +19,13 @@ typedef int SOCKET;
 #endif
 #define EBLOCK -6969
 
+//used to simulate packet drop
+extern float PacketDropRate;
+
 void SetNonBlocking(SOCKET sock);
 int GetError();
 void Close(SOCKET sock, bool now);
-int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest);
+int Send(SOCKET sock, const char* buffer, int bytes, const sockaddr_in* dest);
 int Receive(SOCKET sock, char* buffer, int maxBytes, sockaddr_in *location);
 int Receive(SOCKET sock, char* buffer, int maxBytes);
 int Bind(SOCKET sock, sockaddr_in* addr);

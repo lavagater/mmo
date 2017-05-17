@@ -2,7 +2,8 @@
 \author Wyatt Lavigueure
 \date   5/5/2017
 \brief  
-  The network stack. When a message is to be sent over the internet it has(should?) to go through here!
+  The network stack. When a message is to be sent over the internet it has(should?) to go through here! Note that the 
+  network stack should have the same layers on both ends of the connection.
 */
 #ifndef NTSTCK_H
 #define NTSTCK_H
@@ -23,6 +24,12 @@
     The number of flags in each packet
 */
 #define HEADERSIZE 8
+
+/*!
+  \brief
+    Error message when a packet coming through the network stack is not something sent from the network stack
+*/
+#define MALEFORMEDPACKET -123
 
 //forward decleration so that NetworkLayer can use
 class NetworkStack;
@@ -55,7 +62,7 @@ public:
 	  \return
 	    The number of bytes "sent" wich is just the new size of the buffer
 	*/
-	virtual int Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags) = 0;
+	virtual int Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags) = 0;
 	/*!
 	  \brief
 	    recieve function similar to the send function but for sending things.
@@ -129,6 +136,7 @@ public:
 		num
 	};
 	int auth_level; /*!< The level of authentication*/
+	float ping = 0.05; /*!< The ping in seconds for this connection, a rolling average of pings*/
 	sockaddr_in *addr; /*!< The address*/
 	unsigned connection_id; /*!< This is a unique id for this connection shared along all the onnections*/
 };
@@ -182,7 +190,7 @@ public:
 	  \return
 	    The number of bytes sent on the wire, almost garanteed to be different from bytes
 	*/
-	int Send(const char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer = -1);
+	int Send(const char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer = -1);
 	/*!
 	  \brief
 	    Recieves data from wire then sends it through every layers Receive function in opposite order
@@ -211,6 +219,11 @@ public:
       The timer used to update network layers and time ping 
   */
 	FrameRate timer;
+	/*!
+	  \brief
+	    The last error that was encountered
+	*/
+	int last_error;
 private:
 	SOCKET sock;
 };

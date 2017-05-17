@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "wyatt_sock.h"
 #include "meta.h"
@@ -20,6 +21,7 @@
 #include "blowfish.h"
 #include "network_stack.h"
 #include "bit_array.h"
+#include "reliability.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -33,10 +35,11 @@ bool TestFrameRate();
 bool TestBlowFish();
 bool TestNetworkLayer();
 bool TestBitArray();
+bool TestReliability();
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
-    TestNetworkLayer, TestBitArray
+    TestNetworkLayer, TestBitArray, TestReliability
 }; 
 
 int main()
@@ -482,7 +485,7 @@ public:
 	{
 		//nothing to do..
 	}
-	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+	int Send(char *buffer, int bytes, __attribute__((unused))const sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		for (int i = 0; i < bytes; ++i)
 		{
@@ -512,7 +515,7 @@ public:
 	{
 		//nothing to do.., but did test that this got called properly trust meee
 	}
-	int Send(char *buffer, int bytes, __attribute__((unused))sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+	int Send(char *buffer, int bytes, __attribute__((unused))const sockaddr_in *dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 	{
 		//shift the buffer over by 8 bytes
 		for (int i = bytes - 1; i >=0; --i)
@@ -661,6 +664,102 @@ bool TestBitArray()
 		}
 	}
 	return true;
+}
+
+bool TestReliability()
+{
+	//set up a connection with ourself
+	sockaddr_in sender;
+	sockaddr_in reciever;
+	Init();
+	CreateAddress("127.0.0.1", 4500, &sender);
+	CreateAddress("127.0.0.1", 4501, &reciever);
+	SOCKET send_sock = CreateSocket(IPPROTO_UDP);
+	SOCKET recieve_sock = CreateSocket(IPPROTO_UDP);
+	Bind(send_sock, &sender);
+	Bind(recieve_sock, &reciever);
+	SetNonBlocking(send_sock);
+	SetNonBlocking(recieve_sock);
+
+	//now create our network stack
+	NetworkStack net_send(send_sock);
+	NetworkStack net_recv(recieve_sock);
+	net_send.AddLayer(new Channel());
+	net_send.AddLayer(new Reliability());
+	net_recv.AddLayer(new Channel());
+	net_recv.AddLayer(new Reliability());
+	
+	//send a reliable message to myself
+	BitArray<HEADERSIZE> flags;
+	flags.SetBit(0);
+  net_send.Send("Hello World", 12, &reciever, flags);
+
+  //recieve message
+  char buf[100];
+  sockaddr_in temp;
+  net_recv.Receive(buf, 100, &temp);
+  if (!(temp.sin_addr.s_addr == sender.sin_addr.s_addr))
+  {
+  	PRINT_ERROR();
+  	return false;
+  }
+  if (std::string(buf)!=std::string("Hello World"))
+  {
+  	PRINT_ERROR();
+  	return false;
+  }
+  //reciev the ack
+  int n = net_send.Receive(buf, 100, &temp);
+  if (n != 0)
+  {
+  	PRINT_ERROR();
+  	return false;
+  }
+  if (!(temp.sin_addr.s_addr == reciever.sin_addr.s_addr))
+  {
+  	PRINT_ERROR();
+  	return false;
+  }
+  //increase packet drop to 50 percent
+  PacketDropRate = 0.5;
+  //test that reliability will send packets even with packet loss
+  FrameRate timer;
+  //send 20 reliable messages
+  std::string msg = "fruit loops";
+  int msg_sent = 50;
+  for (int i = 0; i < msg_sent; ++i)
+  {
+  	net_send.Send(msg.c_str(), msg.size()+1, &reciever, flags);
+  }
+  //a counter for how many of the reliable messages have been recieved
+  int recved = 0;
+  //loop for 5 seconds
+  while(timer.GetTotalTime() < 5)
+  {
+  	//using same buf and addr as above recieve call
+  	int n = net_recv.Receive(buf, 100, &temp);
+  	//we got the message
+  	if (n > 1)
+  	{
+  		recved += 1;
+  	}
+  	//to get the acks
+  	net_send.Receive(buf, 100, &temp);
+  	net_recv.Update();
+  	net_send.Update();
+  }
+  //turn off artificail packet loss
+  PacketDropRate = 0;
+  if (recved != msg_sent)
+  {
+  	PRINT_ERROR();
+  	std::cout << "only recieved " << recved << " of " << msg_sent << std::endl;
+  	return false;
+  }
+	Close(send_sock, true);
+	Close(recieve_sock, true);
+	Deinit();
+  return true;
 }
 
 #endif //DOXYGEN_SHOULD_SKIP_THIS

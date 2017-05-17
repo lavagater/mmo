@@ -19,6 +19,8 @@
 //size in bytes of the acknowlegement number, max size is sizeof(unsigned)
 #define ACKSIZE 2
 
+#define RESENDFRACTION 3.0/2.0
+
 /*!
   \brief
     This class saves all the information needed to resend a packet
@@ -31,6 +33,11 @@ public:
       The array of characters representing the packet. This is allocated memory and the packet is copied into this
   */
   char *packet;
+  /*!
+    \brief
+      The number of bytes in the packet
+  */
+  int bytes;
   /*!
     \brief
       The flags for the packet
@@ -51,9 +58,14 @@ class Reliability : public NetworkLayer
 public:
   /*!
     \brief
+      Frees memory of resends and client_acks
+  */
+  ~Reliability();
+  /*!
+    \brief
       If reliable flag is set, Saves the sent message for incase it needs to be resent and adds an ack to the front of the packet
   */
-  int Send(char* buffer, int bytes, sockaddr_in* dest, BitArray<HEADERSIZE> &flags);
+  int Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags);
   /*!
     \brief
       If the packet has the reliability flag set then send back a packet with the ack number to show that we got the packet

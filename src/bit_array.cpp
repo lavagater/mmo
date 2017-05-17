@@ -23,20 +23,28 @@ void BitArray<size>::SetBit(unsigned index, bool value)
     {
       case 0:
       buffer[index/8] |= 1;
+      break;
       case 1:
       buffer[index/8] |= 2;
+      break;
       case 2:
       buffer[index/8] |= 4;
+      break;
       case 3:
       buffer[index/8] |= 8;
+      break;
       case 4:
       buffer[index/8] |= 16;
+      break;
       case 5:
       buffer[index/8] |= 32;
+      break;
       case 6:
       buffer[index/8] |= 64;
+      break;
       case 7:
       buffer[index/8] |= 128;
+      break;
     }
   }
   else
@@ -45,20 +53,28 @@ void BitArray<size>::SetBit(unsigned index, bool value)
     {
       case 0:
       buffer[index/8] &= 255 - 1;
+      break;
       case 1:
       buffer[index/8] &= 255 - 2;
+      break;
       case 2:
       buffer[index/8] &= 255 - 4;
+      break;
       case 3:
       buffer[index/8] &= 255 - 8;
+      break;
       case 4:
       buffer[index/8] &= 255 - 16;
+      break;
       case 5:
       buffer[index/8] &= 255 - 32;
+      break;
       case 6:
       buffer[index/8] &= 255 - 64;
+      break;
       case 7:
       buffer[index/8] &= 255 - 128;
+      break;
     }
   }
 }

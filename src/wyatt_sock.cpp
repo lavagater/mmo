@@ -2,6 +2,8 @@
 
 #include "wyatt_sock.h"
 
+float PacketDropRate = 0;
+
 int GetError()
 {
 #ifdef _WIN32
@@ -54,8 +56,10 @@ int SendTCP(SOCKET sock, const char* buffer, int bytes)
 }
 
 
-int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest)
+int Send(SOCKET sock, const char* buffer, int bytes, const sockaddr_in* dest)
 {
+  if (rand() / double(RAND_MAX) < PacketDropRate)
+    return bytes;
   int result = sendto(sock, buffer, bytes, 0, (sockaddr*)dest, sizeof(sockaddr_in));
   if (result == SOCKET_ERROR)
     return -1;

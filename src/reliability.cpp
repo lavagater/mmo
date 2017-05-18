@@ -25,8 +25,7 @@ Reliability::~Reliability()
 
 int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags)
 {
-  //fisrt flag is the reliability
-  if (flags[0])
+  if (flags[ReliableFlag])
   {
     //shift buffer to the right by ack size
     for (int i = bytes+ACKSIZE-1; i >= ACKSIZE; --i)
@@ -75,10 +74,10 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
 int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
   //check if this message is reliable
-  if (flags[0])
+  if (flags[ReliableFlag])
   {
     //check if its just the ack
-    if (flags[1])
+    if (flags[AckNumberFlag])
     {
       //the contents of the buffer is just the ack number
       //make sure the number of bytes is correct
@@ -134,8 +133,8 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       acks[ack%RESENDSIZE] = ack;
       //send ack message
       BitArray<HEADERSIZE> temp;
-      temp.SetBit(0);
-      temp.SetBit(1);
+      temp.SetBit(ReliableFlag);
+      temp.SetBit(AckNumberFlag);
       stack->Send(reinterpret_cast<char*>(&ack), ACKSIZE, location, temp, layer_id-1);
       return bytes - ACKSIZE;
     }

@@ -42,11 +42,17 @@ bool (*tests[])() = {
     TestNetworkLayer, TestBitArray, TestReliability
 }; 
 
-int main()
+int main(int argc, char **argv)
 {
+	//skip tests
+	unsigned i = 0;
+	if (argc == 2)
+	{
+		i = atoi(argv[1]);
+	}
 	srand(time(0));
 	int num_failed = 0;
-	for (unsigned i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i)
+	for (i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i)
 	{
 		if (!tests[i]())
 		{

@@ -2,8 +2,7 @@
 \author Wyatt Lavigueure
 \date   5/4/2017
 \brief  
-  The lowest part of the network stack before the operating system takes over. The channel layer 
-  is responsible for connection state and authentication
+  Currently channel just gets ping times, and removes connections if they dont respond to pings.
 */
 #ifndef CHAN_H
 #define CHAN_H
@@ -25,12 +24,12 @@ public:
 	int Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags);
 	/*!
 	  \brief
-	    The channel recieve does nothing
+	    The channel recieve checks if the message is a ping message
 	*/
 	int Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags);
 	/*!
 	  \brief
-	    The channel updates nothing
+	    The channel updates occasianally sends pings to its connections
 	*/
 	void Update(double dt);
 private:

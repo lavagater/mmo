@@ -31,6 +31,27 @@
 */
 #define MALEFORMEDPACKET -123
 
+/*!
+  \brief
+    enum for header flags
+*/
+enum
+{
+	ReliableFlag,
+	AckNumberFlag,
+	MessageTypeFlag
+};
+/*!
+  /brief
+    enum for message types
+*/
+enum
+{
+	Ping,
+	Pong,
+	NumMsgTypes
+};
+
 //forward decleration so that NetworkLayer can use
 class NetworkStack;
 

@@ -109,6 +109,11 @@ public:
 	virtual void Update(double dt) = 0;
 	/*!
 	  \brief
+	    This addr was removed from connections and if this addr is being used in a layer it should remove it as well
+	*/
+	virtual void RemoveConnection(const sockaddr_in *addr) = 0;
+	/*!
+	  \brief
 	    The network stack that this layer is a part of
 	*/
 	NetworkStack *stack;
@@ -156,9 +161,11 @@ public:
 		AuthedAdmin,
 		num
 	};
-	int auth_level; /*!< The level of authentication*/
-	float ping = 0.05; /*!< The ping in seconds for this connection, a rolling average of pings*/
 	sockaddr_in *addr; /*!< The address*/
+	double ping = 0.05; /*!< The ping in seconds for this connection, a rolling average of pings*/
+	float time_since_ping;/*!< The time since this connection responded to a ping, used to determine if dissconnected*/
+	float ping_timer; /*!< The time until another ping will be sent*/
+	int auth_level; /*!< The level of authentication*/
 	unsigned connection_id; /*!< This is a unique id for this connection shared along all the onnections*/
 };
 
@@ -230,6 +237,13 @@ public:
 	    This is ment to be called every frame
 	*/
 	void Update();
+	/*!
+	  \brief
+	    Removes a connection
+	  \param addr
+	    the address of the connection to remove
+	*/
+	void RemoveConnection(const sockaddr_in *addr);
   /*!
     \brief
       The connection information for ever entity we have communicated with

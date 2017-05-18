@@ -511,6 +511,10 @@ public:
 	{
 
 	}
+  void RemoveConnection(__attribute__((unused))const sockaddr_in *addr)
+	{
+
+	}
 };
 
 //this baby on send adds a header to the packet, just to test the network stack functionality
@@ -545,6 +549,10 @@ public:
 		return bytes-8;
 	}
 	void Update(__attribute__((unused))double dt)
+	{
+
+	}
+	void RemoveConnection(__attribute__((unused))const sockaddr_in *addr)
 	{
 
 	}

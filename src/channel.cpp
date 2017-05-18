@@ -8,7 +8,7 @@ int Channel::Send(__attribute__((unused))char* buffer, int bytes, __attribute__(
   return bytes;
 }
 
-int Channel::Receive(char* buffer, int bytes, __attribute__((unused))sockaddr_in* location, BitArray<HEADERSIZE> &flags)
+int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
@@ -19,13 +19,17 @@ int Channel::Receive(char* buffer, int bytes, __attribute__((unused))sockaddr_in
       if (*buffer == Ping)
       {
         //send a pong message
-
+        *buffer = Pong;
+        stack->Send(buffer, bytes, location, flags, layer_id);
         return 0;
       }
-      else if (*buffer == Pong)
+      else if (*buffer == Pong && (unsigned)bytes >= sizeof(double)+1)
       {
         //extract new ping
-
+        double ping = stack->timer.GetTotalTime() - *reinterpret_cast<double*>(buffer+1);
+        //rolling average
+        stack->connections[*location].ping = stack->connections[*location].ping * 0.9 + ping * 0.1;
+        stack->connections[*location].time_since_ping = 0;
         return 0;
       }
     }
@@ -38,7 +42,38 @@ int Channel::Receive(char* buffer, int bytes, __attribute__((unused))sockaddr_in
   return bytes;
 }
 
-void Channel::Update(__attribute__((unused))double dt)
+void Channel::Update(double dt)
 {
-
+  std::vector<const sockaddr_in*> to_remove;
+  for (auto it = stack->connections.begin(); it != stack->connections.end(); ++it)
+  {
+    it->second.ping_timer -= dt;
+    it->second.time_since_ping += dt;
+    if (it->second.time_since_ping > DISCONNECT_TIME)
+    {
+      //add the connection to be removed
+      to_remove.push_back(&it->first);
+    }
+    if (it->second.ping_timer <= 0)
+    {
+      //send a ping
+      char buffer[1+sizeof(double)];
+      buffer[0] = Ping;
+      *reinterpret_cast<double*>(buffer+1) = stack->timer.GetTotalTime();
+      BitArray<HEADERSIZE> flags;
+      flags.SetBit(MessageTypeFlag);
+      stack->Send(buffer, 1+sizeof(double), &it->first, flags, layer_id);
+      //reset timer
+      it->second.ping_timer = TIME_BETWEEN_PINGS;
+    }
+  }
+  //remove the connections
+  for (unsigned i = 0; i < to_remove.size(); ++i)
+  {
+    stack->RemoveConnection(to_remove[i]);
+  }
+}
+void Channel::RemoveConnection(__attribute__((unused))const sockaddr_in*addr)
+{
+  //nothing
 }

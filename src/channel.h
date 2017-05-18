@@ -11,6 +11,18 @@
 #include "network_stack.h"
 
 /*!
+  \brief
+    how often to send pings in seconds 
+*/
+#define TIME_BETWEEN_PINGS 2
+
+/*!
+  \brief
+    The mount of time to wait until disconnecting a nonresponsize connection
+*/
+#define DISCONNECT_TIME 5*TIME_BETWEEN_PINGS
+
+/*!
 	\brief
 	  This class might do something in the future
 */
@@ -32,6 +44,7 @@ public:
 	    The channel updates occasianally sends pings to its connections
 	*/
 	void Update(double dt);
+	void RemoveConnection(const sockaddr_in*addr);
 private:
 };
 

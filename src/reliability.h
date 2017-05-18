@@ -78,6 +78,7 @@ public:
       Checks if a packet should be resent and sends it
   */
   void Update(double dt);
+  void RemoveConnection(const sockaddr_in*addr);
 private:
   //these are acknowlegement numbers from client messages, so that we dont look at a message we have already seen
   //the size of teh array is RESENDSIZE

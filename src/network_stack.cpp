@@ -112,3 +112,14 @@ void NetworkStack::AddLayer(NetworkLayer *layer)
 	layer->stack = this;
 	layers.push_back(layer);
 }
+void NetworkStack::RemoveConnection(const sockaddr_in *addr)
+{
+	//remove the connection from all the layers first so they can still see what the connection was
+	for (unsigned i = 0; i < layers.size(); ++i)
+	{
+		layers[i]->RemoveConnection(addr);
+	}
+
+	//then actually remove the connection
+	connections.erase(connections.find(*addr));
+}

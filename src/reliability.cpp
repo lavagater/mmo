@@ -173,3 +173,19 @@ void Reliability::Update(__attribute__((unused))double dt)
     }
   }
 }
+void Reliability::RemoveConnection(const sockaddr_in *addr)
+{
+  if (resends[*addr])
+  {
+    for (unsigned i = 0; i < RESENDSIZE; ++i)
+    {
+      //delete any packets that wernt acked
+      delete [] resends[*addr][i].packet;
+    }
+    delete [] resends[*addr];
+  }
+  delete [] client_acks[*addr];
+  resends.erase(resends.find(*addr));
+  next_ack.erase(next_ack.find(*addr));
+  client_acks.erase(client_acks.find(*addr));
+}

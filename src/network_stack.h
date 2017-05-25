@@ -39,7 +39,8 @@ enum
 {
 	ReliableFlag,
 	AckNumberFlag,
-	MessageTypeFlag
+	MessageTypeFlag,
+	NotImportant
 };
 /*!
   /brief
@@ -244,6 +245,11 @@ public:
 	    the address of the connection to remove
 	*/
 	void RemoveConnection(const sockaddr_in *addr);
+	/*!
+	  \brief
+	    Calculates the bandwidth being used by the program
+	*/
+	double GetBandwidth();
   /*!
     \brief
       The connection information for ever entity we have communicated with
@@ -261,6 +267,10 @@ public:
 	int last_error;
 private:
 	SOCKET sock;
+	//bytes_sent time_start and time split are for getting the bandwidth
+	unsigned bytes_sent;
+	double time_start;
+	double time_split;
 };
 
 #endif

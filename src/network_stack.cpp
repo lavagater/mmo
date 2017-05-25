@@ -7,6 +7,9 @@ NetworkLayer::~NetworkLayer(){}
 NetworkStack::NetworkStack(SOCKET socket)
 {
 	sock= socket;
+	bytes_sent = 0;
+	time_start = 0;
+	time_split = 0;
 }
 
 NetworkStack::~NetworkStack()
@@ -54,6 +57,11 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 	{
 		//leave room in buffer for header
 		sent = layers[i]->Send(new_buf+HEADERSIZE/8, sent, dest, flags);
+		//if a layer sends 0 bytes then we stop
+		if (sent == 0)
+		{
+			return 0;
+		}
 	}
 	//put flags into buffer
 	for (unsigned i = 0; i < HEADERSIZE/8; ++i)
@@ -61,6 +69,8 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 		new_buf[i] = flags.buffer[i];
 	}
 	sent += HEADERSIZE/8;
+	//update bytes sent for bandwidth
+	bytes_sent += sent;
 	//calling the socket library send function
 	return ::Send(sock, new_buf, sent, dest);
 }
@@ -98,8 +108,19 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 	}
 	return recv;
 }
+double NetworkStack::GetBandwidth()
+{
+	return bytes_sent / (timer.GetTotalTime() - time_start);
+}
 void NetworkStack::Update()
 {
+	//refresh bandwidth
+	double temp = GetBandwidth();
+	time_start = time_split;
+	time_split = timer.GetTotalTime();
+	bytes_sent = temp * (time_split-time_start);
+
+	//update layers
 	double dt = timer.GetTime();
 	for (unsigned i = 0; i < layers.size(); ++i)
 	{

@@ -22,6 +22,7 @@
 #include "network_stack.h"
 #include "bit_array.h"
 #include "reliability.h"
+#include "prioritization.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -36,10 +37,12 @@ bool TestBlowFish();
 bool TestNetworkLayer();
 bool TestBitArray();
 bool TestReliability();
+bool TestBandwidth();
+bool TestPriority();
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
-    TestNetworkLayer, TestBitArray, TestReliability
+    TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority
 }; 
 
 int main(int argc, char **argv)
@@ -52,7 +55,7 @@ int main(int argc, char **argv)
 	}
 	srand(time(0));
 	int num_failed = 0;
-	for (i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i)
+	for (;i < sizeof(tests) / sizeof(tests[0]); ++i)
 	{
 		if (!tests[i]())
 		{
@@ -680,6 +683,7 @@ bool TestBitArray()
 	return true;
 }
 
+//this one is hard to test, the real test will be in the stress test
 bool TestReliability()
 {
 	//set up a connection with ourself
@@ -774,6 +778,146 @@ bool TestReliability()
 	Close(recieve_sock, true);
 	Deinit();
   return true;
+}
+
+//this one is hard to test, will be tested better in the stress test
+bool TestBandwidth()
+{
+	sockaddr_in sender;
+	sockaddr_in reciever;
+	sockaddr_in other;
+	Init();
+	CreateAddress("127.0.0.1", 4876, &sender);
+	CreateAddress("127.0.0.1", 4877, &reciever);
+	SOCKET send_sock = CreateSocket(IPPROTO_UDP);
+	SOCKET recieve_sock = CreateSocket(IPPROTO_UDP);
+	Bind(send_sock, &sender);
+	Bind(recieve_sock, &reciever);
+	SetNonBlocking(send_sock);
+	SetNonBlocking(recieve_sock);
+
+	//now create our network stack
+	NetworkStack net_send(send_sock);
+	NetworkStack net_recv(recieve_sock);
+	
+	//flags just default nothing set
+	BitArray<HEADERSIZE> flags;
+	//number of messages to send
+	unsigned num = 100;
+	//empty memory
+	char buffer[MAXPACKETSIZE] = {0};
+	//size of each message
+	unsigned size_of_message = 100;
+	//timer
+	FrameRate timer;
+	//time to sleep for in seconds
+	float sleep_time = 0.01;
+	//stop interation
+	unsigned stop = 5;
+	//the mesaured bandwidths
+	std::vector<double> bandwidths;
+	for (unsigned i = 0; i <num; ++i)
+	{
+		//wait for a bit
+		FrameRate t;
+		while (t.GetTotalTime() < sleep_time){}
+		net_send.Send(buffer, size_of_message, &reciever, flags);
+		net_recv.Send(buffer, size_of_message, &sender, flags);
+		net_send.Receive(buffer, MAXPACKETSIZE, &other);
+		net_recv.Receive(buffer, MAXPACKETSIZE, &other);
+		if (i == stop)
+		{
+			//get the bandwidth
+			bandwidths.push_back(net_send.GetBandwidth());
+			//increase message size to increase next bandwidth
+			size_of_message += 100;
+			//make a new stop time
+			stop += 5;
+			net_send.Update();
+			net_recv.Update();
+		}
+	}
+	//make sure the bandwidths are in increasing order
+	for (unsigned i = 1; i < bandwidths.size(); ++i)
+	{
+		if (bandwidths[i-1] > bandwidths[i])
+		{
+			PRINT_ERROR();
+	    Deinit();
+			return false;
+		}
+	}
+	Deinit();
+	return true;
+}
+
+bool TestPriority()
+{
+	sockaddr_in sender;
+	sockaddr_in reciever;
+	sockaddr_in other;
+	Init();
+	CreateAddress("127.0.0.1", 4878, &sender);
+	CreateAddress("127.0.0.1", 4879, &reciever);
+	SOCKET send_sock = CreateSocket(IPPROTO_UDP);
+	SOCKET recieve_sock = CreateSocket(IPPROTO_UDP);
+	Bind(send_sock, &sender);
+	Bind(recieve_sock, &reciever);
+	SetNonBlocking(send_sock);
+	SetNonBlocking(recieve_sock);
+
+	//now create our network stack
+	NetworkStack net_send(send_sock);
+	NetworkStack net_recv(recieve_sock);
+	int bandwidth = 1000;
+	//add some layers
+	net_send.AddLayer(new Channel());
+	net_send.AddLayer(new Reliability());
+	net_send.AddLayer(new Prioritization(bandwidth));
+	net_recv.AddLayer(new Channel());
+	net_recv.AddLayer(new Reliability());
+	net_recv.AddLayer(new Prioritization(bandwidth));
+	//flags just default nothing set
+	BitArray<HEADERSIZE> flags;
+	flags.SetBit(ReliableFlag);
+	char *packet = new char[bandwidth]();
+	int num_send = 8;
+	int num_sent = 0;
+	//send some messages
+	for (int i = 0; i < num_send; ++i)
+	{
+		int n = net_send.Send(packet, bandwidth, &reciever, flags);
+		if (n > 0)
+		{
+			num_sent += 1;
+		}
+	}
+	//we should have been way over the bandwidth so it should not have sent most of them
+	if (num_send == num_sent)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	int num_rec = 0;
+	//to prevent infinite loop
+	int counter = 100000;
+	while (num_rec != num_sent)
+	{
+		int n = net_recv.Receive(packet, bandwidth, &other);
+		if (n > 0)
+		{
+			num_rec += 1;
+		}
+		net_send.Update();
+		net_recv.Update();
+		if (counter-- == 0)
+		{
+			PRINT_ERROR();
+			return false;
+		}
+	}
+	delete [] packet;
+	return true;
 }
 
 #endif //DOXYGEN_SHOULD_SKIP_THIS

@@ -30,7 +30,11 @@
     Error message when a packet coming through the network stack is not something sent from the network stack
 */
 #define MALEFORMEDPACKET -123
-
+/*!
+  \brief
+    Error mesage when trying to send an encrypted message to a connection that does not have a shared key
+*/
+#define NOENCRYPTIONKEY -124
 /*!
   \brief
     enum for header flags
@@ -40,7 +44,8 @@ enum
 	ReliableFlag,
 	AckNumberFlag,
 	MessageTypeFlag,
-	NotImportant
+	NotImportant,
+	EncryptFlag
 };
 /*!
   /brief

@@ -1,35 +1,44 @@
 
 #include "blowfish.h"
 
-BlowFish::BlowFish(unsigned *key, unsigned size)
+BlowFish::BlowFish()
 {
-	for (int i = 0; i < 4; ++i)
-	{
-		for (int j = 0; j < 256; ++j)
-		{
-			s_box[i][j] = 0;
-		}
-	}
-	for (int i = 0; i < 18; ++i)
-	{
-		keys[i] = key[i % size];
-	}
-	unsigned lhs = 0, rhs = 0;
-	for (int i = 0; i < 18; ++i)
-	{
-		encrypt(lhs, rhs);
-		keys[i] = lhs;
-		keys[i+1] = rhs;
-	}
-	for (int i = 0; i < 4; ++i)
-	{
-		for (int j = 0; j < 256; ++j)
-		{
-			encrypt(lhs, rhs);
-			s_box[i][j] = lhs;
-			s_box[i][j] = rhs;
-		}
-	}
+}
+
+BlowFish::BlowFish(const unsigned *key, unsigned size)
+{
+	SetKey(key, size);
+}
+
+void BlowFish::SetKey(const unsigned *key, unsigned size)
+{
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 256; ++j)
+    {
+      s_box[i][j] = 0;
+    }
+  }
+  for (int i = 0; i < 18; ++i)
+  {
+    keys[i] = key[i % size];
+  }
+  unsigned lhs = 0, rhs = 0;
+  for (int i = 0; i < 18; ++i)
+  {
+    encrypt(lhs, rhs);
+    keys[i] = lhs;
+    keys[i+1] = rhs;
+  }
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 256; ++j)
+    {
+      encrypt(lhs, rhs);
+      s_box[i][j] = lhs;
+      s_box[i][j] = rhs;
+    }
+  }
 }
 
 unsigned BlowFish::round_function(unsigned x)

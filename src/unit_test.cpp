@@ -23,26 +23,33 @@
 #include "bit_array.h"
 #include "reliability.h"
 #include "prioritization.h"
+#include "encryption.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 #define PRINT_ERROR(x) std::cout << "line " << __LINE__ << " function " << __FUNCTION__ << std::endl;
 
-bool TestInferType();
-bool TestStringToValue();
-bool TestConfig();
-bool TestHashFunction();
-bool TestFrameRate();
-bool TestBlowFish();
-bool TestNetworkLayer();
-bool TestBitArray();
-bool TestReliability();
-bool TestBandwidth();
-bool TestPriority();
+//helper function prints content of buffer as hex
+void HexDump(char *buffer, int length);
+//prints entire buffer not stopping at null character
+void Print(char *buffer, int length);
+
+bool TestInferType();//0
+bool TestStringToValue();//1
+bool TestConfig();//2
+bool TestHashFunction();//3
+bool TestFrameRate();//4
+bool TestBlowFish();//5
+bool TestNetworkLayer();//6
+bool TestBitArray();//7
+bool TestReliability();//8
+bool TestBandwidth();//9
+bool TestPriority();//10
+bool TestEncryptionLayer();//11
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
-    TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority
+    TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer
 }; 
 
 int main(int argc, char **argv)
@@ -918,6 +925,91 @@ bool TestPriority()
 	}
 	delete [] packet;
 	return true;
+}
+
+//test without network stack
+bool TestEncryptionLayer()
+{
+	Encryption test_layer;
+	BitArray<HEADERSIZE> flags;
+	flags.SetBit(EncryptFlag);
+	char buffer[MAXPACKETSIZE] = "A secret message for secret people!";
+	int len = strlen(buffer);
+	sockaddr_in test_addr;
+	memset(&test_addr, 0, sizeof(test_addr));
+	unsigned key[10];
+	for (unsigned iter = 0; iter < 100; ++iter)
+	{
+		char temp[MAXPACKETSIZE] = {0};
+		for (int i = 0; i < len; ++i)
+		{
+			temp[i] = buffer[i];
+		}
+		for (unsigned i = 0; i < sizeof(key) / sizeof(unsigned); ++i)
+		{
+			key[i] = rand();
+		}
+		test_layer.blowfish[test_addr].SetKey(key, sizeof(key) / sizeof(unsigned));
+		int n = test_layer.Send(buffer, len, &test_addr, flags);
+		if (unsigned(n-len) > 8)
+		{
+			PRINT_ERROR();
+			return false;
+		}
+		//make sure the buffer changed suffeicently
+		int changes = 0;
+		for (int i = 0; i < len; ++i)
+		{
+			if (buffer != temp)
+			{
+				changes += 1;
+			}
+		}
+		//if the buffers arnt 50 percent different its wrong
+		if (changes / (float)len < 0.5)
+		{
+			PRINT_ERROR();
+			return false;
+		}
+		n = test_layer.Receive(buffer, MAXPACKETSIZE, &test_addr, flags);
+		//make sure they are te same again
+		for (int i = 0; i < len; ++i)
+		{
+			if (buffer[i] != temp[i])
+			{
+				PRINT_ERROR();
+				HexDump(buffer, len);
+				HexDump(temp, len);
+				return false;
+			}
+		}
+		len = rand() % MAXPACKETSIZE - 10;
+		for (int i = 0; i < len; ++i)
+		{
+			buffer[i] = rand();
+		}
+	}
+	return true;
+}
+
+void HexDump(char *buffer, int length)
+{
+  std::cout << std::hex;
+	for (int i = 0; i < length; ++i)
+	{
+		std::cout << (int)((unsigned char)buffer[i]) << " ";
+	}
+	std::cout << std::endl;
+	std::cout << std::dec;
+}
+
+void Print(char *buffer, int length)
+{
+	for (int i = 0; i < length; ++i)
+	{
+		std::cout << buffer[i];
+	}
+	std::cout << std::endl;
 }
 
 #endif //DOXYGEN_SHOULD_SKIP_THIS

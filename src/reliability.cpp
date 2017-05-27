@@ -84,7 +84,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       if (bytes != ACKSIZE)
       {
         stack->last_error = MALEFORMEDPACKET;
-        return -1;
+        return MALEFORMEDPACKET;
       }
       //remove the saved message for the ack
       unsigned ack = 0;

@@ -58,9 +58,9 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 		//leave room in buffer for header
 		sent = layers[i]->Send(new_buf+HEADERSIZE/8, sent, dest, flags);
 		//if a layer sends 0 bytes then we stop
-		if (sent == 0)
+		if (sent <= 0)
 		{
-			return 0;
+			return sent;
 		}
 	}
 	//put flags into buffer
@@ -87,7 +87,7 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 	if (recv < HEADERSIZE/8)
 	{
 		last_error = MALEFORMEDPACKET;
-		return -1;
+		return MALEFORMEDPACKET;
 	}
 	//set the flags
 	BitArray<HEADERSIZE> flags;

@@ -36,7 +36,7 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
     else
     {
       stack->last_error = MALEFORMEDPACKET;
-      return -1;
+      return MALEFORMEDPACKET;
     }
   }
   return bytes;

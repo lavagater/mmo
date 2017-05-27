@@ -16,6 +16,11 @@
 class BlowFish
 {
 public:
+	/*
+	  \brief
+	    Does nothing
+	*/
+	BlowFish();
 	/*!
 	  \brief
 	    initalizes the keys and s_box
@@ -24,7 +29,16 @@ public:
 	  \param size
 	    The size of the key
 	*/
-	BlowFish(unsigned *key, unsigned size);
+	BlowFish(const unsigned *key, unsigned size);
+	/*!
+	  \brief
+	    changes the key to a new key
+	  \param key
+	    The key for the blowfish
+	  \param size
+	    The size of the key
+	*/
+	void SetKey(const unsigned *key, unsigned size);
 	/*!
 	  \brief
 	    encrypts two unsigneds using blowfish encryption

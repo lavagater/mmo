@@ -965,10 +965,12 @@ bool TestEncryptionLayer()
 				changes += 1;
 			}
 		}
-		//if the buffers arnt 50 percent different its wrong
-		if (changes / (float)len < 0.5)
+		//if the buffers arnt 90 percent different its wrong
+		if (changes / (float)len < 0.9)
 		{
 			PRINT_ERROR();
+			Print(buffer, len);
+			Print(temp, len);
 			return false;
 		}
 		n = test_layer.Receive(buffer, MAXPACKETSIZE, &test_addr, flags);
@@ -983,7 +985,8 @@ bool TestEncryptionLayer()
 				return false;
 			}
 		}
-		len = rand() % MAXPACKETSIZE - 10;
+		//minus ten for room to add pad bytes and minus ten plus ten to avoid length zero
+		len = rand() % (MAXPACKETSIZE - 10 - 10)+10;
 		for (int i = 0; i < len; ++i)
 		{
 			buffer[i] = rand();

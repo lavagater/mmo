@@ -6,7 +6,7 @@
   \brief
     Reliablity layer of the network stack. If a packet is marked as reliable then it will be resent. If we send RESENDSIZE
     number of messages to a single client before a message is acknowleged it will be removed and no longer resent, If
-    that is a problem then increase RESENDSIZE
+    that is a problem then increase RESENDSIZE.
 */
 #ifndef RELI_H
 #define RELI_H

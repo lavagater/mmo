@@ -2,7 +2,7 @@
 \author Wyatt Lavigueure
 \date   5/4/2017
 \brief  
-  Currently channel just gets ping times, and removes connections if they dont respond to pings.
+  Channel layer handles connections, gets ping times, and removes connections if they dont respond to pings.
 */
 #ifndef CHAN_H
 #define CHAN_H

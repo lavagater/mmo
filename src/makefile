@@ -19,11 +19,15 @@ ZONE=zone.out
 UNIT=unit.out
 
 # Targets ========================================
-all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE)
+all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE) $(OUTDIR)stress_test.out
 
 #unit tests
 $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)$(UNIT) $(TEST_OJECTS) $(GENERAL_OBJECTS)
+
+#stress tests
+$(OUTDIR)stress_test.out : $(OUTDIR)stress_test.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)stress_test.out $(OUTDIR)stress_test.o $(GENERAL_OBJECTS) 
 
 # Load balancer
 $(OUTDIR)$(LOAD_BALANCER) : $(BALANCE_OBJECTS) $(GENERAL_OBJECTS)
@@ -40,6 +44,9 @@ $(OUTDIR)$(DATABASE) : $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 
 $(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
 	$(CC) -o $(OUTDIR)unit_test.o $(CFLAGS) unit_test.cpp
+
+$(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
+	$(CC) -o $(OUTDIR)stress_test.o $(CFLAGS) stress_test.cpp
 
 $(OUTDIR)zone.o  : zone.cpp
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp

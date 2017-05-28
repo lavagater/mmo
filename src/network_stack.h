@@ -41,10 +41,15 @@
 */
 enum
 {
+	//Makes the packet reliable
 	ReliableFlag,
+	//respone to the reliabile message
 	AckNumberFlag,
+	//this is a message for the networ stack
 	MessageTypeFlag,
+	//the message can be discarded if bandwidth is to much
 	NotImportant,
+	//the message is encrypted using shared key
 	EncryptFlag
 };
 /*!
@@ -167,7 +172,6 @@ public:
 		AuthedAdmin,
 		num
 	};
-	sockaddr_in *addr; /*!< The address*/
 	double ping = 0.05; /*!< The ping in seconds for this connection, a rolling average of pings*/
 	float time_since_ping;/*!< The time since this connection responded to a ping, used to determine if dissconnected*/
 	float ping_timer; /*!< The time until another ping will be sent*/

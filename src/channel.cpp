@@ -3,8 +3,10 @@
 #include "channel.h"
 
 
-int Channel::Send(__attribute__((unused))char* buffer, int bytes, __attribute__((unused))const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+int Channel::Send(__attribute__((unused))char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 {
+  //create the connection for this address if not already created
+  stack->connections.insert(std::make_pair(*dest, ConnectionState()));
   return bytes;
 }
 
@@ -39,6 +41,8 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
       return MALEFORMEDPACKET;
     }
   }
+  //create the connection for this address if not already created
+  stack->connections.insert(std::make_pair(*location, ConnectionState()));
   return bytes;
 }
 

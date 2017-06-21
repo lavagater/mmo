@@ -5,7 +5,7 @@ CFLAGS=-c -Wall -Wextra -Werror -ansi -pedantic --std=c++11
 
 OUTDIR=bin/
 ERASE=rm
-DATABASE_OBJECTS=$(OUTDIR)database.o
+DATABASE_OBJECTS=$(OUTDIR)database_app.o $(OUTDIR)database.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
 GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o \
@@ -51,7 +51,10 @@ $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
 $(OUTDIR)zone.o  : zone.cpp
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp
 
-$(OUTDIR)database.o  : database.cpp
+$(OUTDIR)database_app.o  : database_app.cpp
+	$(CC) -o $(OUTDIR)database_app.o $(CFLAGS) database_app.cpp
+
+$(OUTDIR)database.o  : database.cpp database.h
 	$(CC) -o $(OUTDIR)database.o $(CFLAGS) database.cpp
 
 $(OUTDIR)load_balancer.o  : load_balancer.cpp

@@ -37,6 +37,11 @@
 #define NOENCRYPTIONKEY -124
 /*!
   \brief
+    Error message for when messages are being sent to fastfor the amount of bandwidth
+*/
+#define BANDWIDTHLIMIT -125
+/*!
+  \brief
     enum for header flags
 */
 enum
@@ -47,8 +52,6 @@ enum
 	AckNumberFlag,
 	//this is a message for the networ stack
 	MessageTypeFlag,
-	//the message can be discarded if bandwidth is to much
-	NotImportant,
 	//the message is encrypted using shared key
 	EncryptFlag
 };

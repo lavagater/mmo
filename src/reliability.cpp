@@ -33,11 +33,11 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
       buffer[i] = buffer[i-ACKSIZE];
     }
     //get the ack
-    unsigned ack = next_ack[*dest];
+    last_ack = next_ack[*dest];
     //update the next ack
     next_ack[*dest] += 1;
     //put the ack in the packet
-    memcpy(buffer, &ack, ACKSIZE);
+    memcpy(buffer, &last_ack, ACKSIZE);
     //save the packet to be resent
     PacketSave *packets = resends[*dest];
     //if this is the first time we need to allocate the memory for packets
@@ -48,7 +48,7 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
       //set data to zero
       memset(packets, 0, RESENDSIZE * sizeof(PacketSave));
     }
-    unsigned index = ack % RESENDSIZE;
+    unsigned index = last_ack % RESENDSIZE;
     //remove the old data
     delete [] packets[index].packet;
     //only allocate as much memory as we need
@@ -83,7 +83,6 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       //make sure the number of bytes is correct
       if (bytes != ACKSIZE)
       {
-        stack->last_error = MALEFORMEDPACKET;
         return MALEFORMEDPACKET;
       }
       //remove the saved message for the ack
@@ -188,4 +187,12 @@ void Reliability::RemoveConnection(const sockaddr_in *addr)
   resends.erase(resends.find(*addr));
   next_ack.erase(next_ack.find(*addr));
   client_acks.erase(client_acks.find(*addr));
+}
+int Reliability::get_ack()
+{
+  return last_ack;
+}
+bool Reliability::check_sent(int ack, sockaddr_in *dest)
+{
+  return resends[*dest][ack%RESENDSIZE].packet == 0;
 }

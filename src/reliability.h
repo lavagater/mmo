@@ -79,6 +79,25 @@ public:
   */
   void Update(double dt);
   void RemoveConnection(const sockaddr_in*addr);
+  /*!
+    \brief
+      Gets the acknowlegement of the last reliable packet that was sent, note that this includes packets being resent
+      this function should be called directly after a send call to get the last ack
+    \return
+      returns tha ack number
+  */
+  int get_ack();
+  /*!
+    \brief
+      Checks if a reliable message has been recieved by the other connection
+    \param ack
+      The acknowlegement number for the packet
+    \param dest
+      The address of the connection the packet was sent to
+    \return
+      Wether the packet has been recieved
+  */
+  bool check_sent(int ack, sockaddr_in *dest);
 private:
   //these are acknowlegement numbers from client messages, so that we dont look at a message we have already seen
   //the size of teh array is RESENDSIZE
@@ -87,6 +106,8 @@ private:
   std::unordered_map<sockaddr_in, unsigned, SockAddrHash> next_ack;
   //these are packets to resend, the size of the array is RESENDSIZE
   std::unordered_map<sockaddr_in, PacketSave*, SockAddrHash> resends;
+  //the ack of the last reliable message sent
+  int last_ack;
 };
 
 #endif

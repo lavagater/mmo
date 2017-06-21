@@ -60,6 +60,7 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 		//if a layer sends 0 bytes then we stop
 		if (sent <= 0)
 		{
+			last_error = sent;
 			return sent;
 		}
 	}
@@ -81,7 +82,7 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 	if (recv < 0)
 	{
 		last_error= GetError();
-		return -1;
+		return last_error;
 	}
 	//packet cant be less than the header size, the packet must be bad
 	if (recv < HEADERSIZE/8)

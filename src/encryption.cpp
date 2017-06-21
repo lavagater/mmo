@@ -79,5 +79,8 @@ void Encryption::Update(__attribute__((unused))double dt)
 void Encryption::RemoveConnection(const sockaddr_in*addr)
 {
   //remove from the map
-  blowfish.erase(blowfish.find(*addr));
+  if (blowfish.find(*addr) != blowfish.end())
+  {
+    blowfish.erase(blowfish.find(*addr));
+  }
 }

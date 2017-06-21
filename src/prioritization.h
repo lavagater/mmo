@@ -48,8 +48,6 @@ public:
   void Update(double dt);
   void RemoveConnection(const sockaddr_in*addr);
 private:
-  //these are packets tht were not sent
-  std::unordered_map<sockaddr_in, std::vector<PacketSave>, SockAddrHash> saved;
   double bandwidth;
 };
 

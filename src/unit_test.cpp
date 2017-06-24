@@ -24,6 +24,7 @@
 #include "reliability.h"
 #include "prioritization.h"
 #include "encryption.h"
+#include "database.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -46,10 +47,12 @@ bool TestReliability();//8
 bool TestBandwidth();//9
 bool TestPriority();//10
 bool TestEncryptionLayer();//11
+bool TestDatabase();//12
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
-    TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer
+    TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
+    TestDatabase
 }; 
 
 int main(int argc, char **argv)
@@ -990,6 +993,62 @@ bool TestEncryptionLayer()
 		for (int i = 0; i < len; ++i)
 		{
 			buffer[i] = rand();
+		}
+	}
+	return true;
+}
+
+bool TestDatabase()
+{
+	std::vector<unsigned> rows = {16,8,8,2,1,4};
+	Database db("test_table", rows);
+	char buffer[16+8+8+2+1+4] = {0};
+	unsigned num_elements = 1000;
+	//add random things to the database
+	for (unsigned i = 0; i < num_elements; ++i)
+	{
+		//randomise the buffer
+		for (unsigned j = 0; j < sizeof(buffer) / sizeof(buffer[0]); ++j)
+		{
+			buffer[j] = rand();
+		}
+		db.Set(i, 0, buffer);
+		db.Set(i, 1, buffer+16);
+		db.Set(i, 2, buffer+16+8);
+		db.Set(i, 3, buffer+16+8+8);
+		db.Set(i, 4, buffer+16+8+8+2);
+		db.Set(i, 5, buffer+16+8+8+1+1);
+	}
+	//test database things
+	for (unsigned iter = 0; iter < 10000; ++iter)
+	{
+		//get a random id to test
+		unsigned id = rand()%db.size;
+		//random row
+		unsigned row = rand()%rows.size();
+		//randomise the value
+		for (unsigned j = 0; j < rows[row]; ++j)
+		{
+			buffer[j] = rand();
+		}
+		//set the value
+		db.Set(id, row, buffer);
+		//then search the database for that value
+		std::vector<unsigned> res = db.Find(row, buffer);
+		//make sure the id is in the list
+		bool found = false;
+		for (unsigned i = 0; i < res.size(); ++i)
+		{
+			if (res[i] == id)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found == false)
+		{
+			PRINT_ERROR();
+			return false;
 		}
 	}
 	return true;

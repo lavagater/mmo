@@ -29,6 +29,10 @@ void FuzzTest(SOCKET sock, sockaddr_in *server)
   }
 }
 
+void DataBaseTest(__attribute__((unused))NetworkStack &stack, __attribute__((unused))sockaddr_in *server, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+{
+}
+
 void StressCleint(NetworkStack &stack, sockaddr_in *server, BitArray<HEADERSIZE> &flags)
 {
   //string is the packet sent, while float is the time sent
@@ -143,6 +147,9 @@ int main(int argc, char **argv)
       break;
       case 1:
         FuzzTest(sock, &dest);
+      break;
+      case 2:
+        DataBaseTest(stack, &dest, flags);
       break;
     }
   }

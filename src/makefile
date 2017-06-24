@@ -5,12 +5,12 @@ CFLAGS=-c -Wall -Wextra -Werror -ansi -pedantic --std=c++11
 
 OUTDIR=bin/
 ERASE=rm
-DATABASE_OBJECTS=$(OUTDIR)database_app.o $(OUTDIR)database.o
+DATABASE_OBJECTS=$(OUTDIR)database_app.o
 ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
 GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o \
                 $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o $(OUTDIR)reliability.o \
-                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o
+                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o $(OUTDIR)database.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out

@@ -1,8 +1,8 @@
-
+#include <string.h>
 
 #include "database.h"
 
-Database::Database(char *table_name) : file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out), size(0), rows()
+Database::Database(const char *table_name) : size(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out), rows()
 {
   //set the rows
   unsigned num_rows;
@@ -29,7 +29,7 @@ void Database::UpdateSize()
   file.write(reinterpret_cast<char*>(&size), sizeof(unsigned));
 }
 
-Database::Database(char *table_name, std::vector<unsigned> rows) :file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc), size(0), rows(rows)
+Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc), rows(rows)
 {
   //write the rows to the file
   unsigned num_rows = rows.size();
@@ -48,18 +48,17 @@ Database::Database(char *table_name, std::vector<unsigned> rows) :file(table_nam
   }
 }
 
-char *Database::Get(unsigned id)
+unsigned Database::Get(unsigned id, char *data)
 {
-  //allocate memory to return
-  char *res = new char[object_size];
+  data = new char[object_size];
   //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
   file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size);
   //read the entire object
-  file.read(res, object_size);
-  return res;
+  file.read(data, object_size);
+  return object_size;
 }
 
-char *Database::Get(unsigned id, unsigned row)
+unsigned Database::Get(unsigned id, unsigned row, char *data)
 {
   //find out how far into the object to get to the row we want
   unsigned split_size = 0;
@@ -68,12 +67,12 @@ char *Database::Get(unsigned id, unsigned row)
     split_size += rows[i];
   }
   //allocate memory to return
-  char *res = new char[rows[row]];
+  data = new char[rows[row]];
   //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
   file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + split_size);
   //read just the specified row
-  file.read(res, rows[row]);
-  return res;
+  file.read(data, rows[row]);
+  return rows[row];
 }
 
 void Database::Set(unsigned id, unsigned row, const void *data)
@@ -94,4 +93,38 @@ void Database::Set(unsigned id, unsigned row, const void *data)
     size = id;
     UpdateSize();
   }
+}
+int Database::Create()
+{
+  unsigned id = size;
+  //seek past the spot in the file so that it can be read from
+  file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
+  //update the size
+  size += 1;
+  UpdateSize();
+  //return the id
+  return id;
+}
+std::vector<unsigned> Database::Find(unsigned row, char *value)
+{
+  std::vector<unsigned> res;
+  //find out how far into the object to get to the row we want
+  unsigned split_size = 0;
+  for (unsigned i = 0; i < row; ++i)
+  {
+    split_size += rows[i];
+  }
+  char *buffer = new char[rows[row]];
+  for (unsigned i = 0; i < size; ++i)
+  {
+    file.seekg((2 + rows.size()) * sizeof(unsigned) + i * object_size + split_size);
+    file.read(buffer, rows[row]);
+    //no internet to look this function up, im assuming it works like strcmp
+    if (memcmp(buffer, value, rows[row]) == 0)
+    {
+      res.push_back(i);
+    }
+  }
+  delete [] buffer;
+  return res;
 }

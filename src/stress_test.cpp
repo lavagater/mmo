@@ -29,8 +29,46 @@ void FuzzTest(SOCKET sock, sockaddr_in *server)
   }
 }
 
-void DataBaseTest(__attribute__((unused))NetworkStack &stack, __attribute__((unused))sockaddr_in *server, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+void DataBaseTest(NetworkStack &stack, sockaddr_in *server, BitArray<HEADERSIZE> &flags, int test_num)
 {
+  //find all the elements with my test num from the data base
+  char buffer[MAXPACKETSIZE];
+  //the message type, find request
+  buffer[0] = 3;
+  //the row to find
+  *reinterpret_cast<unsigned*>(buffer+1) = 5;
+  //the value
+  *reinterpret_cast<int*>(buffer+1+sizeof(unsigned)) = test_num;
+  //send the request
+  stack.Send(buffer, 1 + sizeof(unsigned) + sizeof(int), server, flags);
+  std::vector<unsigned> ids;
+  //wait for the response('s), and get the id's
+  while(1)
+  {
+    int n = stack.Receive(buffer, MAXPACKETSIZE, server);
+    if (n > 0)
+    {
+      //first part of packet is the row
+      //the second part is 1 byte for size of data then the data
+      unsigned skip = sizeof(unsigned) + 1 + buffer[sizeof(unsigned)+1];
+      //then the next byte is the number of is'd found
+      //then an array of all the id's
+      //if the number of id's is 100 then there is another message comming 
+      //add all the id's we got to the list
+      for (int i = 0; i < buffer[skip]; ++i)
+      {
+        ids.push_back(*reinterpret_cast<unsigned*>(buffer + skip + 1 + sizeof(unsigned) * i));
+      }
+      //if the number of id's is 100 then there is another packet
+      if (buffer[skip] != 100)
+      {
+        //we have all the id's exit loop
+        break;
+      }
+    }
+    stack.Update();
+  }
+  //now use the id's
 }
 
 void StressCleint(NetworkStack &stack, sockaddr_in *server, BitArray<HEADERSIZE> &flags)
@@ -149,7 +187,7 @@ int main(int argc, char **argv)
         FuzzTest(sock, &dest);
       break;
       case 2:
-        DataBaseTest(stack, &dest, flags);
+        DataBaseTest(stack, &dest, flags, static_cast<int>(config.properties["database_test_number"]));
       break;
     }
   }

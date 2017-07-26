@@ -8,6 +8,8 @@
 
 */
 /*****************************************************************************/
+#include <math.h>
+#include <iostream>
 
 #include "database.h"
 #include "meta.h"
@@ -23,12 +25,15 @@
 
 int main()
 {
+  std::cout << "start" << std::endl;
   //load in config file
   Config config;
   config.Init("database.conf");
   //load the database
   std::string file = static_cast<std::string>(config.properties["table"])+".tbl";
+  std::cout << "made name" << std::endl;
   Database db(file.c_str());
+  std::cout << "created db" << std::endl;
   //setup the network stack
   Init();
   SOCKET sock = CreateSocket(IPPROTO_UDP);
@@ -50,6 +55,7 @@ int main()
   char buffer[MAXPACKETSIZE];
   //the address we recieve from
   sockaddr_in from;
+  std::cout << "entering while loop" << std::endl;
   //main loop
   while(true)
   {
@@ -58,6 +64,7 @@ int main()
     //make sure the message is big enough 1 byte for message type 2 unsigned's
     if (n > int(1 + sizeof(unsigned)*2))
     {
+      std::cout << "got message" << std::endl;
       //handle message
       if (buffer[0] == 0)
       {
@@ -92,12 +99,42 @@ int main()
         unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
         db.Set(id, row, buffer+ sizeof(unsigned)*2);
       }
-      else
+      else if (buffer[0] == 2)
       {
         //create an object in the database and return the id
         unsigned id = db.Create();
         *reinterpret_cast<unsigned*>(buffer) = id;
         stack.Send(buffer, sizeof(unsigned), &from, flags);
+      }
+      else
+      {
+        std::cout << "got find request" << std::endl;
+        //find
+        unsigned row = *reinterpret_cast<unsigned*>(buffer+1);
+        std::vector<unsigned> ids = db.Find(row, buffer+1+sizeof(unsigned));
+        *reinterpret_cast<unsigned*>(buffer) = row;
+        *(buffer+sizeof(unsigned)) = sizeof(int);
+        //note that where the value to search for is in the same spot in the buffer
+        //add the id's
+        while(1)
+        {
+          unsigned num = std::max(ids.size(),(long unsigned)(100));
+          for (unsigned i = 0; i < num; ++i)
+          {
+            *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1+sizeof(int)+ sizeof(unsigned)*i) = ids[i];
+          }
+          stack.Send(buffer, sizeof(unsigned)+1+sizeof(int)+ sizeof(unsigned)*num, &from, flags);
+          //if there was more than 100 need to send another one, remove the first 100
+          if (num == 100)
+          {
+            ids.erase(ids.begin(), ids.begin()+num);
+          }
+          else
+          {
+            //end while loop
+            break;
+          }
+        }
       }
     }
     stack.Update();

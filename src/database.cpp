@@ -119,7 +119,6 @@ std::vector<unsigned> Database::Find(unsigned row, char *value)
   {
     file.seekg((2 + rows.size()) * sizeof(unsigned) + i * object_size + split_size);
     file.read(buffer, rows[row]);
-    //no internet to look this function up, im assuming it works like strcmp
     if (memcmp(buffer, value, rows[row]) == 0)
     {
       res.push_back(i);

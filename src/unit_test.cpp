@@ -25,6 +25,7 @@
 #include "prioritization.h"
 #include "encryption.h"
 #include "database.h"
+#include "event.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -48,11 +49,12 @@ bool TestBandwidth();//9
 bool TestPriority();//10
 bool TestEncryptionLayer();//11
 bool TestDatabase();//12
+bool TestEventSystem();//13
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
-    TestDatabase
+    TestDatabase, TestEventSystem
 }; 
 
 int main(int argc, char **argv)
@@ -791,6 +793,7 @@ bool TestReliability()
 }
 
 //this one is hard to test, will be tested better in the stress test
+//bandwidth is no longer being used.
 bool TestBandwidth()
 {
 	sockaddr_in sender;
@@ -1050,6 +1053,133 @@ bool TestDatabase()
 			PRINT_ERROR();
 			return false;
 		}
+	}
+	return true;
+}
+
+//class to test event system, in all tests the data is an integer
+class EventTester
+{
+public:
+	int num_called = 0;
+	int num_called2 = 0;
+	void memberfunction(__attribute__((unused))void *data)
+	{
+		num_called += 1;
+	}
+	void memberfunction2(__attribute__((unused))void *data)
+	{
+		num_called2 += 1;
+	}
+};
+
+//to test a non member function function, the data is an integer, each function call the integer is incremented
+void normalfuntion(void *data)
+{
+	*static_cast<int*>(data) += 1;
+}
+
+bool TestEventSystem()
+{
+	Event event;
+	//make sure sending an event with noboy listening does not crash
+	event.SendEvent(EventType::TestEvent, 0);
+	//connect a normal function
+	event.ConnectEvent(EventType::TestEvent, &normalfuntion);
+	//inteer that should be incremented everytime normal function is called, starting at a magic number
+	int num = 4;
+	event.SendEvent(EventType::TestEvent, &num);
+	if (num != 5)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//connect a second noramal function of the same type, (now on send event the function should be called twice)
+	event.ConnectEvent(EventType::TestEvent, &normalfuntion);
+	event.SendEvent(EventType::TestEvent, &num);
+	if (num != 7)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//remove one of the normal functions
+	event.DisconnectEvent(EventType::TestEvent, &normalfuntion);
+	//check to make sure that there is now only one function called
+	event.SendEvent(EventType::TestEvent, &num);
+	if (num != 8)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//now add a member fucntion as well
+	EventTester obj;
+	event.ConnectEvent(EventType::TestEvent, &obj, &EventTester::memberfunction);
+	event.SendEvent(EventType::TestEvent, &num);
+	//this should only increment by one because it only calls the normal function once
+	if (num != 9)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//the object funtion should have been called once
+	if (obj.num_called != 1)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//add memer function to a different event type to make sure that different event types work
+	event.ConnectEvent(EventType::TestEvent2, &obj, &EventTester::memberfunction);
+	event.SendEvent(EventType::TestEvent2, &num);
+	//num should remain unchanged
+	if (num != 9)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//the object funtion should have been called once
+	if (obj.num_called != 2)
+	{
+		std::cout << num << std::endl;
+		PRINT_ERROR();
+		return false;
+	}
+	//add a second object to the event system
+	EventTester obj2;
+	event.ConnectEvent(EventType::TestEvent, &obj2, &EventTester::memberfunction);
+	//add prev object with different member function
+	event.ConnectEvent(EventType::TestEvent, &obj, &EventTester::memberfunction2);
+	//test removing a member function
+	event.DisconnectEvent(EventType::TestEvent, &obj, &EventTester::memberfunction);
+	event.SendEvent(EventType::TestEvent, &num);
+	//num should have incremented once
+	if (num != 10)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	//the object funtion should not have been called
+	if (obj.num_called != 2)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	//second object shoud have had his fun called
+	if (obj2.num_called != 1)
+	{
+		PRINT_ERROR();
+		return false;
+	}
+	//member function 2 should have still been called
+	if (obj.num_called2 != 1)
+	{
+		PRINT_ERROR();
+		return false;
 	}
 	return true;
 }

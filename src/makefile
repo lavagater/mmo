@@ -10,7 +10,7 @@ ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
 GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o \
                 $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o $(OUTDIR)reliability.o \
-                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o $(OUTDIR)database.o
+                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o $(OUTDIR)database.o $(OUTDIR)event.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out
@@ -19,7 +19,8 @@ ZONE=zone.out
 UNIT=unit.out
 
 # Targets ========================================
-all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE) $(OUTDIR)stress_test.out
+all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE) \
+	$(OUTDIR)stress_test.out $(OUTDIR)table_maker.out $(OUTDIR)TextMMO.out $(OUTDIR)TextMMOClient.out
 
 #unit tests
 $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
@@ -28,6 +29,24 @@ $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
 #stress tests
 $(OUTDIR)stress_test.out : $(OUTDIR)stress_test.o $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)stress_test.out $(OUTDIR)stress_test.o $(GENERAL_OBJECTS) 
+
+#table maker
+$(OUTDIR)table_maker.out : $(OUTDIR)table_maker.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)table_maker.out $(OUTDIR)table_maker.o $(GENERAL_OBJECTS) 
+
+#The textmmo
+$(OUTDIR)TextMMO.out : $(OUTDIR)TextMMO.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)TextMMO.out $(OUTDIR)TextMMO.o $(GENERAL_OBJECTS)
+
+$(OUTDIR)TextMMO.o : TextMMO.cpp $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)TextMMO.o $(CFLAGS) TextMMO.cpp
+
+#The textmmo
+$(OUTDIR)TextMMOClient.out : $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)TextMMOClient.out $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
+
+$(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)TextMMOClient.o $(CFLAGS) TextMMOClient.cpp
 
 # Load balancer
 $(OUTDIR)$(LOAD_BALANCER) : $(BALANCE_OBJECTS) $(GENERAL_OBJECTS)
@@ -48,6 +67,9 @@ $(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
 $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
 	$(CC) -o $(OUTDIR)stress_test.o $(CFLAGS) stress_test.cpp
 
+$(OUTDIR)table_maker.o  : table_maker.cpp $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)table_maker.o $(CFLAGS) table_maker.cpp
+
 $(OUTDIR)zone.o  : zone.cpp
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp
 
@@ -65,6 +87,9 @@ $(OUTDIR)wyatt_sock.o : wyatt_sock.cpp wyatt_sock.h
 
 $(OUTDIR)timer.o : timer.cpp timer.h
 	$(CC) -o $(OUTDIR)timer.o $(CFLAGS) timer.cpp	
+
+$(OUTDIR)event.o : event.cpp event.h
+	$(CC) -o $(OUTDIR)event.o $(CFLAGS) event.cpp	
 
 $(OUTDIR)channel.o : channel.cpp channel.h wyatt_sock.h
 	$(CC) -o $(OUTDIR)channel.o $(CFLAGS) channel.cpp

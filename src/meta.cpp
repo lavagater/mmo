@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <string>
-
 #include "meta.h"
 
 int InferType(const char *str)

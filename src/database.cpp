@@ -2,7 +2,7 @@
 
 #include "database.h"
 
-Database::Database(const char *table_name) : size(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out), rows()
+Database::Database(const char *table_name) : size(0), num_ids(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out), rows()
 {
   //set the rows
   unsigned num_rows;
@@ -15,10 +15,21 @@ Database::Database(const char *table_name) : size(0), file(table_name, std::ios_
   }
   //set the size
   file.read(reinterpret_cast<char*>(&size), sizeof(unsigned));
+  //set the num_ids
+  file.read(reinterpret_cast<char*>(&num_ids), sizeof(int));
   //save the object size
+  object_size = 0;
   for (unsigned i = 0; i < rows.size(); ++i)
   {
     object_size += rows[i];
+  }
+  //set the local copy of the ids
+  file.seekg((2 + rows.size()) * sizeof(unsigned) + size * object_size + object_size);
+  for (int i = 0; i < num_ids; ++i)
+  {
+    unsigned temp;
+    file.write(reinterpret_cast<char*>(&temp), sizeof(temp));
+    reusable_ids.push_back(temp);
   }
 }
 
@@ -26,22 +37,31 @@ void Database::UpdateSize()
 {
   //seek file to where the size goes
   file.seekg((1+rows.size()) * sizeof(unsigned));
-  file.write(reinterpret_cast<char*>(&size), sizeof(unsigned));
+  file.write(reinterpret_cast<char*>(&size), sizeof(size));
+}
+void Database::UpdateIds()
+{
+  //seek file to where the size goes
+  file.seekg((2+rows.size()) * sizeof(unsigned));
+  file.write(reinterpret_cast<char*>(&num_ids), sizeof(num_ids));
 }
 
-Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc), rows(rows)
+Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0), num_ids(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc), rows(rows)
 {
   //write the rows to the file
   unsigned num_rows = rows.size();
-  file.write(reinterpret_cast<char*>(&num_rows), sizeof(unsigned));
+  file.write(reinterpret_cast<char*>(&num_rows), sizeof(num_rows));
   for (unsigned i = 0; i < num_rows; ++i)
   {
     unsigned row_size = rows[i];
-    file.write(reinterpret_cast<char*>(&row_size), sizeof(unsigned));
+    file.write(reinterpret_cast<char*>(&row_size), sizeof(row_size));
   }
   //write the size
   UpdateSize();
+  //write the number of ids
+  UpdateIds();
   //save the object size
+  object_size = 0;
   for (unsigned i = 0; i < rows.size(); ++i)
   {
     object_size += rows[i];
@@ -96,14 +116,44 @@ void Database::Set(unsigned id, unsigned row, const void *data)
 }
 int Database::Create()
 {
-  unsigned id = size;
-  //seek past the spot in the file so that it can be read from
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
-  //update the size
-  size += 1;
-  UpdateSize();
-  //return the id
-  return id;
+  if (num_ids > 0)
+  {
+    //update the number of ids in the list
+    num_ids -= 1;
+    unsigned id = reusable_ids[num_ids];
+    reusable_ids.pop_back();
+    UpdateIds();
+    return id;
+  }
+  else
+  {
+    unsigned id = size;
+    //seek past the spot in the file so that it can be read from
+    file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
+    //update the size
+    size += 1;
+    UpdateSize();
+    //return the id
+    return id;
+  }
+}
+void Database::Delete(unsigned id)
+{
+  //check for double delete
+  for (int i = 0; i < num_ids; ++i)
+  {
+    if (reusable_ids[i] == id)
+    {
+      return;
+    }
+  }
+  //add the id to the end of the list of id's
+  file.seekg((2 + rows.size()) * sizeof(unsigned) + size * object_size + object_size + num_ids * sizeof(unsigned));
+  file.write(reinterpret_cast<char*>(&id), sizeof(id));
+  //update the local list
+  reusable_ids.push_back(id);
+  num_ids += 1;
+  UpdateIds();
 }
 std::vector<unsigned> Database::Find(unsigned row, char *value)
 {
@@ -125,5 +175,17 @@ std::vector<unsigned> Database::Find(unsigned row, char *value)
     }
   }
   delete [] buffer;
+  //make sure none of the results are deleted
+  for (int i = 0; i < num_ids; ++i)
+  {
+    for (unsigned j = 0; j < res.size(); ++j)
+    {
+      if (reusable_ids[i] == res[j])
+      {
+        res.erase(res.begin()+j);
+        break;
+      }
+    }
+  }
   return res;
 }

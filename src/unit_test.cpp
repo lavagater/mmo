@@ -1006,7 +1006,7 @@ bool TestDatabase()
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
 	Database db("test_table", rows);
 	char buffer[16+8+8+2+1+4] = {0};
-	unsigned num_elements = 1000;
+	unsigned num_elements = 100;
 	//add random things to the database
 	for (unsigned i = 0; i < num_elements; ++i)
 	{
@@ -1015,6 +1015,7 @@ bool TestDatabase()
 		{
 			buffer[j] = rand();
 		}
+		//dont need to call create
 		db.Set(i, 0, buffer);
 		db.Set(i, 1, buffer+16);
 		db.Set(i, 2, buffer+16+8);
@@ -1023,7 +1024,7 @@ bool TestDatabase()
 		db.Set(i, 5, buffer+16+8+8+1+1);
 	}
 	//test database things
-	for (unsigned iter = 0; iter < 10000; ++iter)
+	for (unsigned iter = 0; iter < 1000; ++iter)
 	{
 		//get a random id to test
 		unsigned id = rand()%db.size;
@@ -1035,6 +1036,64 @@ bool TestDatabase()
 			buffer[j] = rand();
 		}
 		//set the value
+		db.Set(id, row, buffer);
+		//then search the database for that value
+		std::vector<unsigned> res = db.Find(row, buffer);
+		//make sure the id is in the list
+		bool found = false;
+		for (unsigned i = 0; i < res.size(); ++i)
+		{
+			if (res[i] == id)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found == false)
+		{
+			PRINT_ERROR();
+			return false;
+		}
+	}
+	//test delete, this could delete every object, but there is garrenteed to be at least one double delete
+	for (unsigned iter = 0; iter < db.size+1; ++iter)
+	{
+		//get a random id to test, (this could be the id of a deleted object nd that should be fine)
+		unsigned id = rand()%db.size;
+		//random row
+		unsigned row = rand()%rows.size();
+		//randomise the value
+		for (unsigned j = 0; j < rows[row]; ++j)
+		{
+			buffer[j] = rand();
+		}
+		//set the value(if the id is already deleted this will still set the data)
+		db.Set(id, row, buffer);
+		//delete the object
+		db.Delete(id);
+		//then search the database for that value (the object that we deleted should not be found)
+		std::vector<unsigned> res = db.Find(row, buffer);
+		//make sure the id is NOT in the list
+		for (unsigned i = 0; i < res.size(); ++i)
+		{
+			if (res[i] == id)
+			{
+				PRINT_ERROR();
+				return false;
+			}
+		}
+	}
+	//loop for some of the deleted objects and create new ones
+	for (int i = 0; i < db.num_ids; ++i)
+	{
+		unsigned id = db.Create();
+		//random row
+		unsigned row = rand()%rows.size();
+		for (unsigned j = 0; j < rows[row]; ++j)
+		{
+			buffer[j] = rand();
+		}
+		//set the value(if the id is already deleted this will still set the data)
 		db.Set(id, row, buffer);
 		//then search the database for that value
 		std::vector<unsigned> res = db.Find(row, buffer);

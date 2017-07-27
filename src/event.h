@@ -110,6 +110,11 @@ public:
   Event();
   /*!
     \brief
+      Frees memory from the EventTable
+  */
+  ~Event();
+  /*!
+    \brief
       Calls all the functions that are subscribed(connected) to the given event type and sends each function the data
     \param type
       Which event type from event_type.h

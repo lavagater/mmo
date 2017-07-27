@@ -3,12 +3,14 @@
     Each table is a seperate file, each table has a header which describes what data is in the table, 
     the header is first thing is an unsigned which represents the number of fields/rows 
     then for each row there is an unsigned representing the size in bytes that the row element is.
-    then there is an unsigned which represents the number or objects/column.
+    then there is an unsigned which represents the number or objects/columns, then there is an unsigned for the number
+    of deleted empty objects/columns.
 
-    The header size is 2 * sizeof(unsigned) + num_rows * sizeof(unsigned)
+    The header size is 3 * sizeof(unsigned) + num_rows * sizeof(unsigned)
     and example header could look like
-    3 4 4 8 74
+    3 4 4 8 74 2
     which would mean there are 3 rows first row is 4 bytes second row is 4 bytes and third row is 8 bytes and there is 74 columns
+    and 2 of the columns/objects are deleted and will be replaced by the next create call
     the files are stored in bianary.
   \author
     Wyatt Lavigueure
@@ -78,14 +80,23 @@ public:
   void Set(unsigned id, unsigned row, const void *data);
   /*!
     \brief
-      Creates a new object in the data base and increases the size, default value is garbage 
+      Reuse deleted object memory if exists otherwise will create a new spot in the database and increase the size.
+      The size dose not increase if memory is reused.
     \return
       The id of the object just created
   */
   int Create();
   /*!
     \brief
-      Gets all the id's of the items with the given value
+      Puts a object/column's memory up for grabs. Does change the size of the database just increases num_ids, and adds the given id
+      to the list of reuseable ids. If the same object is deleted twice the second delete has no effect
+    \param id
+      The id of the object/colum to remove
+  */
+  void Delete(unsigned id);
+  /*!
+    \brief
+      Gets all the id's of the items with the given value, wont return objects that have been deleted
     \param row
       The row to search
     \param value
@@ -96,16 +107,27 @@ public:
   std::vector<unsigned> Find(unsigned row, char *value);
   /*!
     \brief
-      number of objects in file, cannot call Get with an id greater than size, if Set is called with an id greater
+      total number of objects in file including deleted objects. To get the total number of active objects do
+      size - num_ids. cannot call Get with an id greater than size
   */
   unsigned size;
+  /*!
+    \brief
+      This is the number of ids in the list of reusable ids. When an object is deleted from the database, that object is still there in memory
+      and its id is put at the end of the list to be reused. num_ids is the number of objects in the database that are not being used
+  */
+  int num_ids;
 private:
   //the file on harddrive
   std::fstream file;
   //the rows
   std::vector<unsigned> rows;
+  //a local copy of the reusable ids on the database
+  std::vector<unsigned> reusable_ids;
   //the size of the object(sum of every entry in rows)
   unsigned object_size;
   //writes the size to the file
   void UpdateSize();
+  //writes the num_ids to the file
+  void UpdateIds();
 };

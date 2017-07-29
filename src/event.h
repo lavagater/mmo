@@ -1,6 +1,4 @@
 /*!
-  \author
-    Wyatt Lavigueure
   \date
     7/24/2017
   \brief

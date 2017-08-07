@@ -45,7 +45,7 @@ $(OUTDIR)TextMMO.o : TextMMO.cpp $(GENERAL_OBJECTS)
 $(OUTDIR)TextMMOClient.out : $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)TextMMOClient.out $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
 
-$(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS)
+$(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS) protocol.h
 	$(CC) -o $(OUTDIR)TextMMOClient.o $(CFLAGS) TextMMOClient.cpp
 
 # Load balancer
@@ -70,7 +70,7 @@ $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
 $(OUTDIR)table_maker.o  : table_maker.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)table_maker.o $(CFLAGS) table_maker.cpp
 
-$(OUTDIR)zone.o  : zone.cpp
+$(OUTDIR)zone.o  : zone.cpp protocol.h
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp
 
 $(OUTDIR)database_app.o  : database_app.cpp protocol.h

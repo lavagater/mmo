@@ -22,6 +22,7 @@
 #include "reliability.h"
 #include "prioritization.h"
 #include "encryption.h"
+#include "protocol.h"
 
 int main()
 {
@@ -66,74 +67,92 @@ int main()
     {
       std::cout << "got message" << std::endl;
       //handle message
-      if (buffer[0] == 0)
+      switch (buffer[0])
       {
-        unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
-        unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
-        //check if its in the database
-        if (db.size <= id)
+        case Protocol::DatabaseGet:
         {
-          //get data from database
-          char *data = 0;
-          unsigned size;
-          if (row == unsigned(-1))
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
+          //check if its in the database
+          if (db.size <= id)
           {
-            size = db.Get(id, data);
+            //get data from database
+            char *data = 0;
+            unsigned size;
+            if (row == unsigned(-1))
+            {
+              size = db.Get(id, data);
+            }
+            else
+            {
+              size = db.Get(id, row, data);
+            }
+            //send back the data from the database
+            buffer[0] = Protocol::DatabaseGet;
+            *reinterpret_cast<unsigned*>(buffer+1) = id;
+            *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1) = row;
+            memcpy(buffer+sizeof(unsigned)*2+1, data, size);
+            stack.Send(buffer, size + 2 * sizeof(unsigned)+1, &from, flags);
+            delete [] data;
           }
-          else
-          {
-            size = db.Get(id, row, data);
-          }
-          //send back the data from the database
-          *reinterpret_cast<unsigned*>(buffer) = id;
-          *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)) = row;
-          memcpy(buffer+sizeof(unsigned)*2, data, size);
-          stack.Send(buffer, size + 2 * sizeof(unsigned), &from, flags);
-          delete [] data;
         }
-      }
-      else if (buffer[0] == 1)
-      {
-        //set the data
-        unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
-        unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
-        db.Set(id, row, buffer+ sizeof(unsigned)*2);
-      }
-      else if (buffer[0] == 2)
-      {
-        //create an object in the database and return the id
-        unsigned id = db.Create();
-        *reinterpret_cast<unsigned*>(buffer) = id;
-        stack.Send(buffer, sizeof(unsigned), &from, flags);
-      }
-      else if (buffer[0] == 3)
-      {
-        std::cout << "got find request" << std::endl;
-        //find
-        unsigned row = *reinterpret_cast<unsigned*>(buffer+1);
-        std::vector<unsigned> ids = db.Find(row, buffer+1+sizeof(unsigned));
-        *reinterpret_cast<unsigned*>(buffer) = row;
-        *(buffer+sizeof(unsigned)) = sizeof(int);
-        //note that where the value to search for is in the same spot in the buffer
-        //add the id's
-        while(1)
+        case Protocol::DatabaseSet:
         {
-          unsigned num = std::max(ids.size(),(long unsigned)(100));
-          for (unsigned i = 0; i < num; ++i)
+          //set the data
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
+          db.Set(id, row, buffer+ sizeof(unsigned)*2);
+        }
+        case Protocol::DatabaseCreate:
+        {
+          //create an object in the database and return the id
+          unsigned id = db.Create();
+          buffer[0] = Protocol::DatabaseCreate;
+          //the create message has a unsigned nonce after the message type, keep he nonce unmodified
+          *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1) = id;
+          stack.Send(buffer, 2*sizeof(unsigned)+1, &from, flags);
+        }
+        case Protocol::DatabaseFind:
+        {
+          //find
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+1);
+          std::vector<unsigned> ids = db.Find(row, buffer+1+sizeof(unsigned));
+          //create the response
+          //redundant
+          buffer[0] = Protocol::DatabaseFind;
+          //redundant
+          *reinterpret_cast<unsigned*>(buffer+1) = row;
+          //the value thats being searched for stays in the buffer and is sent in response
+
+          //add the id's (its in a loop because we can only send back 100 id's per message so if there
+          //is more than 100 id's we send more than one message, each message has the same first couple bytes)
+          while(1)
           {
-            *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1+sizeof(int)+ sizeof(unsigned)*i) = ids[i];
+            unsigned num = std::max(ids.size(),(long unsigned)(100));
+            //num is between 0-100 so it fits in a char
+            buffer[1+sizeof(unsigned) + db.rows[row]] = num;
+            for (unsigned i = 0; i < num; ++i)
+            {
+              *reinterpret_cast<unsigned*>(buffer+1+sizeof(unsigned)+db.rows[row]+1+ sizeof(unsigned)*i) = ids[i];
+            }
+            stack.Send(buffer, 1+sizeof(unsigned)+db.rows[row]+1+ sizeof(unsigned)*num, &from, flags);
+            //if there was more than 100 need to send another one, remove the first 100
+            //note that if the number of items found is divisable by 100 then we will send on message with no ids 
+            if (num == 100)
+            {
+              ids.erase(ids.begin(), ids.begin()+num);
+            }
+            else
+            {
+              //end while loop
+              break;
+            }
           }
-          stack.Send(buffer, sizeof(unsigned)+1+sizeof(int)+ sizeof(unsigned)*num, &from, flags);
-          //if there was more than 100 need to send another one, remove the first 100
-          if (num == 100)
-          {
-            ids.erase(ids.begin(), ids.begin()+num);
-          }
-          else
-          {
-            //end while loop
-            break;
-          }
+        }
+        case Protocol::DatabaseDelete:
+        {
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
+          db.Delete(id);
         }
       }
     }

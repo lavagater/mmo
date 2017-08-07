@@ -2,7 +2,9 @@
 
 #include "database.h"
 
-Database::Database(const char *table_name) : size(0), num_ids(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out), rows()
+Database::Database(const char *table_name) : size(0), num_ids(0), rows(), 
+                                             file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out),
+                                             reusable_ids(), object_size(0)
 {
   //set the rows
   unsigned num_rows;
@@ -18,7 +20,6 @@ Database::Database(const char *table_name) : size(0), num_ids(0), file(table_nam
   //set the num_ids
   file.read(reinterpret_cast<char*>(&num_ids), sizeof(int));
   //save the object size
-  object_size = 0;
   for (unsigned i = 0; i < rows.size(); ++i)
   {
     object_size += rows[i];
@@ -46,7 +47,10 @@ void Database::UpdateIds()
   file.write(reinterpret_cast<char*>(&num_ids), sizeof(num_ids));
 }
 
-Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0), num_ids(0), file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc), rows(rows)
+Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0), num_ids(0), rows(rows),
+                                                                         file(table_name, std::ios_base::binary | 
+                                                                         std::ios_base::in | std::ios_base::out | 
+                                                                         std::ios_base::trunc), reusable_ids(), object_size(0)
 {
   //write the rows to the file
   unsigned num_rows = rows.size();
@@ -60,8 +64,6 @@ Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0)
   UpdateSize();
   //write the number of ids
   UpdateIds();
-  //save the object size
-  object_size = 0;
   for (unsigned i = 0; i < rows.size(); ++i)
   {
     object_size += rows[i];

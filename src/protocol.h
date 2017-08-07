@@ -10,6 +10,9 @@
 */
 enum Protocol
 {
+  //Each Database message type has a different meaning depending on who is recieving the message
+  //ex. DatabaseGet message is asking the database for a value in the database but
+  //DatabaseGet is also a message containing a value from the database
   DatabaseGet,
   DatabaseSet,
   DatabaseCreate,

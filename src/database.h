@@ -117,11 +117,15 @@ public:
       and its id is put at the end of the list to be reused. num_ids is the number of objects in the database that are not being used
   */
   int num_ids;
+  /*!
+    \brief
+      The layout of the object. Each element in the vector corrisponds to an attribute of the object, the value of the element is the size
+      in bytes of the attribute
+  */
+  std::vector<unsigned> rows;
 private:
   //the file on harddrive
   std::fstream file;
-  //the rows
-  std::vector<unsigned> rows;
   //a local copy of the reusable ids on the database
   std::vector<unsigned> reusable_ids;
   //the size of the object(sum of every entry in rows)

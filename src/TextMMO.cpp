@@ -20,6 +20,7 @@
 #include "reliability.h"
 #include "prioritization.h"
 #include "encryption.h"
+#include "protocol.h"
 
 int main()
 {

@@ -57,7 +57,7 @@ enum
 };
 /*!
   /brief
-    enum for message types
+    enum for message types used if MessageTypeFlag is set
 */
 enum
 {

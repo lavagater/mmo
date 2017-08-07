@@ -106,7 +106,7 @@ int main()
         *reinterpret_cast<unsigned*>(buffer) = id;
         stack.Send(buffer, sizeof(unsigned), &from, flags);
       }
-      else
+      else if (buffer[0] == 3)
       {
         std::cout << "got find request" << std::endl;
         //find

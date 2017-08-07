@@ -10,5 +10,10 @@
 */
 enum Protocol
 {
-
+  DatabaseGet,
+  DatabaseSet,
+  DatabaseCreate,
+  DatabaseFind,
+  DatabaseDelete,
+  num
 };

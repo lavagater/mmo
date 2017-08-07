@@ -61,7 +61,7 @@ $(OUTDIR)$(DATABASE) : $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)$(DATABASE) $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 
 
-$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
+$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h protocol.h
 	$(CC) -o $(OUTDIR)unit_test.o $(CFLAGS) unit_test.cpp
 
 $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
@@ -73,7 +73,7 @@ $(OUTDIR)table_maker.o  : table_maker.cpp $(GENERAL_OBJECTS)
 $(OUTDIR)zone.o  : zone.cpp
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp
 
-$(OUTDIR)database_app.o  : database_app.cpp
+$(OUTDIR)database_app.o  : database_app.cpp protocol.h
 	$(CC) -o $(OUTDIR)database_app.o $(CFLAGS) database_app.cpp
 
 $(OUTDIR)database.o  : database.cpp database.h

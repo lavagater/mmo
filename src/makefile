@@ -10,7 +10,8 @@ ZONE_OBJECTS=$(OUTDIR)zone.o
 BALANCE_OBJECTS=$(OUTDIR)load_balancer.o
 GENERAL_OBJECTS=$(OUTDIR)wyatt_sock.o $(OUTDIR)config.o $(OUTDIR)meta.o $(OUTDIR)network_stack.o \
                 $(OUTDIR)channel.o $(OUTDIR)frame_rate.o $(OUTDIR)blowfish.o $(OUTDIR)reliability.o \
-                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o $(OUTDIR)database.o $(OUTDIR)event.o
+                $(OUTDIR)prioritization.o $(OUTDIR)encryption.o $(OUTDIR)timer.o $(OUTDIR)database.o $(OUTDIR)event.o \
+                $(OUTDIR)remote_database.o $(OUTDIR)protocol.o
 TEST_OJECTS=$(OUTDIR)unit_test.o
 ALL_OBJECTS=$(GENERAL_OBJECTS) $(BALANCE_OBJECTS) $(ZONE_OBJECTS) $(DATABASE_OBJECTS) $(TEST_OJECTS)
 LOAD_BALANCER=load_balancer.out
@@ -45,7 +46,7 @@ $(OUTDIR)TextMMO.o : TextMMO.cpp $(GENERAL_OBJECTS)
 $(OUTDIR)TextMMOClient.out : $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)TextMMOClient.out $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
 
-$(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS) protocol.h
+$(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)TextMMOClient.o $(CFLAGS) TextMMOClient.cpp
 
 # Load balancer
@@ -61,7 +62,7 @@ $(OUTDIR)$(DATABASE) : $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)$(DATABASE) $(DATABASE_OBJECTS) $(GENERAL_OBJECTS)
 
 
-$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h protocol.h
+$(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
 	$(CC) -o $(OUTDIR)unit_test.o $(CFLAGS) unit_test.cpp
 
 $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
@@ -70,14 +71,20 @@ $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
 $(OUTDIR)table_maker.o  : table_maker.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)table_maker.o $(CFLAGS) table_maker.cpp
 
-$(OUTDIR)zone.o  : zone.cpp protocol.h
+$(OUTDIR)zone.o  : zone.cpp
 	$(CC) -o $(OUTDIR)zone.o $(CFLAGS) zone.cpp
 
-$(OUTDIR)database_app.o  : database_app.cpp protocol.h
+$(OUTDIR)database_app.o  : database_app.cpp
 	$(CC) -o $(OUTDIR)database_app.o $(CFLAGS) database_app.cpp
 
 $(OUTDIR)database.o  : database.cpp database.h
 	$(CC) -o $(OUTDIR)database.o $(CFLAGS) database.cpp
+
+$(OUTDIR)remote_database.o  : remote_database.cpp remote_database.h
+	$(CC) -o $(OUTDIR)remote_database.o $(CFLAGS) remote_database.cpp
+
+$(OUTDIR)protocol.o  : protocol.cpp protocol.h
+	$(CC) -o $(OUTDIR)protocol.o $(CFLAGS) protocol.cpp
 
 $(OUTDIR)load_balancer.o  : load_balancer.cpp
 	$(CC) -o $(OUTDIR)load_balancer.o $(CFLAGS) load_balancer.cpp

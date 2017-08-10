@@ -4,7 +4,9 @@
 \date   5/2/2017
 \brief  
   The entry point for the database executable. The database trusts its users (since the users have full control of the data) so it
-  does minimal error checking with packets
+  does minimal error checking with packets. This is my first time ever writing a database so it might not be what a veteran would 
+  assume so you might want to double check what things do before using, documentaion might use lingo incorrectly be careful(This applys
+  for all the database related files).
 
 */
 /*****************************************************************************/
@@ -95,6 +97,7 @@ int main()
             stack.Send(buffer, size + 2 * sizeof(unsigned)+1, &from, flags);
             delete [] data;
           }
+          break;
         }
         case Protocol::DatabaseSet:
         {
@@ -102,6 +105,7 @@ int main()
           unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
           unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
           db.Set(id, row, buffer+ sizeof(unsigned)*2);
+          break;
         }
         case Protocol::DatabaseCreate:
         {
@@ -111,6 +115,7 @@ int main()
           //the create message has a unsigned nonce after the message type, keep he nonce unmodified
           *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1) = id;
           stack.Send(buffer, 2*sizeof(unsigned)+1, &from, flags);
+          break;
         }
         case Protocol::DatabaseFind:
         {
@@ -148,11 +153,13 @@ int main()
               break;
             }
           }
+          break;
         }
         case Protocol::DatabaseDelete:
         {
           unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
           db.Delete(id);
+          break;
         }
       }
     }

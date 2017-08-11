@@ -128,6 +128,7 @@ public:
   */
   void GetCallback(void *data)
   {
+        std::cout << "porn 1" << std::endl;
     NetworkEvent *event = static_cast<NetworkEvent*>(data);
     unsigned id = *reinterpret_cast<unsigned*>(event->buffer+1);
     unsigned row = *reinterpret_cast<unsigned*>(event->buffer+1+sizeof(unsigned));
@@ -168,12 +169,14 @@ public:
       //send to every new connection
       for (unsigned i = 0; i < new_conn.size(); ++i)
       {
+        std::cout << "sending mesage to new clients" << std::endl;
         stack->Send(buffer, sizeof(float)*2+sizeof(int)+partials[id].length, &new_conn[i].first, *flags);
       }
       //remove partial since it is no longer a partial
       delete [] partials[id].msg;
       partials.erase(partials.find(id));
     }
+        std::cout << "porn 2" << std::endl;
   }
   /*!
     \brief
@@ -219,6 +222,7 @@ public:
     {
       if (new_conn[i].second == counter - 1)
       {
+        std::cout << "new connection done" << std::endl;
         new_conn.erase(new_conn.begin()+i);
         i -= 1;
         continue;
@@ -265,6 +269,10 @@ public:
     if (num != 100)
     {
       counter -= 1;
+      if (counter < 0)
+      {
+        counter = MAXAGE;
+      }
       int n = CreateFindMessage(buffer, 2, &counter, sizeof(counter));
       stack->Send(buffer, n, event->addr, *flags);
     }
@@ -332,11 +340,13 @@ int main()
         {
           case Protocol::DatabaseGet:
           {
+            std::cout << "DatabaseGet" << std::endl;
             remotedb.ProcessGet(buffer, n, &from);
             break;
           }
           case Protocol::DatabaseCreate:
           {
+            std::cout << "DatabaseCreate" << std::endl;
             remotedb.ProcessCreate(buffer, n, &from);
             break;
           }
@@ -352,11 +362,13 @@ int main()
       {
         if (n <= int(sizeof(float)) * 2)
         {
+          std::cout << "new connection" << std::endl;
           //this means its a new connection add the address to the vector of new connections
           obj.new_conn.push_back(std::make_pair(from, obj.counter));
         }
         else
         {
+          std::cout << "client message" << std::endl;
           //this is a new message
           std::cout << buffer + sizeof(float) * 2 << std::endl;
           //shift the string over by one int to make room for time alive

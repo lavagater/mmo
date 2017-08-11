@@ -53,7 +53,7 @@ public:
     \return
       the size in bytes put into data
   */
-  unsigned Get(unsigned id, char *data);
+  unsigned Get(unsigned id, char *&data);
   /*!
     \brief
       Gets a speciic row from an object/column from the table, returns the data in a tightly packet format(no pad bytes)
@@ -66,7 +66,7 @@ public:
     \return
       the size of bytes put into data
   */
-  unsigned Get(unsigned id, unsigned row, char *data);
+  unsigned Get(unsigned id, unsigned row, char *&data);
   /*!
     \brief
       Sets the value of a row for a specific column
@@ -123,6 +123,11 @@ public:
       in bytes of the attribute
   */
   std::vector<unsigned> rows;
+  /*!
+    \brief
+      Flush stream. forcing the internal buffers to be written to the file
+  */
+  void flush();
 private:
   //the file on harddrive
   std::fstream file;

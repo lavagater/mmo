@@ -70,7 +70,7 @@ Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0)
   }
 }
 
-unsigned Database::Get(unsigned id, char *data)
+unsigned Database::Get(unsigned id, char *&data)
 {
   data = new char[object_size];
   //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
@@ -80,7 +80,7 @@ unsigned Database::Get(unsigned id, char *data)
   return object_size;
 }
 
-unsigned Database::Get(unsigned id, unsigned row, char *data)
+unsigned Database::Get(unsigned id, unsigned row, char *&data)
 {
   //find out how far into the object to get to the row we want
   unsigned split_size = 0;
@@ -132,6 +132,7 @@ int Database::Create()
     unsigned id = size;
     //seek past the spot in the file so that it can be read from
     file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
+    file.write("c", 1);
     //update the size
     size += 1;
     UpdateSize();
@@ -190,4 +191,8 @@ std::vector<unsigned> Database::Find(unsigned row, char *value)
     }
   }
   return res;
+}
+void Database::flush()
+{
+  file.flush();
 }

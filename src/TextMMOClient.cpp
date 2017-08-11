@@ -53,6 +53,9 @@ int main()
   //the address we recieve from
   sockaddr_in from;
 
+  //tell the server i exist and that i want them old messages
+  stack.Send(buffer, 1, &server, flags);
+
   //send message, only send one message because its blocing
   float x;
   float y;

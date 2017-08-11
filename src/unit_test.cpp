@@ -1004,8 +1004,12 @@ bool TestEncryptionLayer()
 bool TestDatabase()
 {
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
+	//makes a new table replacing the old one
 	Database db("test_table", rows);
 	char buffer[16+8+8+2+1+4] = {0};
+	//try finding an element when there are no elemenets
+	//does not matter whats in buffer
+	db.Find(0, buffer);
 	unsigned num_elements = 100;
 	//add random things to the database
 	for (unsigned i = 0; i < num_elements; ++i)

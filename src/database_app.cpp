@@ -65,9 +65,8 @@ int main()
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
     //make sure the message is big enough 1 byte for message type 2 unsigned's
-    if (n > int(1 + sizeof(unsigned)*2))
+    if (n > 0)
     {
-      std::cout << "got message" << std::endl;
       //handle message
       switch (buffer[0])
       {
@@ -76,7 +75,7 @@ int main()
           unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
           unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
           //check if its in the database
-          if (db.size <= id)
+          if (id <= db.size)
           {
             //get data from database
             char *data = 0;
@@ -104,7 +103,8 @@ int main()
           //set the data
           unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
           unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
-          db.Set(id, row, buffer+ sizeof(unsigned)*2);
+          db.Set(id, row, buffer + 1 + sizeof(unsigned)*2);
+          db.flush();
           break;
         }
         case Protocol::DatabaseCreate:
@@ -133,7 +133,7 @@ int main()
           //is more than 100 id's we send more than one message, each message has the same first couple bytes)
           while(1)
           {
-            unsigned num = std::max(ids.size(),(long unsigned)(100));
+            unsigned num = std::min(ids.size(),(long unsigned)(100));
             //num is between 0-100 so it fits in a char
             buffer[1+sizeof(unsigned) + db.rows[row]] = num;
             for (unsigned i = 0; i < num; ++i)
@@ -157,6 +157,8 @@ int main()
         }
         case Protocol::DatabaseDelete:
         {
+            std::cout << "Delete messsage" << std::endl;
+
           unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
           db.Delete(id);
           break;

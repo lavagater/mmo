@@ -82,7 +82,9 @@ int main()
       if (n > 0)
       {
         //print the text message
-        std::cout << buffer + sizeof(float) * 2 + sizeof(int) << std::endl;
+        std::cout << "xpos = " << *reinterpret_cast<float*>(buffer) << " ypos = " << *reinterpret_cast<float*>(buffer + sizeof(float));
+        std::cout << " age = " << *reinterpret_cast<int*>(buffer + sizeof(float) *2) << std::endl;
+        std::cout << buffer + sizeof(float) * 2 + sizeof(int) << std::endl << std::endl;
       }
       else
       {

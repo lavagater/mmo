@@ -128,7 +128,6 @@ public:
   */
   void GetCallback(void *data)
   {
-        std::cout << "porn 1" << std::endl;
     NetworkEvent *event = static_cast<NetworkEvent*>(data);
     unsigned id = *reinterpret_cast<unsigned*>(event->buffer+1);
     unsigned row = *reinterpret_cast<unsigned*>(event->buffer+1+sizeof(unsigned));
@@ -147,6 +146,12 @@ public:
         break;
       }
       case 2:
+      {
+        partials[id].age = *reinterpret_cast<int*>(event->buffer+1+sizeof(unsigned)*2);
+        partials[id].done += 1;
+        break;
+      }
+      case 3:
       {
         //get the length of the string returned, it should always be the same size
         unsigned length = event->length - sizeof(unsigned) * 2 -1;
@@ -176,7 +181,6 @@ public:
       delete [] partials[id].msg;
       partials.erase(partials.find(id));
     }
-        std::cout << "porn 2" << std::endl;
   }
   /*!
     \brief
@@ -340,7 +344,7 @@ int main()
         {
           case Protocol::DatabaseGet:
           {
-            std::cout << "DatabaseGet" << std::endl;
+            //std::cout << "DatabaseGet" << std::endl;
             remotedb.ProcessGet(buffer, n, &from);
             break;
           }

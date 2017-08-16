@@ -1005,7 +1005,7 @@ bool TestDatabase()
 {
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
 	//makes a new table replacing the old one
-	Database db("test_table", rows);
+	Database db("test_table.tbl", rows);
 	char buffer[16+8+8+2+1+4] = {0};
 	//try finding an element when there are no elemenets
 	//does not matter whats in buffer

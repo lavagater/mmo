@@ -21,7 +21,8 @@ UNIT=unit.out
 
 # Targets ========================================
 all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE) \
-	$(OUTDIR)stress_test.out $(OUTDIR)table_maker.out $(OUTDIR)TextMMO.out $(OUTDIR)TextMMOClient.out
+	$(OUTDIR)stress_test.out $(OUTDIR)table_maker.out $(OUTDIR)TextMMO.out $(OUTDIR)TextMMOClient.out \
+	$(OUTDIR)function_profiler.out
 
 #unit tests
 $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
@@ -30,6 +31,10 @@ $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
 #stress tests
 $(OUTDIR)stress_test.out : $(OUTDIR)stress_test.o $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)stress_test.out $(OUTDIR)stress_test.o $(GENERAL_OBJECTS) 
+
+#profiler
+$(OUTDIR)function_profiler.out : $(OUTDIR)function_profiler.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)function_profiler.out $(OUTDIR)function_profiler.o $(GENERAL_OBJECTS) 
 
 #table maker
 $(OUTDIR)table_maker.out : $(OUTDIR)table_maker.o $(GENERAL_OBJECTS)
@@ -67,6 +72,9 @@ $(OUTDIR)unit_test.o  : unit_test.cpp $(GENERAL_OBJECTS) bit_array.h
 
 $(OUTDIR)stress_test.o  : stress_test.cpp $(GENERAL_OBJECTS) bit_array.h
 	$(CC) -o $(OUTDIR)stress_test.o $(CFLAGS) stress_test.cpp
+
+$(OUTDIR)function_profiler.o  : function_profiler.cpp $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)function_profiler.o $(CFLAGS) function_profiler.cpp
 
 $(OUTDIR)table_maker.o  : table_maker.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)table_maker.o $(CFLAGS) table_maker.cpp

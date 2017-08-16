@@ -33,3 +33,6 @@
 
 # Doxygen folder
 src/doxygen
+
+# Database Tables
+*.tbl

@@ -50,11 +50,16 @@ bool TestPriority();//10
 bool TestEncryptionLayer();//11
 bool TestDatabase();//12
 bool TestEventSystem();//13
+bool TestDatabaseCreate();//14
+bool TestDatabaseGetAndSet();//15
+bool TestDatabaseFind();//16
+bool TestDatabaseDelete();//17
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
-    TestDatabase, TestEventSystem
+    TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
+    TestDatabaseDelete
 }; 
 
 int main(int argc, char **argv)
@@ -1001,6 +1006,8 @@ bool TestEncryptionLayer()
 	return true;
 }
 
+//TODO: this unit test tests the entire database, the entire database is not a unit this
+//should be broken up into multiple unit tests for each database function
 bool TestDatabase()
 {
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
@@ -1019,13 +1026,13 @@ bool TestDatabase()
 		{
 			buffer[j] = rand();
 		}
-		//dont need to call create
-		db.Set(i, 0, buffer);
-		db.Set(i, 1, buffer+16);
-		db.Set(i, 2, buffer+16+8);
-		db.Set(i, 3, buffer+16+8+8);
-		db.Set(i, 4, buffer+16+8+8+2);
-		db.Set(i, 5, buffer+16+8+8+1+1);
+		int id = db.Create();
+		db.Set(id, 0, buffer);
+		db.Set(id, 1, buffer+16);
+		db.Set(id, 2, buffer+16+8);
+		db.Set(id, 3, buffer+16+8+8);
+		db.Set(id, 4, buffer+16+8+8+2);
+		db.Set(id, 5, buffer+16+8+8+1+1);
 	}
 	//test database things
 	for (unsigned iter = 0; iter < 1000; ++iter)
@@ -1142,6 +1149,7 @@ void normalfuntion(void *data)
 	*static_cast<int*>(data) += 1;
 }
 
+//TODO: Similar to Database test this could be split into threeish unit tests
 bool TestEventSystem()
 {
 	Event event;
@@ -1244,6 +1252,23 @@ bool TestEventSystem()
 		PRINT_ERROR();
 		return false;
 	}
+	return true;
+}
+
+bool TestDatabaseCreate()
+{
+	return true;
+}
+bool TestDatabaseGetAndSet()
+{
+	return true;
+}
+bool TestDatabaseFind()
+{
+	return true;
+}
+bool TestDatabaseDelete()
+{
 	return true;
 }
 

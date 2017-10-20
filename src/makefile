@@ -22,7 +22,7 @@ UNIT=unit.out
 # Targets ========================================
 all: $(OUTDIR)$(UNIT) $(OUTDIR)$(LOAD_BALANCER) $(OUTDIR)$(ZONE) $(OUTDIR)$(DATABASE) \
 	$(OUTDIR)stress_test.out $(OUTDIR)table_maker.out $(OUTDIR)TextMMO.out $(OUTDIR)TextMMOClient.out \
-	$(OUTDIR)function_profiler.out
+	$(OUTDIR)function_profiler.out $(OUTDIR)test_database.out
 
 #unit tests
 $(OUTDIR)$(UNIT) : $(TEST_OJECTS) $(GENERAL_OBJECTS)
@@ -53,6 +53,12 @@ $(OUTDIR)TextMMOClient.out : $(OUTDIR)TextMMOClient.o $(GENERAL_OBJECTS)
 
 $(OUTDIR)TextMMOClient.o : TextMMOClient.cpp $(GENERAL_OBJECTS)
 	$(CC) -o $(OUTDIR)TextMMOClient.o $(CFLAGS) TextMMOClient.cpp
+
+$(OUTDIR)test_database.out : $(OUTDIR)test_database.o $(GENERAL_OBJECTS)
+	$(CC) -o $(OUTDIR)test_database.out $(OUTDIR)test_database.o $(GENERAL_OBJECTS)
+
+$(OUTDIR)test_database.o  : test_database.cpp $(GENERAL_OBJECTS) bit_array.h
+	$(CC) -o $(OUTDIR)test_database.o $(CFLAGS) test_database.cpp
 
 # Load balancer
 $(OUTDIR)$(LOAD_BALANCER) : $(BALANCE_OBJECTS) $(GENERAL_OBJECTS)

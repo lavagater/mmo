@@ -49,6 +49,10 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
       memset(packets, 0, RESENDSIZE * sizeof(PacketSave));
     }
     unsigned index = last_ack % RESENDSIZE;
+    if (packets[index].packet)
+    {
+      std::cout << "hhh kool" << std::endl;
+    }
     //remove the old data
     delete [] packets[index].packet;
     //only allocate as much memory as we need
@@ -101,7 +105,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       //check that the message is no to small, screw you hackers
       if (bytes < ACKSIZE)
       {
-        return -1;
+        return MALEFORMEDPACKET;
       }
       //extract the ack
       unsigned ack = 0;
@@ -162,10 +166,13 @@ void Reliability::Update(__attribute__((unused))double dt)
           //check if the time the message was sent was more than resend_tme ago
           if (cur_time - it->second[i].time >= resend_time)
           {
-            //reset the send time
-            it->second[i].time = cur_time;
+            //reset the send time, we added on the resend time because if the client did not get the first one and the second one
+            //there is probably an issue with their connection and we probably should not bonbard them with resent packets
+            it->second[i].time = cur_time + resend_time;
+            //std::cout << "cur_time = " << cur_time <<" resend tme = "<< resend_time << " ping = " << stack->connections[it->first].ping <<std::endl; 
             //resend the message
             stack->Send(it->second[i].packet, it->second[i].bytes, &it->first, it->second[i].flags, layer_id-1);
+            //std::cout << "Resend msg " << it->second[i].time << " index = " << i << " b = " << stack->GetBandwidth() << std::endl;
           }
         }
       }

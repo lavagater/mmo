@@ -15,21 +15,24 @@ Database::Database(const char *table_name) : size(0), num_ids(0), rows(),
     file.read(reinterpret_cast<char*>(&row_size), sizeof(unsigned));
     rows.push_back(row_size);
   }
+
   //set the size
   file.read(reinterpret_cast<char*>(&size), sizeof(unsigned));
   //set the num_ids
   file.read(reinterpret_cast<char*>(&num_ids), sizeof(int));
+
   //save the object size
   for (unsigned i = 0; i < rows.size(); ++i)
   {
     object_size += rows[i];
   }
+
   //set the local copy of the ids
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + size * object_size + object_size);
+  file.seekg((3 + rows.size()) * sizeof(unsigned) + size * object_size + object_size);
   for (int i = 0; i < num_ids; ++i)
   {
     unsigned temp;
-    file.write(reinterpret_cast<char*>(&temp), sizeof(temp));
+    file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
     reusable_ids.push_back(temp);
   }
 }
@@ -72,9 +75,13 @@ Database::Database(const char *table_name, std::vector<unsigned> rows) : size(0)
 
 unsigned Database::Get(unsigned id, char *&data)
 {
+  if (num_ids > 1000)
+  {
+    abort();
+  }
   data = new char[object_size];
-  //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size);
+  //go to the spot in the file, (3 + rows.size()) * sizeof(unsigned) is the size of the header
+  file.seekg((3 + rows.size()) * sizeof(unsigned) + id * object_size);
   //read the entire object
   file.read(data, object_size);
   return object_size;
@@ -90,8 +97,8 @@ unsigned Database::Get(unsigned id, unsigned row, char *&data)
   }
   //allocate memory to return
   data = new char[rows[row]];
-  //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + split_size);
+  //go to the spot in the file, (3 + rows.size()) * sizeof(unsigned) is the size of the header
+  file.seekg((3 + rows.size()) * sizeof(unsigned) + id * object_size + split_size);
   //read just the specified row
   file.read(data, rows[row]);
   return rows[row];
@@ -105,16 +112,10 @@ void Database::Set(unsigned id, unsigned row, const void *data)
   {
     split_size += rows[i];
   }
-  //go to the spot in the file, (2 + rows.size()) * sizeof(unsigned) is the size of the header
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + split_size);
+  //go to the spot in the file, (3 + rows.size()) * sizeof(unsigned) is the size of the header
+  file.seekg((3 + rows.size()) * sizeof(unsigned) + id * object_size + split_size);
   //write the data
   file.write(reinterpret_cast<const char*>(data), rows[row]);
-  //if we are edting an object that is past size we need to update size
-  if (size < id)
-  {
-    size = id;
-    UpdateSize();
-  }
 }
 int Database::Create()
 {
@@ -131,7 +132,7 @@ int Database::Create()
   {
     unsigned id = size;
     //seek past the spot in the file so that it can be read from
-    file.seekg((2 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
+    file.seekg((3 + rows.size()) * sizeof(unsigned) + id * object_size + object_size);
     file.write("c", 1);
     //update the size
     size += 1;
@@ -151,7 +152,7 @@ void Database::Delete(unsigned id)
     }
   }
   //add the id to the end of the list of id's
-  file.seekg((2 + rows.size()) * sizeof(unsigned) + size * object_size + object_size + num_ids * sizeof(unsigned));
+  file.seekg((3 + rows.size()) * sizeof(unsigned) + size * object_size + object_size + num_ids * sizeof(unsigned));
   file.write(reinterpret_cast<char*>(&id), sizeof(id));
   //update the local list
   reusable_ids.push_back(id);
@@ -170,7 +171,7 @@ std::vector<unsigned> Database::Find(unsigned row, char *value)
   char *buffer = new char[rows[row]];
   for (unsigned i = 0; i < size; ++i)
   {
-    file.seekg((2 + rows.size()) * sizeof(unsigned) + i * object_size + split_size);
+    file.seekg((3 + rows.size()) * sizeof(unsigned) + i * object_size + split_size);
     file.read(buffer, rows[row]);
     if (memcmp(buffer, value, rows[row]) == 0)
     {

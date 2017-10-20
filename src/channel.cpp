@@ -1,4 +1,4 @@
-
+#include <iostream>
 
 #include "channel.h"
 
@@ -56,6 +56,8 @@ void Channel::Update(double dt)
     {
       //add the connection to be removed
       to_remove.push_back(&it->first);
+      std::cout << std::endl << "Connection unresponsive***************" << std::endl;
+      abort();
     }
     if (it->second.ping_timer <= 0)
     {

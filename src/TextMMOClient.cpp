@@ -20,8 +20,13 @@
 #include "prioritization.h"
 #include "encryption.h"
 
-int main()
+int main(int argc, char **argv)
 {
+  if (argc == 1)
+  {
+    std::cout << "Usage:" << std::endl << argv[0] << " xpos1  ypos1  message1 [number of times to send, default one]" << std::endl;
+    return 1;
+  }
     //load in config file
   Config config;
   config.Init("TextMMOClient.conf");
@@ -53,28 +58,31 @@ int main()
   //the address we recieve from
   sockaddr_in from;
 
-  //tell the server i exist and that i want them old messages
+  //tell the server I exist and that I want them old messages
   stack.Send(buffer, 1, &server, flags);
 
-  //send message, only send one message because its blocing
-  float x;
-  float y;
-  std::cout << "Enter a x position : ";
-  std::cin >> x;
-  std::cout << "Enter a y position : ";
-  std::cin >> y;
-  std::cout << "Enter message :" << std::endl;
-  std::string str;
-  std::cin >> str;
-  //put info into the buffer
-  *reinterpret_cast<float*>(buffer) = x;
-  *reinterpret_cast<float*>(buffer+sizeof(float)) = y;
-  memcpy(buffer+sizeof(float)*2, str.c_str(), str.length()+1);
-  //send message to the server
-  stack.Send(buffer, sizeof(float) * 2 + str.length()+1, &server, flags);
+  int num = 1;
+  if (argc == 5)
+  {
+    num = atoi(argv[4]);
+  }
+  int counter = 0;
   //main loop
   while (1)
   {
+    //send the message num times
+    if (counter >= 100000 && num-- > 0)
+    {
+      //put info into the buffer
+      *reinterpret_cast<float*>(buffer) = atoi(argv[1]);
+      *reinterpret_cast<float*>(buffer+sizeof(float)) = atoi(argv[2]);
+      strcpy(buffer+sizeof(float)*2, argv[3]);
+      //send message to the server
+      stack.Send(buffer, sizeof(float) * 2 + strlen(argv[3])+1, &server, flags);
+      std::cout << "sent " << num << std::endl;
+      counter = 0;
+    }
+    counter += 1;
     while(1)
     {
       //recieve message

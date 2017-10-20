@@ -9,6 +9,7 @@
 */
 #include <vector>
 #include <iostream>
+#include <chrono>
 
 #include "meta.h"
 #include "config.h"
@@ -23,7 +24,9 @@
 #include "protocol.h"
 #include "remote_database.h" 
 
-//this should be about a day(I rounded to nearest fun number)
+//how often a find request is sent in seconds
+#define FINDRATE 0.05
+//the max age of a message in cycles (to comput the max age in seconds = MAXAGE * FINDRATE * MAXAGE)
 #define MAXAGE 1337
 
 /*!
@@ -213,7 +216,22 @@ public:
     delete [] msg_data;
     saved.erase(saved.find(s_nonce));
   }
+  /*!
+    \brief
+      used for perfomance testing
+  */
+  std::chrono::high_resolution_clock::time_point timer;
     /*!
+    \brief
+      used for perfomance testing
+  */
+  double time_spent;
+    /*!
+    \brief
+      used for perfomance testing
+  */
+  double average = 0;
+  /*!
     \brief
       callback function for when a find response comes from db
     \param data
@@ -221,6 +239,16 @@ public:
   */
   void FindCallback(void *data)
   {
+    //static int ccc = 0;
+    //std::cout << ccc++ << std::endl;
+    //get the time between find calls
+    time_spent = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - timer).count();
+    average = 0.9 * average + 0.1 * time_spent;
+    timer = std::chrono::high_resolution_clock::now();
+    if (counter == 0)
+    {
+      std::cout << "Time between Finds = " << average << std::endl;
+    }
     //remove old connections from new_conn
     for (unsigned i = 0; i < new_conn.size(); ++i)
     {
@@ -268,24 +296,12 @@ public:
       n = CreateGetMessage(buffer, ary[i], 3);
       stack->Send(buffer, n, event->addr, *flags);
     }
-    //if there was 100 ids then there are more coming
-    //otherwise decrement the counter and send a find request to the database for the next batch of ids
-    if (num != 100)
-    {
-      counter -= 1;
-      if (counter < 0)
-      {
-        counter = MAXAGE;
-      }
-      int n = CreateFindMessage(buffer, 2, &counter, sizeof(counter));
-      stack->Send(buffer, n, event->addr, *flags);
-    }
   }
 };
 
 int main()
 {
-    //load in config file
+  //load in config file
   Config config;
   config.Init("TextMMO.conf");
 
@@ -310,6 +326,7 @@ int main()
   char buffer[MAXPACKETSIZE];
   //the address we recieve from
   sockaddr_in from;
+  double find_timer = 0;
 
   //create the addres for the database
   sockaddr_in db_addr;
@@ -405,6 +422,20 @@ int main()
         }
       }
     }
+    //check if we should send another find call
+    if (find_timer < stack.timer.GetTotalTime())
+    {
+      find_timer += FINDRATE;
+      //std::cout << "sent find" << std::endl;
+      obj.counter -= 1;
+      if (obj.counter < 0)
+      {
+        obj.counter = MAXAGE;
+      }
+      int n = CreateFindMessage(buffer, 2, &obj.counter, sizeof(obj.counter));
+      stack.Send(buffer, n, &db_addr, flags);
+    }
+
     stack.Update();
   }
 }

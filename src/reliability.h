@@ -14,12 +14,14 @@
 #include "network_stack.h"
 
 //the number of acks to save at a time
-#define RESENDSIZE 300
+#define RESENDSIZE 3000
 
 //size in bytes of the acknowlegement number, max size is sizeof(unsigned)
 #define ACKSIZE 2
 
-#define RESENDFRACTION 3.0/2.0
+//this is how many ping times before resending a packet 
+#define RESENDFRACTION 3.0
+
 
 /*!
   \brief

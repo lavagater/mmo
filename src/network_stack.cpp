@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "network_stack.h"
-
+#include <iostream>
 NetworkLayer::~NetworkLayer(){}
 
 NetworkStack::NetworkStack(SOCKET socket)
@@ -70,6 +70,16 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 		new_buf[i] = flags.buffer[i];
 	}
 	sent += HEADERSIZE/8;
+	//debug the total bytes sent
+	static double bytes_send = 0;
+	static double counter = 0;
+	bytes_send += sent;
+	if (timer.GetTotalTime() - counter > 10)
+	{
+		std::cout << "average bytes per second send = " <<bytes_send/timer.GetTotalTime() << std::endl;
+		std::cout << "bandwidth = " << GetBandwidth() << std::endl;
+		counter = timer.GetTotalTime();
+	}
 	//update bytes sent for bandwidth
 	bytes_sent += sent;
 	//calling the socket library send function
@@ -83,6 +93,15 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 	{
 		last_error= GetError();
 		return last_error;
+	}
+	//debug the total bytes recieved
+	static double bytes_recieved = 0;
+	static double counter = 0;
+	bytes_recieved += recv;
+	if (timer.GetTotalTime() - counter > 10)
+	{
+		std::cout << "average bytes per second recieved = " <<bytes_recieved/timer.GetTotalTime() << std::endl;
+		counter = timer.GetTotalTime();
 	}
 	//packet cant be less than the header size, the packet must be bad
 	if (recv < HEADERSIZE/8)

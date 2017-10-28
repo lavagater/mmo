@@ -62,7 +62,26 @@ public:
   void CreateCallback(void *data)
   {
     NetworkEvent *event = static_cast<NetworkEvent*>(data);
-    std::cout << "create" << event << std::endl;
+    int nounce = *reinterpret_cast<int*>(event->buffer+1);
+    unsigned id = *reinterpret_cast<unsigned*>(event->buffer+1+sizeof(int));
+    std::cout << "create for nounce " << nounce << " id = " << id << std::endl;
+
+    //set the to random values
+    char buffer[100];
+    //hp is set between 0 and 100
+    float hp = rand() / (double)RAND_MAX * 100;
+    int n = CreateSetMessage(buffer, id, 0, &hp, sizeof(float));
+    stack->Send(buffer, n, event->addr, *flags);
+
+    //level also between 0 and 100
+    int level = rand() % 100;
+    n = CreateSetMessage(buffer, id, 1, &level, sizeof(int));
+    stack->Send(buffer, n, event->addr, *flags);
+
+    //null pointer
+    char null_reference[8] = {0};
+    n = CreateSetMessage(buffer, id, 2, &null_reference, 8);
+    stack->Send(buffer, n, event->addr, *flags);
   }
   /*!
     \brief
@@ -122,8 +141,8 @@ int main()
 
   //create the addres for the database
   sockaddr_in db_addr;
-  std::string ip = static_cast<std::string>(config.properties["db_ip"]);
-  CreateAddress(ip.c_str(), static_cast<int>(config.properties["db_port"]), &db_addr);
+  std::string ip = static_cast<std::string>(config.properties["player_db_ip"]);
+  CreateAddress(ip.c_str(), static_cast<int>(config.properties["player_db_port"]), &db_addr);
   //make the remote database
   RemoteDatabase remotedb;
   //make a callback class to recieve the messages from the database
@@ -134,6 +153,9 @@ int main()
   remotedb.db_events[db_addr].ConnectEvent(DatabaseGetEvent, &obj, &DatabaseCallback::GetCallback);
   remotedb.db_events[db_addr].ConnectEvent(DatabaseCreateEvent, &obj, &DatabaseCallback::CreateCallback);
   remotedb.db_events[db_addr].ConnectEvent(DatabaseFindEvent, &obj, &DatabaseCallback::FindCallback);
+
+  int nounce = 0;
+  double timer = 0;
   //main loop
   while (1)
   {
@@ -161,6 +183,17 @@ int main()
         }
       }
     }
+
+    //create a player every second
+    if (timer > 0.05)
+    {
+      int msg_len = CreateCreateMessage(buffer, nounce++);
+      stack.Send(buffer, msg_len, &db_addr, flags);
+      timer = 0;
+    }
+    timer += stack.timer.GetTime();
+
+
     stack.Update();
   }
 }

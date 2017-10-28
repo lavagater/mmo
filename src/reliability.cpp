@@ -51,7 +51,9 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
     unsigned index = last_ack % RESENDSIZE;
     if (packets[index].packet)
     {
-      std::cout << "hhh kool" << std::endl;
+      //sent to many reliable messages
+      std::cout << "ran out of acks message not sent" << std::endl;
+      return RELIABLELIMIT;
     }
     //remove the old data
     delete [] packets[index].packet;

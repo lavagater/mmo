@@ -42,6 +42,12 @@
 #define BANDWIDTHLIMIT -125
 /*!
   \brief
+    Error message for when too many reliable messages are being sent. This is returned in reliablilty
+    layer if there are no more ack numbers to give out. the max number of acks is defined as RESENDSIZE
+*/
+#define RELIABLELIMIT -126
+/*!
+  \brief
     enum for header flags
 */
 enum

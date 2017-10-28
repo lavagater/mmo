@@ -11,3 +11,5 @@
 
 -increase the number of database request types, i.e. more specific find methods(find float, find string, find float between x and y, find first)
   -see what can be done to make creating these easy, so they can be made as I need them
+
+-Remark(bug?), if a client is terminated then started up again before the connection is removed the server will remember the old port and will send to old port, but pings still work so it is a non-communicating connection

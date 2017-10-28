@@ -56,8 +56,7 @@ void Channel::Update(double dt)
     {
       //add the connection to be removed
       to_remove.push_back(&it->first);
-      std::cout << std::endl << "Connection unresponsive***************" << std::endl;
-      abort();
+      std::cout << std::endl << "Connection removed" << std::endl;
     }
     if (it->second.ping_timer <= 0)
     {

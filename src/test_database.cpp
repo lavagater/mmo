@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <time.h>
 
 #include "meta.h"
 #include "config.h"
@@ -107,12 +108,17 @@ public:
   void FindCallback(void *data)
   {
     NetworkEvent *event = static_cast<NetworkEvent*>(data);
-    std::cout << "found" << event << std::endl;
+    //the number of ids in the find call
+    int num = event->buffer[sizeof(unsigned)*2+1];
+    //the row its searching for
+    unsigned row = *reinterpret_cast<unsigned*>(event->buffer+1);
+    std::cout << "found " << num << " row " << row << std::endl;
   }
 };
 
 int main()
 {
+  unsigned test_num = 1;
   //load in config file
   Config config;
   config.Init("test_database.conf");
@@ -184,14 +190,34 @@ int main()
       }
     }
 
-    //create a player every second
-    if (timer > 0.05)
+    switch (test_num)
     {
-      int msg_len = CreateCreateMessage(buffer, nounce++);
-      stack.Send(buffer, msg_len, &db_addr, flags);
-      timer = 0;
+      case 0:
+      {
+        //create a player every 0.05 seconds
+        if (timer > 0.05)
+        {
+          int msg_len = CreateCreateMessage(buffer, nounce++);
+          stack.Send(buffer, msg_len, &db_addr, flags);
+          timer = 0;
+        }
+        timer += stack.timer.GetTime();
+        break;
+      }
+      case 1:
+      {
+        //find different players
+        if (timer > 0.05)
+        {
+          int level = rand()%100;
+          int msg_len = CreateFindMessage(buffer, 1, reinterpret_cast<char*>(&level), sizeof(level));
+          stack.Send(buffer, msg_len, &db_addr, flags);
+          timer = 0;
+        }
+        timer += stack.timer.GetTime();
+        break;
+      }
     }
-    timer += stack.timer.GetTime();
 
 
     stack.Update();

@@ -74,6 +74,7 @@ int main(int argc, char **argv)
 	int num_failed = 0;
 	for (;i < sizeof(tests) / sizeof(tests[0]); ++i)
 	{
+		std::cout << "test "<<i << std::endl;
 		if (!tests[i]())
 		{
 			num_failed += 1;
@@ -1011,8 +1012,11 @@ bool TestEncryptionLayer()
 bool TestDatabase()
 {
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
+	std::vector<unsigned> types = { Database::Types::String, Database::Types::Double, Database::Types::Double, 
+		                              Database::Types::Short, Database::Types::Char, Database::Types::Integer };
+  std::vector<unsigned> sorted = {1, 1, 1, 1, 1, 1};
 	//makes a new table replacing the old one
-	Database db("test_table.tbl", rows);
+	Database db("test_table.tbl", rows, types, sorted);
 	char buffer[16+8+8+2+1+4] = {0};
 	//try finding an element when there are no elemenets
 	//does not matter whats in buffer
@@ -1039,6 +1043,10 @@ bool TestDatabase()
 	{
 		//get a random id to test
 		unsigned id = rand()%db.size;
+		if (id == 0)
+		{
+			id = 1;
+		}
 		//random row
 		unsigned row = rand()%rows.size();
 		//randomise the value
@@ -1063,6 +1071,11 @@ bool TestDatabase()
 		if (found == false)
 		{
 			PRINT_ERROR();
+			std::cout << res.size() << " id= " << id << " row = " << row << std::endl;
+			if (res.size() > 0)
+			{
+				std::cout << res[0] << std::endl;
+			}
 			return false;
 		}
 	}
@@ -1071,6 +1084,11 @@ bool TestDatabase()
 	{
 		//get a random id to test, (this could be the id of a deleted object nd that should be fine)
 		unsigned id = rand()%db.size;
+		//make sure its not null id
+		if (id == 0)
+		{
+			id = 1;
+		}
 		//random row
 		unsigned row = rand()%rows.size();
 		//randomise the value

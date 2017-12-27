@@ -15,19 +15,27 @@
 void DatabaseFindTest()
 {
   std::vector<unsigned> rows = { 4, 1};
+  std::vector<unsigned> types = { Database::Types::Integer, Database::Types::Char};
+  std::vector<unsigned> sorted = { 1, 1};
   //table with an integer and a char
-  Database db_small("speed_test_small.tbl", rows);
+  Database db_small("speed_test_small.tbl", rows, types, sorted);
   //add some more ints
   for (int i = 0; i < 30; ++i)
   {
     rows.push_back(4);
+    types.push_back(Database::Types::Integer);
+    sorted.push_back(1);
   }
   //table with integer a char and 30 integers
-  Database db_medium("speed_test_medium.tbl", rows);
+  Database db_medium("speed_test_medium.tbl", rows, types, sorted);
   //make a large table same as medium plus 500 bytes and 1000 bytes
   rows.push_back(500);
+  types.push_back(Database::Types::String);
+  sorted.push_back(0);
   rows.push_back(1000);
-  Database db_large("speed_test_large.tbl", rows);
+  types.push_back(Database::Types::String);
+  sorted.push_back(0);
+  Database db_large("speed_test_large.tbl", rows, types, sorted);
   //put an element in each database
   db_small.Create();
   db_medium.Create();
@@ -41,7 +49,7 @@ void DatabaseFindTest()
   std::chrono::high_resolution_clock::time_point timer;
   double time_spent;
 
-  //test speed of small database nearly empty
+  //test speed of small database empty
   timer = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < 100000; ++i)
   {
@@ -50,7 +58,7 @@ void DatabaseFindTest()
   time_spent = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - timer).count();
   std::cout << "small databse one item " << time_spent / 100000.0 << " seconds" << std::endl;
 
-  //test speed of medium database nearly empty
+  //test speed of medium database empty
   timer = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < 100000; ++i)
   {
@@ -59,7 +67,7 @@ void DatabaseFindTest()
   time_spent = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - timer).count();
   std::cout << "medium databse one item " << time_spent / 100000.0 << " seconds" << std::endl;
 
-  //test speed of large database nearly empty
+  //test speed of large database empty
   timer = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < 100000; ++i)
   {

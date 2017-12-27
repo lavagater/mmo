@@ -122,7 +122,6 @@ int main()
           //find
           unsigned row = *reinterpret_cast<unsigned*>(buffer+1);
           std::vector<unsigned> ids = db.Find(row, buffer+1+sizeof(unsigned));
-          std::cout << ids.size() << std::endl;
           //create the response
           //redundant
           buffer[0] = Protocol::DatabaseFind;
@@ -134,8 +133,6 @@ int main()
           //is more than 100 id's we send more than one message, each message has the same first couple bytes)
           while(1)
           {
-            static int ccc = 0;
-            std::cout << ccc++ << std::endl;
             unsigned num = std::min(ids.size(),(long unsigned)(100));
             //num is between 0-100 so it fits in a char
             buffer[1+sizeof(unsigned) + db.rows[row]] = num;

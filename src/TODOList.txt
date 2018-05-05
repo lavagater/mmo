@@ -5,8 +5,6 @@
 -Move testcode (like unit test and test_database and stress test) into a different folder
   -Design a system to allow for using the code from different folder so that engine code and game code dont get mixed
 
--Rewrite database to use skip list
-
 -write more functions that create the message protocol for you, those look nice
 
 -increase the number of database request types, i.e. more specific find methods(find float, find string, find float between x and y, find first)

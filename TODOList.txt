@@ -1,0 +1,17 @@
+//List of things I want to do or bugs i want to fix in no particular order
+
+-Fix make file to not compile everything
+
+-Move testcode (like unit test and test_database and stress test) into a different folder
+  -Design a system to allow for using the code from different folder so that engine code and game code dont get mixed
+
+-write more functions that create the message protocol for you, those look nice
+
+-increase the number of database request types, i.e. more specific find methods(find float, find string, find float between x and y, find first)
+  -see what can be done to make creating these easy, so they can be made as I need them
+
+-Remark(bug?), if a client/server shuts down then starts back up before the connection is terminated then reliable messages acks could be off for up to RESENDSIZE number of packets, which means the message will be assumed that it was resent and will ignore it but send back an ack saying its been seen, so the packet is essentially droped. To fix this I am going to make a reconnect message or something that will remove the connection then re add it
+
+-There is a problem with sending a lot of messages (mainly reliable ones) where we send more than the computer can send and they will get dropped at a very high rate until almost no messages are being sent and the ping messages are also dropped and the clients get disconnected. I dont know how to detect if this is happening since the send function says the packets are being sent just fine, I dont know if its the bytes per second or the packets per second that affect it more. Another probelm of if I figure out how to detect it is what to do to fix it, what packets to not send. 
+
+-fix unit tests so that they are more concise, ie remove giant functions like TestDatabase and make smaller ones like TestDatabaseFind

@@ -32,7 +32,8 @@
 *.app
 
 # Doxygen folder
-src/doxygen
+doxygen
+build
 
 # Database Tables
 *.tbl

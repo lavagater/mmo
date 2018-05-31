@@ -186,6 +186,10 @@ int Listen(SOCKET socket, int backlog)
 }
 SOCKET Accept(SOCKET socket, sockaddr_in* addr)
 {
+#ifdef _WIN32
+  int len = sizeof(*addr);
+#else
   unsigned len = sizeof(*addr);
+#endif
   return accept(socket,  (sockaddr *)(addr), &len);
 }

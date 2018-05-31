@@ -908,6 +908,11 @@ static std::string name_node(unsigned id, unsigned file_id, unsigned level, char
   return ss.str();
 }
 
+int my_min(int lhs, int rhs)
+{
+  return (((lhs) < (rhs)) ? (lhs) : (rhs));
+}
+
 std::string Database::ToGraphViz(unsigned row)
 {
   std::string graph = "digraph {rankdir=LR;";
@@ -927,7 +932,7 @@ std::string Database::ToGraphViz(unsigned row)
     skip_lists[row].read(reinterpret_cast<char*>(&id), sizeof(id));
     skip_lists[row].read(data, rows[row]);
     //add a connection for each level
-    for (unsigned i = 0; i < (unsigned)std::min(level, max_level[row]); ++i)
+    for (unsigned i = 0; i < (unsigned)my_min(level, max_level[row]); ++i)
     {
       unsigned next;
       skip_lists[row].seekg(walker + rows[row] + sizeof(unsigned) * (2 + i) + sizeof(int));

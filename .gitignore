@@ -26,6 +26,23 @@
 *.a
 *.lib
 
+# Visual studio
+*.ilk
+*.pbd
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.log
+*.ibd
+*.pdb
+*.tlog
+*.lastbuildstate
+*.suo
+*.db
+*.opendb
+*.ipch
+*.idb
+
 # Executables
 *.exe
 *.out

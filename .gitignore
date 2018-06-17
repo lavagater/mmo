@@ -42,6 +42,7 @@
 *.opendb
 *.ipch
 *.idb
+*.exp
 
 # Executables
 *.exe

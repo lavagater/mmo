@@ -1,7 +1,7 @@
 #include <string.h>
-#include <iostream>
 
 #include "reliability.h"
+#include "logger.h"
 
 Reliability::~Reliability()
 {
@@ -52,7 +52,7 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
     if (packets[index].packet)
     {
       //sent to many reliable messages
-      std::cout << "ran out of acks message not sent" << std::endl;
+      LOG("ran out of acks message not sent" << std::endl);
       return RELIABLELIMIT;
     }
     //remove the old data
@@ -79,7 +79,7 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
 }
 int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  std::cout << "reliablilty recieve" << std::endl;
+  LOG("reliablilty recieve" << std::endl);
   //check if this message is reliable
   if (flags[ReliableFlag])
   {
@@ -172,10 +172,8 @@ void Reliability::Update(__attribute__((unused))double dt)
             //reset the send time, we added on the resend time because if the client did not get the first one and the second one
             //there is probably an issue with their connection and we probably should not bonbard them with resent packets
             it->second[i].time = cur_time + resend_time;
-            //std::cout << "cur_time = " << cur_time <<" resend tme = "<< resend_time << " ping = " << stack->connections[it->first].ping <<std::endl; 
             //resend the message
             stack->Send(it->second[i].packet, it->second[i].bytes, &it->first, it->second[i].flags, layer_id-1);
-            //std::cout << "Resend msg " << it->second[i].time << " index = " << i << " b = " << stack->GetBandwidth() << std::endl;
           }
         }
       }

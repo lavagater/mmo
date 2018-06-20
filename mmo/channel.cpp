@@ -1,5 +1,4 @@
-#include <iostream>
-
+#include "logger.h"
 #include "channel.h"
 
 
@@ -12,7 +11,7 @@ int Channel::Send(__attribute__((unused))char* buffer, int bytes, const sockaddr
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  std::cout << "channel recieved" << std::endl;
+  LOG("channel recieved" << std::endl);
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {
@@ -57,7 +56,7 @@ void Channel::Update(double dt)
     {
       //add the connection to be removed
       to_remove.push_back(&it->first);
-      std::cout << std::endl << "Connection removed" << std::endl;
+      LOG(std::endl << "Connection removed" << std::endl);
     }
     if (it->second.ping_timer <= 0)
     {

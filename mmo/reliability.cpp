@@ -79,6 +79,7 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
 }
 int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
+  std::cout << "reliablilty recieve" << std::endl;
   //check if this message is reliable
   if (flags[ReliableFlag])
   {

@@ -46,8 +46,8 @@ reusable_ids(), object_size(0)
     //if its sorted then use actual values
     if (row_is_sorted)
     {
-      std::string temp_name = std::to_string(i);
-      temp_name += table_name;
+      std::string temp_name = table_name;
+      temp_name += std::to_string(i);
       skip_lists[i].open(temp_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out);
       skip_lists[i].read(reinterpret_cast<char*>(&skip_size[i]), sizeof(unsigned));
 
@@ -132,8 +132,8 @@ file(table_name, std::ios_base::binary |
     max_level.push_back(0);
     if (row_sorted)
     {
-      std::string temp_name = std::to_string(i);
-      temp_name += table_name;
+      std::string temp_name = table_name;
+      temp_name += std::to_string(i);
       //save the file name
       file_names[&skip_lists[i]] = temp_name;
       //make the skip list file

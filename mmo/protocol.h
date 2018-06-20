@@ -20,6 +20,7 @@ enum Protocol
   DatabaseCreate,
   DatabaseFind,
   DatabaseDelete,
+  EncryptionKey,
   num
 };
 /*!

@@ -4,7 +4,7 @@ CXX = g++
 CXX_FLAGS = -Wall -Wextra -Werror -ansi -pedantic --std=c++11 $(INCLUDES)
 
 # Final binary
-BIN = a.out
+BIN = load_balancer.out
 BIN_DIR = bin
 # Put all auto generated stuff to this build dir.
 BUILD_DIR = ../build

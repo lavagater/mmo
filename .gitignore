@@ -55,3 +55,6 @@ build
 
 # Database Tables
 *.tbl
+
+#vs code folder
+.vscode

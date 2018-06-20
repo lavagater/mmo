@@ -343,7 +343,7 @@ bool TestStringToValue()
 bool TestConfig()
 {
 	Config config;
-	config.Init("test_conf.txt");
+	config.Init("resources/test_conf.txt");
 	if ((float)config.properties["item1"] != 34.5)
 	{
 		PRINT_ERROR();
@@ -1016,7 +1016,7 @@ bool TestDatabase()
 		                              Database::Types::Short, Database::Types::Char, Database::Types::Integer };
   std::vector<unsigned> sorted = {1, 1, 1, 1, 1, 1};
 	//makes a new table replacing the old one
-	Database db("test_table.tbl", rows, types, sorted);
+	Database db("generated/test_table.tbl", rows, types, sorted);
 	char buffer[16+8+8+2+1+4] = {0};
 	//try finding an element when there are no elemenets
 	//does not matter whats in buffer

@@ -12,6 +12,7 @@ int Channel::Send(__attribute__((unused))char* buffer, int bytes, const sockaddr
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
+  std::cout << "channel recieved" << std::endl;
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {

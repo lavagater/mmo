@@ -58,4 +58,4 @@ $(foreach var,$(CPP),$(eval $(call targets,$(var))))
 .PHONY : clean
 clean :
 	# This should remove all generated files.
-	-rm $(BUILD_DIR)/$(BIN) $(OBJ) $(DEP)
+	-rm $(BIN_DIR)/$(BIN) $(OBJ) $(DEP)

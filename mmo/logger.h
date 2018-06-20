@@ -27,14 +27,14 @@
   \brief
     Macro to add usefull information to the log
 */
-#define LOG(x) (Logger::Notification() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << " " << x)
+#define LOG(x) Logger::Notification() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x
 
 
 /*!
   \brief
     Same as LOG but for warnings
 */
-#define LOGW(x) (Logger::Notification() << " Warning " << Logger::Warning() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << " ")
+#define LOGW(x) LOG("*** Warning ***\n" << x); Logger::Warning() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x
 
 
 /*!

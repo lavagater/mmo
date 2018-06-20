@@ -29,6 +29,7 @@ extern std::vector<int> dll_unused_ids;
 
 
 extern "C" {
+  NETWORK_DLL_API void Update(int id);
   NETWORK_DLL_API int CreateSession(char *ip, int port);
   NETWORK_DLL_API void DeleteSession(int id);
   NETWORK_DLL_API int SessionSend(int id, char *data, int length);

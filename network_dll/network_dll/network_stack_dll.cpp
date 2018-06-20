@@ -14,6 +14,10 @@ std::vector<session> dll_sessions;
 std::vector<int> dll_unused_ids;
 
 extern "C" {
+  void Update(int id)
+  {
+    dll_sessions[id].stack->Update();
+  }
   int CreateSession(char *ip, int port)
   {
     Init();

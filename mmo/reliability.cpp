@@ -106,6 +106,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
     }
     else
     {
+      LOG("Already seen" << std::endl);
       //check that the message is no to small, screw you hackers
       if (bytes < ACKSIZE)
       {

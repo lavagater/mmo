@@ -3,6 +3,7 @@
 
 #include "blowfish.h"
 #include "encryption.h"
+#include "logger.h"
 
 int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags)
 {
@@ -41,6 +42,7 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
 }
 int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
+  LOG("Encryption begin" << std::endl);
   if (flags[EncryptFlag])
   {
     //if there is no key set for this encryption then we cant do anything with it...
@@ -49,6 +51,7 @@ int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray
       //set error
       if (stack)
         stack->last_error = NOENCRYPTIONKEY;
+      LOGW("NOENCRYPTIONKEY" << std::endl);
       return NOENCRYPTIONKEY;
     }
     //get the number of bytes of original message
@@ -69,6 +72,7 @@ int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray
   }
   else
   {
+    LOG("Not encrypted" << std::endl);
     //not encypted do nothing
     return bytes;
   }

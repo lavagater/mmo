@@ -21,13 +21,14 @@
 #include "prioritization.h"
 #include "encryption.h"
 #include "protocol.h"
+#include "logger.h"
 
 int main()
 {
   //load in config file
   Config config;
   config.Init("resources/load_balancer.conf");
-  std::cout << "config loaded" << std::endl;
+  LOG("config loaded" << std::endl);
   //setup the network stack
   Init();
   SOCKET sock = CreateSocket(IPPROTO_UDP);
@@ -49,7 +50,7 @@ int main()
   char buffer[MAXPACKETSIZE];
   //the address we recieve from
   sockaddr_in from;
-  std::cout << "entering while loop" << std::endl;
+  LOG("entering while loop" << std::endl);
   //main loop
   while(true)
   {
@@ -58,7 +59,7 @@ int main()
     //make sure the message is big enough 1 byte for message type 2 unsigned's
     if (n > 0)
     {
-      std::cout << "msg got" << std::endl;
+      LOG("Recieved message of length " << n);
       //handle message
       switch (buffer[0])
       {
@@ -73,8 +74,8 @@ int main()
         break;
         default:
         {
-          std::cout << "sending back" << std::endl;
-        stack.Send(buffer, n, &from, flags);
+          LOG("sending back" << std::endl);
+          stack.Send(buffer, n, &from, flags);
         }
         break;
       }

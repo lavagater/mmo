@@ -37,6 +37,7 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
     }
     else
     {
+      LOGW("MALEFORMEDPACKET" << std::endl);
       return MALEFORMEDPACKET;
     }
   }

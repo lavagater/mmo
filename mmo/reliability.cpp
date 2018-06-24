@@ -90,6 +90,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       //make sure the number of bytes is correct
       if (bytes != ACKSIZE)
       {
+        LOGW("MALEFORMEDPACKET" << std::endl);
         return MALEFORMEDPACKET;
       }
       //remove the saved message for the ack
@@ -108,6 +109,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       //check that the message is no to small, screw you hackers
       if (bytes < ACKSIZE)
       {
+        LOGW("MALEFORMEDPACKET" << std::endl);
         return MALEFORMEDPACKET;
       }
       //extract the ack

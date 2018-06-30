@@ -11,7 +11,6 @@ int Channel::Send(__attribute__((unused))char* buffer, int bytes, const sockaddr
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOG("channel recieved" << std::endl);
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {
@@ -57,7 +56,6 @@ void Channel::Update(double dt)
     {
       //add the connection to be removed
       to_remove.push_back(&it->first);
-      LOG(std::endl << "Connection removed" << std::endl);
     }
     if (it->second.ping_timer <= 0)
     {
@@ -75,7 +73,9 @@ void Channel::Update(double dt)
   //remove the connections
   for (unsigned i = 0; i < to_remove.size(); ++i)
   {
+    LOG(std::endl << "Connection removed, start" << std::endl);
     stack->RemoveConnection(to_remove[i]);
+    LOG(std::endl << "Connection removed, finish" << std::endl);
   }
 }
 void Channel::RemoveConnection(__attribute__((unused))const sockaddr_in*addr)

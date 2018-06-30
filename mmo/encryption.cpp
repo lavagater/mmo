@@ -42,7 +42,6 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
 }
 int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOG("Encryption begin" << std::endl);
   if (flags[EncryptFlag])
   {
     //if there is no key set for this encryption then we cant do anything with it...
@@ -72,7 +71,6 @@ int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray
   }
   else
   {
-    LOG("Not encrypted" << std::endl);
     //not encypted do nothing
     return bytes;
   }

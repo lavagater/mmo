@@ -74,7 +74,8 @@ int main()
         break;
         default:
         {
-          LOG("sending back" << std::endl);
+          buffer[n] = 0;
+          LOG("sending back: " << buffer << std::endl);
           stack.Send(buffer, n, &from, flags);
         }
         break;

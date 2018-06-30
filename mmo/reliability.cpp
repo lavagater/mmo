@@ -79,7 +79,6 @@ int Reliability::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray
 }
 int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOG("reliablilty recieve" << std::endl);
   //check if this message is reliable
   if (flags[ReliableFlag])
   {
@@ -106,7 +105,6 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
     }
     else
     {
-      LOG("Already seen" << std::endl);
       //check that the message is no to small, screw you hackers
       if (bytes < ACKSIZE)
       {

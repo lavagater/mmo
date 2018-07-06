@@ -193,9 +193,21 @@ void Reliability::RemoveConnection(const sockaddr_in *addr)
     delete [] resends[*addr];
   }
   delete [] client_acks[*addr];
-  resends.erase(resends.find(*addr));
-  next_ack.erase(next_ack.find(*addr));
-  client_acks.erase(client_acks.find(*addr));
+  auto resends_it = resends.find(*addr);
+  if (resends_it != resends.end())
+  {
+    resends.erase(resends_it);
+  }
+  auto client_acks_it = client_acks.find(*addr);
+  if (client_acks_it != client_acks.end())
+  {
+    client_acks.erase(client_acks_it);
+  }
+  auto next_ack_it = next_ack.find(*addr);
+  if (next_ack_it != next_ack.end())
+  {
+    next_ack.erase(next_ack_it);
+  }
 }
 int Reliability::get_ack()
 {

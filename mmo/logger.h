@@ -25,6 +25,12 @@
 
 /*!
   \brief
+    Turns a buffer into hex
+*/
+std::string ToHexString(char *buffer, int length);
+
+/*!
+  \brief
     Macro to add usefull information to the log
 */
 #define LOG(x) Logger::Notification() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x

@@ -2,6 +2,25 @@
 #include <chrono>
 #include <iomanip>
 
+std::string HexDump(char *buffer, int length)
+{
+  std::stringstream ss;
+  ss << std::hex;
+	for (int i = 0; i < length; ++i)
+	{
+		ss << (int)((unsigned char)buffer[i]) << " ";
+    if (i % 8 == 0)
+    {
+      ss << " ";
+      if (i % 16 == 0)
+      {
+        ss << std::endl;
+      }
+    }
+	}
+	return ss.str();
+}
+
 std::fstream Logger::Notification()
 {
   std::fstream file("generated/logger_notifications.log", std::ios_base::app);

@@ -2,15 +2,17 @@
 #include "channel.h"
 
 
-int Channel::Send(__attribute__((unused))char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
+int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 {
   //create the connection for this address if not already created
   stack->connections.insert(std::make_pair(*dest, ConnectionState()));
+  LOG("Sending " << ToHexString(buffer, bytes));
   return bytes;
 }
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
+  LOG("Recieving " << ToHexString(buffer, bytes));
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {
@@ -21,6 +23,7 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
       {
         //send a pong message
         *buffer = Pong;
+        LOG("Sending pong");
         stack->Send(buffer, bytes, location, flags, layer_id);
         return 0;
       }
@@ -65,6 +68,7 @@ void Channel::Update(double dt)
       *reinterpret_cast<double*>(buffer+1) = stack->timer.GetTotalTime();
       BitArray<HEADERSIZE> flags;
       flags.SetBit(MessageTypeFlag);
+      LOG("Sending Ping");
       stack->Send(buffer, 1+sizeof(double), &it->first, flags, layer_id);
       //reset timer
       it->second.ping_timer = TIME_BETWEEN_PINGS;

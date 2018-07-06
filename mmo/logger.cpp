@@ -1,6 +1,7 @@
 #include "logger.h"
 #include <chrono>
 #include <iomanip>
+#include <sstream>
 
 std::string HexDump(char *buffer, int length)
 {

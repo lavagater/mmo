@@ -97,6 +97,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       memcpy(&ack, buffer, ACKSIZE);
       if (resends[*location])
       {
+        LOG("Got ack " << ack);
         delete [] resends[*location][ack%RESENDSIZE].packet;
         //Mark that this packet no longer needs resending
         resends[*location][ack%RESENDSIZE].packet = 0;

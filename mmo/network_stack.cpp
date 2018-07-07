@@ -28,7 +28,7 @@ bool operator==(const sockaddr_in &lhs, const sockaddr_in &rhs)
 
 size_t SimpleHash(unsigned key)
 {
-	for (unsigned i = 0; i < 17; ++i)
+  for (unsigned i = 0; i < 17; ++i)
   {
     key = (key * 5915587277 + 1) % 9576890767;
   }
@@ -43,7 +43,7 @@ size_t SockAddrHash::operator()(const sockaddr_in &rhs) const
 int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer)
 {
 	//create a new buffer that can be added too
-	char new_buf[MAXPACKETSIZE];
+	char new_buf[MAXPACKETSIZE] = {0};//set to all zero for debugging
 	//leave room in buffer for header
 	memcpy(new_buf+HEADERSIZE/8, buffer, bytes);
 

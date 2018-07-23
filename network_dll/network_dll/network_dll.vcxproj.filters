@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="mmo">
+      <UniqueIdentifier>{4a06957f-eda1-4c69-96aa-28906b320b0b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\mmo\bit_array.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\blowfish.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\channel.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\config.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\database.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\encryption.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\event.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\frame_rate.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\meta.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\network_stack.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\prioritization.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\protocol.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\reliability.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\remote_database.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\timer.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\wyatt_sock.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="windows_macros.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_stack_dll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\logger.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\mmo\bit_array.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\blowfish.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\channel.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\config.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\database.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\encryption.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\event.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\event_types.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\frame_rate.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\meta.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\network_stack.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\prioritization.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\protocol.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\reliability.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\remote_database.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\timer.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\wyatt_sock.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="windows_macros.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network_stack_dll.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\logger.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\mmo\makefile">
+      <Filter>mmo</Filter>
+    </None>
+  </ItemGroup>
+</Project>

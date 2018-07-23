@@ -13,7 +13,7 @@ std::string ToHexString(char *buffer, int length)
     if (i % 8 == 0)
     {
       ss << " ";
-      if (i % 16 == 0)
+      if (i % 16 == 0 && i != 0)
       {
         ss << std::endl;
       }

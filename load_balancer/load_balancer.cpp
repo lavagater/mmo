@@ -76,10 +76,18 @@ int main()
         {
           buffer[n] = 0;
           LOG("sending back: " << buffer << std::endl);
-          stack.Send(buffer, n, &from, flags);
+          int send_err = stack.Send(buffer, n, &from, flags);
+          if (send_err < 0)
+          {
+            LOGW("Send error code = " << send_err);
+          }
         }
         break;
       }
+    }
+    else if (n != EBLOCK)
+    {
+      LOGW("recv Error code " << n);
     }
     stack.Update();
   }

@@ -9,6 +9,7 @@
 #include "prioritization.h"
 #include "encryption.h"
 #include "protocol.h"
+#include "logger.h"
 
 std::vector<session> dll_sessions;
 std::vector<int> dll_unused_ids;
@@ -73,11 +74,21 @@ extern "C" {
   }
   int SessionSend(int id, char *data, int length)
   {
-    return dll_sessions[id].stack->Send(data, length, &dll_sessions[id].server, dll_sessions[id].flags);
+    length = dll_sessions[id].stack->Send(data, length, &dll_sessions[id].server, dll_sessions[id].flags);
+	if (length == 0)
+	{
+	  LOGW("Sending message of length zero!!");
+	}
+	return length;
   }
   int SessionRecieve(int id, char *data, int length)
   {
-    return dll_sessions[id].stack->Receive(data, length, &dll_sessions[id].server);
+    length = dll_sessions[id].stack->Receive(data, length, &dll_sessions[id].server);
+	if (length == 0)
+	{
+		LOGW("Recieving message of length zero!!");
+	}
+	return length;
   }
   void EnableEncryption(int id)
   {

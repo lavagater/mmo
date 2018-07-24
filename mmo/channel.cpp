@@ -1,18 +1,19 @@
 #include "logger.h"
 #include "channel.h"
+#include "string"
 
 
 int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 {
   //create the connection for this address if not already created
   stack->connections.insert(std::make_pair(*dest, ConnectionState()));
-  LOG("Sending " << ToHexString(buffer, bytes));
+  LOG("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   return bytes;
 }
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOG("Recieving " << ToHexString(buffer, bytes));
+  LOG("Recieving " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {

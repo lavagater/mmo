@@ -10,10 +10,11 @@ std::string ToHexString(char *buffer, int length)
 	for (int i = 0; i < length; ++i)
 	{
 		ss << (int)((unsigned char)buffer[i]) << " ";
-    if (i % 8 == 0)
+    //pretty formatting
+    if (i % 8 == 0 && i != 0)
     {
       ss << " ";
-      if (i % 16 == 0 && i != 0)
+      if (i % 16 == 0)
       {
         ss << std::endl;
       }

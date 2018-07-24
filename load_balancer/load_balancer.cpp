@@ -85,7 +85,7 @@ int main()
         break;
       }
     }
-    else if (n != EBLOCK)
+    else if (n != EBLOCK && n != 0)
     {
       LOGW("recv Error code " << n);
     }

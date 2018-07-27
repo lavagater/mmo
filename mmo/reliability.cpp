@@ -122,6 +122,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       }
       //check if we have already recieved this message
       unsigned *acks = client_acks[*location];
+      LOG("location = " << location);
       if (!acks)
       {
         LOG("allocate acks");

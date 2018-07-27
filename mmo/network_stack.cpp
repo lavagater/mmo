@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "network_stack.h"
+#include "logger.h"
 
 NetworkLayer::~NetworkLayer(){}
 
@@ -84,6 +85,7 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 		last_error= GetError();
 		return last_error;
 	}
+	LOG("Recieve " << recv << " bytes");
 	//packet cant be less than the header size, the packet must be bad
 	if (recv < HEADERSIZE/8)
 	{
@@ -105,8 +107,11 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 	//call the rest of the layers
 	for (unsigned i = 0; i < layers.size(); ++i)
 	{
+		LOG("before layer " << i << " bytes  = " << recv);
 		recv = layers[i]->Receive(buffer, recv, location, flags);
+		LOG("after layer " << i << " bytes  = " << recv);
 	}
+	LOG("return " << recv << " bytes");
 	return recv;
 }
 double NetworkStack::GetBandwidth()

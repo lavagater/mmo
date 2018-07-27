@@ -102,6 +102,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
         //Mark that this packet no longer needs resending
         resends[*location][ack%RESENDSIZE].packet = 0;
       }
+      LOG("Just ack");
       return 0;
     }
     else
@@ -123,12 +124,17 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       unsigned *acks = client_acks[*location];
       if (!acks)
       {
+        LOG("allocate acks");
         acks = new unsigned[RESENDSIZE];
         client_acks[*location] = acks;
-        memset(acks, RESENDSIZE+1, RESENDSIZE*sizeof(unsigned));
+        for (int i = 0; i < RESENDSIZE; ++i)
+        {
+          acks[i] = RESENDSIZE+1;
+        }
       }
       if (acks[ack%RESENDSIZE] == ack)
       {
+        LOG("already seen message");
         //we have already seen this message
         //send ack message again
         BitArray<HEADERSIZE> temp;

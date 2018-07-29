@@ -6,7 +6,11 @@
 int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 {
   //create the connection for this address if not already created
-  stack->connections.insert(std::make_pair(*dest, ConnectionState()));
+  if (stack->connections.find(*dest) == stack->connections.end())
+  {
+    stack->connections.insert(std::make_pair(*dest, ConnectionState()));
+    LOG("send new connection, id = " << stack->connections[*dest].connection_id);
+  }
   LOG("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   return bytes;
 }
@@ -45,7 +49,11 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
     }
   }
   //create the connection for this address if not already created
-  stack->connections.insert(std::make_pair(*location, ConnectionState()));
+  if (stack->connections.find(*location) == stack->connections.end())
+  {
+    stack->connections.insert(std::make_pair(*location, ConnectionState()));
+    LOG("recv new connection, id = " << stack->connections[*location].connection_id);
+  }
   return bytes;
 }
 
@@ -78,7 +86,7 @@ void Channel::Update(double dt)
   //remove the connections
   for (unsigned i = 0; i < to_remove.size(); ++i)
   {
-    LOG(std::endl << "Connection removed, start" << std::endl);
+    LOG(std::endl << "Connection removed, start id = " << stack->connections[*to_remove[i]].connection_id << std::endl);
     stack->RemoveConnection(to_remove[i]);
     LOG(std::endl << "Connection removed, finish" << std::endl);
   }

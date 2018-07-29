@@ -51,7 +51,13 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
   //create the connection for this address if not already created
   if (stack->connections.find(*location) == stack->connections.end())
   {
+    std::unordered_map<unsigned, int> ports;
     stack->connections.insert(std::make_pair(*location, ConnectionState()));
+    if (ports[location->sin_port] > 0)
+    {
+      LOGW("Same port used again!! " << location->sin_port);
+    }
+    ports[location->sin_port] += 1;
     LOG("recv new connection, id = " << stack->connections[*location].connection_id);
   }
   return bytes;

@@ -14,13 +14,13 @@
   \brief
     how often to send pings in seconds 
 */
-#define TIME_BETWEEN_PINGS 2
+#define TIME_BETWEEN_PINGS 0.25
 
 /*!
   \brief
     The mount of time to wait until disconnecting a nonresponsize connection
 */
-#define DISCONNECT_TIME 5*TIME_BETWEEN_PINGS
+#define DISCONNECT_TIME 1*TIME_BETWEEN_PINGS
 
 /*!
 	\brief

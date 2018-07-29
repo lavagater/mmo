@@ -171,6 +171,7 @@ bool operator==(const sockaddr_in &lhs, const sockaddr_in &rhs);
 class ConnectionState
 {
 public:
+	ConnectionState();
 	// An enum of type of connections
 	enum
 	{
@@ -181,7 +182,7 @@ public:
 		AuthedAdmin,
 		num
 	};
-	double ping = 0.05; /*!< The ping in seconds for this connection, a rolling average of pings*/
+	double ping; /*!< The ping in seconds for this connection, a rolling average of pings*/
 	float time_since_ping;/*!< The time since this connection responded to a ping, used to determine if dissconnected*/
 	float ping_timer; /*!< The time until another ping will be sent*/
 	int auth_level; /*!< The level of authentication*/

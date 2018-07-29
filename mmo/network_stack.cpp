@@ -150,3 +150,13 @@ void NetworkStack::RemoveConnection(const sockaddr_in *addr)
 	//then actually remove the connection
 	connections.erase(connections.find(*addr));
 }
+ConnectionState::ConnectionState()
+{
+	ping = 0.05; 
+	time_since_ping = 0;
+	ping_timer = 0;
+	auth_level = 0;
+	static unsigned counter = 0;
+	counter += 1;
+	connection_id = counter;
+}

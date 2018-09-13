@@ -25,6 +25,7 @@
 #include "prioritization.h"
 #include "encryption.h"
 #include "protocol.h"
+#include "logger.h"
 
 int main()
 {
@@ -64,16 +65,21 @@ int main()
   {
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-    //make sure the message is big enough 1 byte for message type 2 unsigned's
-    if (n > 0)
+    //make sure the message is big enough for the message type
+    if (n >= message_type_size)
     {
+      Protocol type;
+      //make sure the type is zeroed out because, the protocol size 
+      //might be larger than the type size
+      memset(&type, 0, sizeof(Protocol));
+      memcpy(&type, buffer, message_type_size);
       //handle message
-      switch (buffer[0])
+      switch (type)
       {
         case Protocol::DatabaseGet:
         {
-          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
-          unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+message_type_size);
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+ message_type_size +sizeof(unsigned));
           //check if its in the database
           if (id <= db.size)
           {
@@ -89,11 +95,11 @@ int main()
               size = db.Get(id, row, data);
             }
             //send back the data from the database
-            buffer[0] = Protocol::DatabaseGet;
-            *reinterpret_cast<unsigned*>(buffer+1) = id;
-            *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1) = row;
-            memcpy(buffer+sizeof(unsigned)*2+1, data, size);
-            stack.Send(buffer, size + 2 * sizeof(unsigned)+1, &from, flags);
+            //the message type is same as the one recieved
+            *reinterpret_cast<unsigned*>(buffer+message_type_size) = id;
+            *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+message_type_size) = row;
+            memcpy(buffer+sizeof(unsigned)*2+message_type_size, data, size);
+            stack.Send(buffer, size + 2 * sizeof(unsigned)+message_type_size, &from, flags);
             delete [] data;
           }
           break;
@@ -101,9 +107,9 @@ int main()
         case Protocol::DatabaseSet:
         {
           //set the data
-          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
-          unsigned row = *reinterpret_cast<unsigned*>(buffer+ 1 +sizeof(unsigned));
-          db.Set(id, row, buffer + 1 + sizeof(unsigned)*2);
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+message_type_size);
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+ message_type_size +sizeof(unsigned));
+          db.Set(id, row, buffer + message_type_size + sizeof(unsigned)*2);
           db.flush();
           break;
         }
@@ -113,20 +119,20 @@ int main()
           unsigned id = db.Create();
           buffer[0] = Protocol::DatabaseCreate;
           //the create message has a unsigned nonce after the message type, keep he nonce unmodified
-          *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+1) = id;
-          stack.Send(buffer, 2*sizeof(unsigned)+1, &from, flags);
+          *reinterpret_cast<unsigned*>(buffer+sizeof(unsigned)+message_type_size) = id;
+          stack.Send(buffer, 2*sizeof(unsigned)+message_type_size, &from, flags);
           break;
         }
         case Protocol::DatabaseFind:
         {
           //find
-          unsigned row = *reinterpret_cast<unsigned*>(buffer+1);
-          std::vector<unsigned> ids = db.Find(row, buffer+1+sizeof(unsigned));
+          unsigned row = *reinterpret_cast<unsigned*>(buffer+message_type_size);
+          std::vector<unsigned> ids = db.Find(row, buffer+message_type_size+sizeof(unsigned));
           //create the response
           //redundant
           buffer[0] = Protocol::DatabaseFind;
           //redundant
-          *reinterpret_cast<unsigned*>(buffer+1) = row;
+          *reinterpret_cast<unsigned*>(buffer+message_type_size) = row;
           //the value thats being searched for stays in the buffer and is sent in response
 
           //add the id's (its in a loop because we can only send back 100 id's per message so if there
@@ -135,12 +141,12 @@ int main()
           {
             unsigned num = std::min(ids.size(),(long unsigned)(100));
             //num is between 0-100 so it fits in a char
-            buffer[1+sizeof(unsigned) + db.rows[row]] = num;
+            buffer[message_type_size+sizeof(unsigned) + db.rows[row]] = num;
             for (unsigned i = 0; i < num; ++i)
             {
-              *reinterpret_cast<unsigned*>(buffer+1+sizeof(unsigned)+db.rows[row]+1+ sizeof(unsigned)*i) = ids[i];
+              *reinterpret_cast<unsigned*>(buffer+message_type_size+sizeof(unsigned)+db.rows[row]+message_type_size+ sizeof(unsigned)*i) = ids[i];
             }
-            stack.Send(buffer, 1+sizeof(unsigned)+db.rows[row]+1+ sizeof(unsigned)*num, &from, flags);
+            stack.Send(buffer, message_type_size+sizeof(unsigned)+db.rows[row]+message_type_size+ sizeof(unsigned)*num, &from, flags);
             //if there was more than 100 need to send another one, remove the first 100
             //note that if the number of items found is divisable by 100 then we will send on message with no ids 
             if (num == 100)
@@ -159,8 +165,13 @@ int main()
         {
             std::cout << "Delete messsage" << std::endl;
 
-          unsigned id = *reinterpret_cast<unsigned*>(buffer+1);
+          unsigned id = *reinterpret_cast<unsigned*>(buffer+message_type_size);
           db.Delete(id);
+          break;
+        }
+        default:
+        {
+          LOG("Database got message type " << type << " which is not being handled");
           break;
         }
       }

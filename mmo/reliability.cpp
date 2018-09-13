@@ -122,10 +122,8 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       }
       //check if we have already recieved this message
       unsigned *acks = client_acks[*location];
-      LOG("connection id = " << stack->connections[*location].connection_id);
       if (!acks)
       {
-        LOG("allocate acks");
         acks = new unsigned[RESENDSIZE];
         client_acks[*location] = acks;
         for (int i = 0; i < RESENDSIZE; ++i)

@@ -47,7 +47,7 @@ public:
   bool operator[](unsigned index) const;
   /*!
     \brief
-      The internal buffer, the size if ceil(size/8)
+      The internal buffer, the size is ceil(size/8)
   */
   char buffer[size/8==size/8.0?size/8:size/8+1];
 };

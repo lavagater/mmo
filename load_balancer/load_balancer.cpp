@@ -20,7 +20,7 @@
 #include "reliability.h"
 #include "prioritization.h"
 #include "encryption.h"
-#include "protocol.h"
+#include "load_balancer_protocol.h"
 #include "logger.h"
 
 int main()
@@ -44,39 +44,43 @@ int main()
   stack.AddLayer(reliability);
   stack.AddLayer(encryption);
   //the flags for sending messages
-  BitArray<HEADERSIZE> flags;
-  flags.SetBit(ReliableFlag);
+  std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
   //buffer for receiving messages
   char buffer[MAXPACKETSIZE];
   //the address we recieve from
   sockaddr_in from;
+  AsymetricEncryption encryptor;
   LOG("entering while loop" << std::endl);
   //main loop
   while(true)
   {
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-    //make sure the message is big enough 1 byte for message type 2 unsigned's
-    if (n > 0)
+    flags[from].SetBit(ReliableFlag);
+    if (n >= message_type_size)
     {
       LOG("Recieved message of length " << n);
+      Protocol type;
+      //make sure the type is zeroed out because, the protocol size 
+      //might be larger than the type size
+      memset(&type, 0, sizeof(Protocol));
+      memcpy(&type, buffer, message_type_size);
       //handle message
-      switch (buffer[0])
+      switch (type)
       {
         case EncryptionKey:
         {
-        //get the length of key
-        short length = *reinterpret_cast<short*>(buffer+1);
-        unsigned *data = reinterpret_cast<unsigned*>(buffer + 1 + sizeof(short));
-        ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish(data, length);
-        flags.SetBit(EncryptFlag);
+          char key[MAXPACKETSIZE];
+          short length = ReadEncryptionMessage(buffer, n, key, encryptor);
+          ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
+          flags[from].SetBit(EncryptFlag);
         }
         break;
         default:
         {
           buffer[n] = 0;
           LOG("sending back: " << buffer << std::endl);
-          int send_err = stack.Send(buffer, n, &from, flags);
+          int send_err = stack.Send(buffer, n, &from, flags[from]);
           if (send_err < 0)
           {
             LOGW("Send error code = " << send_err);

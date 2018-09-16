@@ -72,8 +72,15 @@ int main()
         {
           char key[MAXPACKETSIZE];
           short length = ReadEncryptionMessage(buffer, n, key, encryptor);
+          //if the message was malformed it returns -1 length then we ignore this meddage
+          if (length == -1)
+          {
+            break;
+          }
           ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
           flags[from].SetBit(EncryptFlag);
+          //send back a message saying that i got the key
+          stack.Send(buffer, message_type_size, &from, flags[from]);
         }
         break;
         default:

@@ -26,6 +26,7 @@
 #include "encryption.h"
 #include "database.h"
 #include "event.h"
+#include "protocol.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -54,12 +55,13 @@ bool TestDatabaseCreate();//14
 bool TestDatabaseGetAndSet();//15
 bool TestDatabaseFind();//16
 bool TestDatabaseDelete();//17
+bool TestProtocol();//18
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
     TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
-    TestDatabaseDelete
+    TestDatabaseDelete, TestProtocol
 }; 
 
 int main(int argc, char **argv)
@@ -1287,6 +1289,30 @@ bool TestDatabaseFind()
 }
 bool TestDatabaseDelete()
 {
+	return true;
+}
+
+bool TestProtocol()
+{
+	ProtocolLoader pl;
+	pl.LoadProtocol();
+	std::cout << "billy" << std::endl;
+	if (pl.message_types["one"] != 0)
+	{
+		std::cout << "Message one is " << pl.message_types["one"] << std::endl;
+		return false;
+	}
+	if (pl.message_types["two"] != 1)
+	{
+		std::cout << "Message two is " << pl.message_types["two"] << std::endl;
+		return false;
+	}
+	if (pl.message_types["three"] != 2)
+	{
+		std::cout << "Message three is " << pl.message_types["three"] << std::endl;
+		return false;
+	}
+	std::cout << "yo wtf" << std::endl;
 	return true;
 }
 

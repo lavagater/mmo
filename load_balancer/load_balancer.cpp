@@ -20,6 +20,7 @@
 #include "reliability.h"
 #include "prioritization.h"
 #include "encryption.h"
+#include "protocol.h"
 #include "load_balancer_protocol.h"
 #include "logger.h"
 
@@ -50,6 +51,9 @@ int main()
   //the address we recieve from
   sockaddr_in from;
   AsymetricEncryption encryptor;
+  //load in the default protocols
+  ProtocolLoader protocol;
+  protocol.LoadProtocol();
   LOG("entering while loop" << std::endl);
   //main loop
   while(true)
@@ -57,18 +61,15 @@ int main()
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
     flags[from].SetBit(ReliableFlag);
-    if (n >= message_type_size)
+    if (n >= sizeof(MessageType))
     {
       LOG("Recieved message of length " << n);
-      Protocol type;
-      //make sure the type is zeroed out because, the protocol size 
-      //might be larger than the type size
-      memset(&type, 0, sizeof(Protocol));
-      memcpy(&type, buffer, message_type_size);
+      MessageType type = 0;
+      memcpy(&type, buffer, sizeof(MessageType));
       //handle message
       switch (type)
       {
-        case EncryptionKey:
+        case protocol.LookUp("EncryptionKey"):
         {
           char key[MAXPACKETSIZE];
           short length = ReadEncryptionMessage(buffer, n, key, encryptor);

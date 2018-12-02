@@ -61,40 +61,35 @@ int main()
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
     flags[from].SetBit(ReliableFlag);
-    if (n >= sizeof(MessageType))
+    if (n >= (int)sizeof(MessageType))
     {
       LOG("Recieved message of length " << n);
       MessageType type = 0;
       memcpy(&type, buffer, sizeof(MessageType));
-      //handle message
-      switch (type)
+      //handle message, make these into events
+      if (type == protocol.LookUp("EncryptionKey"))
       {
-        case protocol.LookUp("EncryptionKey"):
+        char key[MAXPACKETSIZE];
+        short length = ReadEncryptionMessage(buffer, n, key, encryptor);
+        //if the message was malformed it returns -1 length then we ignore this meddage
+        if (length == -1)
         {
-          char key[MAXPACKETSIZE];
-          short length = ReadEncryptionMessage(buffer, n, key, encryptor);
-          //if the message was malformed it returns -1 length then we ignore this meddage
-          if (length == -1)
-          {
-            break;
-          }
-          ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
-          flags[from].SetBit(EncryptFlag);
-          //send back a message saying that i got the key
-          stack.Send(buffer, message_type_size, &from, flags[from]);
+          break;
         }
-        break;
-        default:
+        ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
+        flags[from].SetBit(EncryptFlag);
+        //send back a message saying that i got the key
+        stack.Send(buffer, sizeof(MessageType), &from, flags[from]);
+      }
+      else
+      {
+        buffer[n] = 0;
+        LOG("sending back: " << buffer << std::endl);
+        int send_err = stack.Send(buffer, n, &from, flags[from]);
+        if (send_err < 0)
         {
-          buffer[n] = 0;
-          LOG("sending back: " << buffer << std::endl);
-          int send_err = stack.Send(buffer, n, &from, flags[from]);
-          if (send_err < 0)
-          {
-            LOGW("Send error code = " << send_err);
-          }
+          LOGW("Send error code = " << send_err);
         }
-        break;
       }
     }
     else if (n != EBLOCK && n != 0)

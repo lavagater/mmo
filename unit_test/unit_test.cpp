@@ -1347,6 +1347,26 @@ bool TestSignal()
 		std::cout << "Connection not work" << std::endl;
 		return false;
 	}
+	//test copy of connections
+	{
+		Connection scoped_conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+	}
+	signal(10);
+	if (sh.mi != 5)
+	{
+		std::cout << "Connection destructor not work" << std::endl;
+		return false;
+	}
+	{
+		Connection scoped_conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+		conn = scoped_conn;
+	}
+	signal(10);
+	if (sh.mi != 10)
+	{
+		std::cout << "Multiple Connection not work" << std::endl;
+		return false;
+	}
 	return true;
 }
 

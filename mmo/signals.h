@@ -4,13 +4,13 @@
 #include <unordered_map>
 #include <functional>
 
-class Connection;
+class InternalConnection;
 
 class SignalBase
 {
   public:
   virtual ~SignalBase() {}
-  virtual void Disconnect(Connection &connection) = 0;
+  virtual void Disconnect(InternalConnection *connection) = 0;
 };
 
 class InternalConnection
@@ -25,12 +25,13 @@ class Connection
 {
 public:
   Connection(InternalConnection *conn);
+  Connection(const Connection &rhs);
+  Connection &operator=(const Connection &rhs);
   ~Connection();
   void Disconnect();
-  //dont touch
-  InternalConnection *internal_connection;
 private:
   void DeleteInternal();
+  InternalConnection *internal_connection;
 };
 
 template<typename... Args>
@@ -44,7 +45,7 @@ public:
 
 private:
   std::unordered_map<InternalConnection*, std::function<void(Args...)> > slots;
-  void Disconnect(Connection &connection);
+  void Disconnect(InternalConnection *connection);
 };
 
 template<typename... Args>
@@ -82,9 +83,9 @@ void Signals<Args...>::operator()(Args... p)
 }
 
 template<typename... Args>
-void Signals<Args...>::Disconnect(Connection &connection)
+void Signals<Args...>::Disconnect(InternalConnection *connection)
 {
-  auto it = slots.find(connection.internal_connection);
+  auto it = slots.find(connection);
   if (it != slots.end())
   {
     it->first->Disconnect();

@@ -27,6 +27,7 @@
 #include "database.h"
 #include "event.h"
 #include "protocol.h"
+#include "signals.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -56,12 +57,13 @@ bool TestDatabaseGetAndSet();//15
 bool TestDatabaseFind();//16
 bool TestDatabaseDelete();//17
 bool TestProtocol();//18
+bool TestSignal();//19
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
     TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
-    TestDatabaseDelete, TestProtocol
+    TestDatabaseDelete, TestProtocol, TestSignal
 }; 
 
 int main(int argc, char **argv)
@@ -1313,6 +1315,38 @@ bool TestProtocol()
 		return false;
 	}
 	std::cout << "yo wtf" << std::endl;
+	return true;
+}
+
+class Signalhelper
+{
+	public:
+	int mi;
+	void test1(int i)
+	{
+		mi = i;
+	}
+};
+
+bool TestSignal()
+{
+	std::cout << "Test Signal" << std::endl;
+	Signals<int> signal;
+	Signalhelper sh;
+	Connection conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+	signal(5);
+	if (sh.mi != 5)
+	{
+		std::cout << "Signal not work" << std::endl;
+		return false;
+	}
+	conn.Disconnect();
+	signal(10);
+	if (sh.mi != 5)
+	{
+		std::cout << "Connection not work" << std::endl;
+		return false;
+	}
 	return true;
 }
 

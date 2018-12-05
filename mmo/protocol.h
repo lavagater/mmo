@@ -33,6 +33,10 @@ public:
    */
   MessageType LookUp(std::string);
   /**
+   * @brief gets the message name from the id, for debugging mostly
+   */
+  std::string LookUp(MessageType);
+  /**
    * @brief name of the files that contain protocol types the files are loaded in order of the vector
    */
   std::vector<std::string> protocol_files;

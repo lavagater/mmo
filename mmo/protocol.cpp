@@ -52,3 +52,15 @@ MessageType ProtocolLoader::LookUp(std::string message)
         return -1;
     }
 }
+
+std::string ProtocolLoader::LookUp(MessageType type)
+{
+    for (auto it = message_types.begin(); it != message_types.end(); ++it)
+    {
+        if (it->second == type)
+        {
+            return it->first;
+        }
+    }
+    return "";
+}

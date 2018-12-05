@@ -12,22 +12,34 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-enum Protocol
-{
-  //Each Database message type has a different meaning depending on who is recieving the message
-  //ex. DatabaseGet message is asking the database for a value in the database but
-  //DatabaseGet is also a message containing a value from the database
-  DatabaseGet,
-  DatabaseSet,
-  DatabaseCreate,
-  DatabaseFind,
-  DatabaseDelete,
-  //these are for the load balancer protocol
-  EncryptionKey,
-  num
-};
+#include <unordered_map>
+#include <vector>
 
-//number of bytes the message type is
-const int message_type_size = 2; 
+typedef unsigned short MessageType;
+
+class ProtocolLoader
+{
+public:
+  /**
+   * @brief Constructor adds the normal/system protocol file names to the protocol_files
+   */
+  ProtocolLoader();
+  /**
+   * @brief Reads all the protocol files and adds them to the messages_types
+   */
+  void LoadProtocol();
+  /**
+   * @brief gets the message type for the given string
+   */
+  MessageType LookUp(std::string);
+  /**
+   * @brief name of the files that contain protocol types the files are loaded in order of the vector
+   */
+  std::vector<std::string> protocol_files;
+  /**
+   * @brief maps name to message type
+   */
+  std::unordered_map<std::string, MessageType> message_types;
+};
 
 #endif

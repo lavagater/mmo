@@ -2,45 +2,45 @@
 
 #include "database_protocol.h"
 
-int CreateSetMessage(char *buffer, unsigned id, unsigned row, void *data, int size)
+int CreateSetMessage(ProtocolLoader &protocol, char *buffer, unsigned id, unsigned row, void *data, int size)
 {
-  Protocol proto = Protocol::DatabaseSet;
-  memcpy(buffer, &proto, message_type_size);
-  *reinterpret_cast<unsigned *>(buffer+message_type_size) = id;
-  *reinterpret_cast<unsigned *>(buffer+message_type_size+sizeof(unsigned)) = row;
-  memcpy(buffer+message_type_size+sizeof(unsigned)*2, data, size);
-  return message_type_size+sizeof(unsigned)*2 + size;
+  MessageType proto = protocol.LookUp("DatabaseSet");
+  memcpy(buffer, &proto, sizeof(MessageType));
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)) = id;
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)+sizeof(unsigned)) = row;
+  memcpy(buffer+sizeof(MessageType)+sizeof(unsigned)*2, data, size);
+  return sizeof(MessageType)+sizeof(unsigned)*2 + size;
 }
-int CreateFindMessage(char *buffer, unsigned row, void *data, int size)
+int CreateFindMessage(ProtocolLoader &protocol, char *buffer, unsigned row, void *data, int size)
 {
-  Protocol proto = Protocol::DatabaseFind;
-  memcpy(buffer, &proto, message_type_size);
-  *reinterpret_cast<unsigned *>(buffer+message_type_size) = row;
-  memcpy(buffer+message_type_size+sizeof(unsigned), data, size);
-  return message_type_size+sizeof(unsigned) + size;
-}
-
-int CreateGetMessage(char *buffer, unsigned id, unsigned row)
-{
-  Protocol proto = Protocol::DatabaseGet;
-  memcpy(buffer, &proto, message_type_size);
-  *reinterpret_cast<unsigned *>(buffer+message_type_size) = id;
-  *reinterpret_cast<unsigned *>(buffer+message_type_size+sizeof(unsigned)) = row;
-  return message_type_size+sizeof(unsigned)*2;
+  MessageType proto = protocol.LookUp("DatabaseFind");
+  memcpy(buffer, &proto, sizeof(MessageType));
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)) = row;
+  memcpy(buffer+sizeof(MessageType)+sizeof(unsigned), data, size);
+  return sizeof(MessageType)+sizeof(unsigned) + size;
 }
 
-int CreateCreateMessage(char *buffer, unsigned nonce)
+int CreateGetMessage(ProtocolLoader &protocol, char *buffer, unsigned id, unsigned row)
 {
-  Protocol proto = Protocol::DatabaseCreate;
-  memcpy(buffer, &proto, message_type_size);
-  *reinterpret_cast<unsigned *>(buffer+message_type_size) = nonce;
-  return message_type_size+sizeof(unsigned);
+  MessageType proto = protocol.LookUp("DatabaseGet");
+  memcpy(buffer, &proto, sizeof(MessageType));
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)) = id;
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)+sizeof(unsigned)) = row;
+  return sizeof(MessageType)+sizeof(unsigned)*2;
 }
 
-int CreateDeleteMessage(char *buffer, unsigned id)
+int CreateCreateMessage(ProtocolLoader &protocol, char *buffer, unsigned nonce)
 {
-  Protocol proto = Protocol::DatabaseDelete;
-  memcpy(buffer, &proto, message_type_size);
-  *reinterpret_cast<unsigned *>(buffer+message_type_size) = id;
-  return message_type_size+sizeof(unsigned);
+  MessageType proto = protocol.LookUp("DatabaseCreate");
+  memcpy(buffer, &proto, sizeof(MessageType));
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)) = nonce;
+  return sizeof(MessageType)+sizeof(unsigned);
+}
+
+int CreateDeleteMessage(ProtocolLoader &protocol, char *buffer, unsigned id)
+{
+  MessageType proto = protocol.LookUp("DatabaseDelete");
+  memcpy(buffer, &proto, sizeof(MessageType));
+  *reinterpret_cast<unsigned *>(buffer+sizeof(MessageType)) = id;
+  return sizeof(MessageType)+sizeof(unsigned);
 }

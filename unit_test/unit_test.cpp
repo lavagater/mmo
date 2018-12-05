@@ -26,6 +26,8 @@
 #include "encryption.h"
 #include "database.h"
 #include "event.h"
+#include "protocol.h"
+#include "signals.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -54,12 +56,14 @@ bool TestDatabaseCreate();//14
 bool TestDatabaseGetAndSet();//15
 bool TestDatabaseFind();//16
 bool TestDatabaseDelete();//17
+bool TestProtocol();//18
+bool TestSignal();//19
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
     TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
-    TestDatabaseDelete
+    TestDatabaseDelete, TestProtocol, TestSignal
 }; 
 
 int main(int argc, char **argv)
@@ -1287,6 +1291,82 @@ bool TestDatabaseFind()
 }
 bool TestDatabaseDelete()
 {
+	return true;
+}
+
+bool TestProtocol()
+{
+	ProtocolLoader pl;
+	pl.LoadProtocol();
+	std::cout << "billy" << std::endl;
+	if (pl.message_types["one"] != 0)
+	{
+		std::cout << "Message one is " << pl.message_types["one"] << std::endl;
+		return false;
+	}
+	if (pl.message_types["two"] != 1)
+	{
+		std::cout << "Message two is " << pl.message_types["two"] << std::endl;
+		return false;
+	}
+	if (pl.message_types["three"] != 2)
+	{
+		std::cout << "Message three is " << pl.message_types["three"] << std::endl;
+		return false;
+	}
+	std::cout << "yo wtf" << std::endl;
+	return true;
+}
+
+class Signalhelper
+{
+	public:
+	int mi;
+	void test1(int i)
+	{
+		mi = i;
+	}
+};
+
+bool TestSignal()
+{
+	std::cout << "Test Signal" << std::endl;
+	Signals<int> signal;
+	Signalhelper sh;
+	Connection conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+	signal(5);
+	if (sh.mi != 5)
+	{
+		std::cout << "Signal not work" << std::endl;
+		return false;
+	}
+	conn.Disconnect();
+	signal(10);
+	if (sh.mi != 5)
+	{
+		std::cout << "Connection not work" << std::endl;
+		return false;
+	}
+	//test copy of connections
+	{
+		Connection scoped_conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+	}
+	signal(10);
+	if (sh.mi != 5)
+	{
+		std::cout << "Connection destructor not work" << std::endl;
+		return false;
+	}
+	{
+		Connection scoped_conn = signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+		conn = scoped_conn;
+	}
+	signal(10);
+	if (sh.mi != 10)
+	{
+		std::cout << "Multiple Connection not work" << std::endl;
+		return false;
+	}
 	return true;
 }
 

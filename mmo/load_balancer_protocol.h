@@ -24,7 +24,7 @@
  * @param size the number of bytes the key is
  * @param encryptor The asymetric encryption to use to encrypt this message
  */
-int CreateEncryptionMessage(char *buffer, char *key, short size, AsymetricEncryption &encryptor);
+int CreateEncryptionMessage(ProtocolLoader &protocol, char *buffer, char *key, short size, AsymetricEncryption &encryptor);
 
 /**
  * @brief Extracts the key and key size from an Encrypt message

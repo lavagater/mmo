@@ -144,14 +144,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\mmo\asymetric_encryption.cpp" />
     <ClCompile Include="..\..\mmo\bit_array.cpp" />
     <ClCompile Include="..\..\mmo\blowfish.cpp" />
     <ClCompile Include="..\..\mmo\channel.cpp" />
     <ClCompile Include="..\..\mmo\config.cpp" />
     <ClCompile Include="..\..\mmo\database.cpp" />
+    <ClCompile Include="..\..\mmo\database_protocol.cpp" />
     <ClCompile Include="..\..\mmo\encryption.cpp" />
     <ClCompile Include="..\..\mmo\event.cpp" />
     <ClCompile Include="..\..\mmo\frame_rate.cpp" />
+    <ClCompile Include="..\..\mmo\load_balancer_protocol.cpp" />
     <ClCompile Include="..\..\mmo\logger.cpp" />
     <ClCompile Include="..\..\mmo\meta.cpp" />
     <ClCompile Include="..\..\mmo\network_stack.cpp" />
@@ -165,15 +168,18 @@
     <ClCompile Include="windows_macros.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\mmo\asymetric_encryption.h" />
     <ClInclude Include="..\..\mmo\bit_array.h" />
     <ClInclude Include="..\..\mmo\blowfish.h" />
     <ClInclude Include="..\..\mmo\channel.h" />
     <ClInclude Include="..\..\mmo\config.h" />
     <ClInclude Include="..\..\mmo\database.h" />
+    <ClInclude Include="..\..\mmo\database_protocol.h" />
     <ClInclude Include="..\..\mmo\encryption.h" />
     <ClInclude Include="..\..\mmo\event.h" />
     <ClInclude Include="..\..\mmo\event_types.h" />
     <ClInclude Include="..\..\mmo\frame_rate.h" />
+    <ClInclude Include="..\..\mmo\load_balancer_protocol.h" />
     <ClInclude Include="..\..\mmo\logger.h" />
     <ClInclude Include="..\..\mmo\meta.h" />
     <ClInclude Include="..\..\mmo\network_stack.h" />

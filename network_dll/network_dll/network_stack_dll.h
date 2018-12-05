@@ -34,7 +34,7 @@ extern "C" {
   NETWORK_DLL_API void DeleteSession(int id);
   NETWORK_DLL_API int SessionSend(int id, char *data, int length);
   NETWORK_DLL_API int SessionRecieve(int id, char *data, int length);
-  NETWORK_DLL_API void EnableEncryption(int id);
+  NETWORK_DLL_API void SendEncryptionRequest(int id);
 }
 
 

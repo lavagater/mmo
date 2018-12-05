@@ -75,6 +75,15 @@
     <ClCompile Include="..\..\mmo\logger.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\asymetric_encryption.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\database_protocol.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\load_balancer_protocol.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\mmo\bit_array.h">
@@ -135,6 +144,15 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\logger.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\asymetric_encryption.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\database_protocol.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\load_balancer_protocol.h">
       <Filter>mmo</Filter>
     </ClInclude>
   </ItemGroup>

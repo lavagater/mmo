@@ -10,6 +10,7 @@
 #include "encryption.h"
 #include "protocol.h"
 #include "logger.h"
+#include "load_balancer_protocol.h"
 
 std::vector<session> dll_sessions;
 std::vector<int> dll_unused_ids;
@@ -88,9 +89,16 @@ extern "C" {
 	{
 		LOGW("Recieving message of length zero!!");
 	}
+	//special case for encryption to set encryption bit
+	long type = 0;
+	memcpy(&type, data, message_type_size);
+	if (type == Protocol::EncryptionKey)
+	{
+		dll_sessions[id].flags.SetBit(EncryptFlag);
+	}
 	return length;
   }
-  void EnableEncryption(int id)
+  void SendEncryptionRequest(int id)
   {
     //generate a symmmetric key between 16 and 32 long
     int length = rand() % 16 + 16;
@@ -103,9 +111,10 @@ extern "C" {
     ((Encryption*)dll_sessions[id].stack->layers[2])->blowfish[dll_sessions[id].server] = BlowFish(key, length);
 
     //call some function to encrypt this message with an asymetric encryption
-
-
-    //every message after this will now be encrypted
-    dll_sessions[id].flags.SetBit(EncryptFlag);
+	char buffer[MAXPACKETSIZE];
+	AsymetricEncryption as;
+	int length = CreateEncryptionMessage(buffer, (char*)key, sizeof(key), as);
+	dll_sessions[id].stack->Send(buffer, length, &dll_sessions[id].server, dll_sessions[id].flags);
+	//in the recieve call we will check for the response and set the encryption bit
   }
 }

@@ -5,14 +5,14 @@
 
 ProtocolLoader::ProtocolLoader()
 {
-    protocol_files.push_back("resources/database_system_protocol.enum");
-    protocol_files.push_back("resources/load_balancer_system_protocol.enum");
-    protocol_files.push_back("resources/zone_system_protocol.enum");
-    protocol_files.push_back("resources/client_system_protocol.enum");
-    protocol_files.push_back("resources/database_game_protocol.enum");
-    protocol_files.push_back("resources/load_balancer_game_protocol.enum");
-    protocol_files.push_back("resources/zone_game_protocol.enum");
-    protocol_files.push_back("resources/client_game_protocol.enum");
+    protocol_files.push_back("resources/database_system_protocol.txt");
+    protocol_files.push_back("resources/load_balancer_system_protocol.txt");
+    protocol_files.push_back("resources/zone_system_protocol.txt");
+    protocol_files.push_back("resources/client_system_protocol.txt");
+    protocol_files.push_back("resources/database_game_protocol.txt");
+    protocol_files.push_back("resources/load_balancer_game_protocol.txt");
+    protocol_files.push_back("resources/zone_game_protocol.txt");
+    protocol_files.push_back("resources/client_game_protocol.txt");
 }
 
 void ProtocolLoader::LoadProtocol()

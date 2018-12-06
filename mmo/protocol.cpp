@@ -2,6 +2,7 @@
 #include "logger.h"
 #include <fstream>
 #include <iostream>
+#include <string>
 
 ProtocolLoader::ProtocolLoader()
 {

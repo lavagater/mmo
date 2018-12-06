@@ -162,6 +162,7 @@
     <ClCompile Include="..\..\mmo\protocol.cpp" />
     <ClCompile Include="..\..\mmo\reliability.cpp" />
     <ClCompile Include="..\..\mmo\remote_database.cpp" />
+    <ClCompile Include="..\..\mmo\signals.cpp" />
     <ClCompile Include="..\..\mmo\timer.cpp" />
     <ClCompile Include="..\..\mmo\wyatt_sock.cpp" />
     <ClCompile Include="network_stack_dll.cpp" />
@@ -182,11 +183,13 @@
     <ClInclude Include="..\..\mmo\load_balancer_protocol.h" />
     <ClInclude Include="..\..\mmo\logger.h" />
     <ClInclude Include="..\..\mmo\meta.h" />
+    <ClInclude Include="..\..\mmo\network_signals.h" />
     <ClInclude Include="..\..\mmo\network_stack.h" />
     <ClInclude Include="..\..\mmo\prioritization.h" />
     <ClInclude Include="..\..\mmo\protocol.h" />
     <ClInclude Include="..\..\mmo\reliability.h" />
     <ClInclude Include="..\..\mmo\remote_database.h" />
+    <ClInclude Include="..\..\mmo\signals.h" />
     <ClInclude Include="..\..\mmo\timer.h" />
     <ClInclude Include="..\..\mmo\wyatt_sock.h" />
     <ClInclude Include="network_stack_dll.h" />

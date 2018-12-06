@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\mmo\load_balancer_protocol.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\signals.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\mmo\bit_array.h">
@@ -153,6 +156,12 @@
       <Filter>mmo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\load_balancer_protocol.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\network_signals.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\signals.h">
       <Filter>mmo</Filter>
     </ClInclude>
   </ItemGroup>

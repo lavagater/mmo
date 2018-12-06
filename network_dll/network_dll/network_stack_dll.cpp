@@ -11,6 +11,8 @@
 #include "protocol.h"
 #include "logger.h"
 #include "load_balancer_protocol.h"
+#include "protocol.h"
+#include "asymetric_encryption.h"
 
 std::vector<session> dll_sessions;
 std::vector<int> dll_unused_ids;
@@ -42,6 +44,7 @@ extern "C" {
       dll_sessions.emplace_back();
     }
     dll_sessions[id].sock = sock;
+	dll_sessions[id].proto.LoadProtocol();
     dll_sessions[id].stack = new NetworkStack(sock);
     Channel *channel = new Channel();
     Reliability *reliability = new Reliability();
@@ -90,9 +93,9 @@ extern "C" {
 		LOGW("Recieving message of length zero!!");
 	}
 	//special case for encryption to set encryption bit
-	long type = 0;
-	memcpy(&type, data, message_type_size);
-	if (type == Protocol::EncryptionKey)
+	MessageType type = 0;
+	memcpy(&type, data, sizeof(MessageType));
+	if (type == dll_sessions[id].proto.LookUp("EncryptionKey"))
 	{
 		dll_sessions[id].flags.SetBit(EncryptFlag);
 	}
@@ -100,6 +103,7 @@ extern "C" {
   }
   void SendEncryptionRequest(int id)
   {
+	LOGW("Sending Encryption request!!!");
     //generate a symmmetric key between 16 and 32 long
     int length = rand() % 16 + 16;
     unsigned key[32];
@@ -113,7 +117,7 @@ extern "C" {
     //call some function to encrypt this message with an asymetric encryption
 	char buffer[MAXPACKETSIZE];
 	AsymetricEncryption as;
-	int length = CreateEncryptionMessage(buffer, (char*)key, sizeof(key), as);
+	length = CreateEncryptionMessage(dll_sessions[id].proto, buffer, (char*)key, sizeof(key), as);
 	dll_sessions[id].stack->Send(buffer, length, &dll_sessions[id].server, dll_sessions[id].flags);
 	//in the recieve call we will check for the response and set the encryption bit
   }

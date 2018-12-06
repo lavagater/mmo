@@ -9,6 +9,7 @@
 
 #include <vector>
 #include "network_stack.h"
+#include "protocol.h"
 
 //contains the things that the client wants to know about
 class session
@@ -22,6 +23,7 @@ public:
   sockaddr_in server;
   SOCKET sock;
   NetworkStack *stack;
+  ProtocolLoader proto;
 };
 
 extern std::vector<session> dll_sessions;

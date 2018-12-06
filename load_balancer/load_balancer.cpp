@@ -36,6 +36,7 @@ LoadBalancer::LoadBalancer()
 //addr and from are going to be the same
 void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
 {
+  LOG("Encryptoin Key");
   char key[MAXPACKETSIZE];
   short length = ReadEncryptionMessage(buffer, n, key, encryptor);
   //if the message was malformed it returns -1 length then we ignore this meddage

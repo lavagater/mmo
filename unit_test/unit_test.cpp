@@ -58,12 +58,13 @@ bool TestDatabaseFind();//16
 bool TestDatabaseDelete();//17
 bool TestProtocol();//18
 bool TestSignal();//19
+bool TestSignalNoConnection();//20
 
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
     TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
-    TestDatabaseDelete, TestProtocol, TestSignal
+    TestDatabaseDelete, TestProtocol, TestSignal, TestSignalNoConnection
 }; 
 
 int main(int argc, char **argv)
@@ -1325,6 +1326,7 @@ class Signalhelper
 	void test1(int i)
 	{
 		mi = i;
+		std::cout << "test1 i = " << i << std::endl;
 	}
 };
 
@@ -1365,6 +1367,20 @@ bool TestSignal()
 	if (sh.mi != 10)
 	{
 		std::cout << "Multiple Connection not work" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool TestSignalNoConnection()
+{
+	Signals<int> signal;
+	Signalhelper sh;
+	signal.Connect(std::bind(&Signalhelper::test1, &sh, std::placeholders::_1));
+	signal(20);
+	if (sh.mi != 20)
+	{
+		std::cout << "connection proxy not work" << std::endl;
 		return false;
 	}
 	return true;

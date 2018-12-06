@@ -13,18 +13,26 @@ class SignalBase
   virtual void Disconnect(InternalConnection *connection) = 0;
 };
 
+class ConnectionProxy
+{
+public:
+  ConnectionProxy(InternalConnection *);
+  InternalConnection *internal_connection;
+};
+
 class InternalConnection
 {
 public:
   void Disconnect();
   SignalBase *signal;
   int ref_count;
+  bool clean_up_self;
 };
 
 class Connection
 {
 public:
-  Connection(InternalConnection *conn);
+  Connection(ConnectionProxy);
   Connection(const Connection &rhs);
   Connection &operator=(const Connection &rhs);
   ~Connection();
@@ -39,7 +47,7 @@ class Signals : public SignalBase
 {
 public:
   ~Signals();
-  Connection Connect(std::function<void(Args...)> slot);
+  ConnectionProxy Connect(std::function<void(Args...)> slot);
   void Clear();
   void operator()(Args... p);
 
@@ -65,12 +73,13 @@ void Signals<Args...>::Clear()
 }
 
 template<typename... Args>
-Connection Signals<Args...>::Connect(std::function<void(Args...)> slot)
+ConnectionProxy Signals<Args...>::Connect(std::function<void(Args...)> slot)
 {
   InternalConnection *connection = new InternalConnection;
   connection->signal = this;
+  connection->clean_up_self = true;
   slots[connection] = slot;
-  return Connection(connection);
+  return ConnectionProxy(connection);
 }
 
 template<typename... Args>

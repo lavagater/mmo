@@ -26,7 +26,12 @@ void ProtocolLoader::LoadProtocol()
         {
             std::string name;
             file >> name;
+            if (name == "")
+            {
+                break;
+            }
             message_types[name] = max;
+            LOG("Message type " << name << " = " << max);
             max += 1;
             if (max == 0)
             {

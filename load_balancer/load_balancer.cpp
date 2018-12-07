@@ -47,7 +47,7 @@ void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
     return;
   }
   LOG("Key of length " << length << " = " << ((unsigned int *)key)[0] << ", " << ((unsigned int *)key)[1] << ", " << ((unsigned int *)key)[2] << " ... " << ((unsigned int *)key)[length-1]);
-  ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
+  ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length);
   flags[from].SetBit(EncryptFlag);
   //send back a message saying that i got the key
   int ret = stack.Send(buffer, sizeof(MessageType), addr, flags[from]);

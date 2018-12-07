@@ -7,7 +7,7 @@ int CreateEncryptionMessage(ProtocolLoader &protocol,char *buffer, char *key, sh
     memcpy(buffer, &type, sizeof(MessageType));
     buffer += sizeof(MessageType);
     memcpy(buffer, &size, sizeof(size));
-    memcpy(buffer+sizeof(size), key, size);
+    memcpy(buffer+sizeof(size), key, size*sizeof(unsigned));
     unsigned length = encryptor.encrypt(buffer, sizeof(size)+size);
     return length + sizeof(MessageType);
 }
@@ -30,6 +30,7 @@ short ReadEncryptionMessage(char *data, unsigned size, char *key, AsymetricEncry
     {
         return -1;
     }
-    memcpy(key, data+sizeof(ret), ret);
+    //because ret is num unsigned
+    memcpy(key, data+sizeof(ret), ret*sizeof(unsigned));
     return ret;
 }

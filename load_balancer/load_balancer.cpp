@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "load_balancer.h"
+#include "logger.h"
 
 
 LoadBalancer::LoadBalancer()
@@ -42,12 +43,18 @@ void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
   //if the message was malformed it returns -1 length then we ignore this meddage
   if (length == -1)
   {
+    LOGW("Bad key");
     return;
   }
+  LOG("Key of length " << length << " = " << ((unsigned int *)key)[0] << ", " << ((unsigned int *)key)[1] << ", " << ((unsigned int *)key)[2] << " ... " << ((unsigned int *)key)[length-1]);
   ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length*sizeof(unsigned int));
   flags[from].SetBit(EncryptFlag);
   //send back a message saying that i got the key
-  stack.Send(buffer, sizeof(MessageType), addr, flags[from]);
+  int ret = stack.Send(buffer, sizeof(MessageType), addr, flags[from]);
+  if (ret < 0)
+  {
+    LOGW("ret = " << ret);
+  }
 }
 void LoadBalancer::Relay(char *buffer, unsigned n, sockaddr_in *addr)
 {

@@ -17,6 +17,7 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
         stack->last_error = NOENCRYPTIONKEY;
       return NOENCRYPTIONKEY;
     }
+    LOG("sending unencrypted data = " << ToHexString(buffer, bytes));
     //save old size to put in packet
     int old_size = bytes;
     //round bytes to the nearest power of 8
@@ -24,7 +25,7 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
     //encrypt the buffer 8 bytes at a time
     for (int i = 0; i < bytes; i += 8)
     {
-      blowfish[*dest].encrypt(*reinterpret_cast<unsigned *>(buffer + i), *reinterpret_cast<unsigned *>(buffer + i + 4));
+      blowfish[*dest].encrypt(*reinterpret_cast<unsigned *>(buffer + i), *reinterpret_cast<unsigned *>(buffer + i + sizeof(unsigned)));
     }
     //shift the buffer over 2 bytes to add the message size, the bytes wont be larger than 65536
     for (int i = bytes-1; i >= 0; --i)
@@ -64,8 +65,9 @@ int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray
     //decrypt the buffer
     for (int i = 0; i < bytes; i += 8)
     {
-      blowfish[*location].decrypt(*reinterpret_cast<unsigned *>(buffer + i), *reinterpret_cast<unsigned *>(buffer + i + 4));
+      blowfish[*location].decrypt(*reinterpret_cast<unsigned *>(buffer + i), *reinterpret_cast<unsigned *>(buffer + i + sizeof(unsigned)));
     }
+    LOG("receiving unencrypted data = " << ToHexString(buffer, bytes));
     //ignore pad bytes
     return og_bytes;
   }

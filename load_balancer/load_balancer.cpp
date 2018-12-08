@@ -50,6 +50,7 @@ void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
   ((Encryption*)(stack.layers[2]))->blowfish[from] = BlowFish((unsigned int *)key, length);
   flags[from].SetBit(EncryptFlag);
   //send back a message saying that i got the key
+  *((MessageType*)buffer) = protocol.LookUp("EncryptionKey");
   int ret = stack.Send(buffer, sizeof(MessageType), addr, flags[from]);
   if (ret < 0)
   {

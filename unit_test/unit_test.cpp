@@ -968,9 +968,10 @@ bool TestEncryptionLayer()
 		}
 		test_layer.blowfish[test_addr].SetKey(key, sizeof(key) / sizeof(unsigned));
 		int n = test_layer.Send(buffer, len, &test_addr, flags);
-		if (unsigned(n-len) > 8)
+		if (unsigned(n-len) > 10)
 		{
 			PRINT_ERROR();
+			std::cout << " n = " << n << " len =  " << len << std::endl;
 			return false;
 		}
 		//make sure the buffer changed suffeicently
@@ -990,7 +991,11 @@ bool TestEncryptionLayer()
 			Print(temp, len);
 			return false;
 		}
-		n = test_layer.Receive(buffer, MAXPACKETSIZE, &test_addr, flags);
+		n = test_layer.Receive(buffer, n, &test_addr, flags);
+		if (n != len)
+		{
+			PRINT_ERROR();
+		}
 		//make sure they are te same again
 		for (int i = 0; i < len; ++i)
 		{

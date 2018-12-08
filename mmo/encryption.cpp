@@ -33,7 +33,7 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
       buffer[i+2] = buffer[i];
     }
     memcpy(buffer, &old_size, 2);
-    return bytes;
+    return bytes+2;
   }
   else
   {
@@ -63,11 +63,11 @@ int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray
       buffer[i] = buffer[i+2];
     }
     //decrypt the buffer
-    for (int i = 0; i < bytes; i += 8)
+    for (int i = 0; i < bytes-2; i += 8)
     {
       blowfish[*location].decrypt(*reinterpret_cast<unsigned *>(buffer + i), *reinterpret_cast<unsigned *>(buffer + i + sizeof(unsigned)));
     }
-    LOG("receiving unencrypted data = " << ToHexString(buffer, bytes));
+    LOG("receiving unencrypted data = " << ToHexString(buffer, og_bytes));
     //ignore pad bytes
     return og_bytes;
   }

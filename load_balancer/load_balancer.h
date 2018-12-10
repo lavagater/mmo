@@ -24,6 +24,11 @@ public:
   //network messages
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void Relay(char *buffer, unsigned n, sockaddr_in *addr);
+  void CreateAccount(char *buffer, unsigned n, sockaddr_in *addr);
+  void Login(char *buffer, unsigned n, sockaddr_in *addr);
+  void BadLogin(char *buffer, unsigned n, sockaddr_in *addr);
+  void ChangePassword(char *buffer, unsigned n, sockaddr_in *addr);
+  void SendLoginMessage(bool is_valid, sockaddr_in *addr);
 private:
   Config config;
   SOCKET sock;

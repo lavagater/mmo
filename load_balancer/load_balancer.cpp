@@ -33,6 +33,9 @@ LoadBalancer::LoadBalancer()
   protocol.LoadProtocol();
   network_signals.signals[protocol.LookUp("EncryptionKey")].Connect(std::bind(&LoadBalancer::EncryptionKey, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Relay")].Connect(std::bind(&LoadBalancer::Relay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("CreateAccount")].Connect(std::bind(&LoadBalancer::CreateAccount, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&LoadBalancer::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("ChangePassword")].Connect(std::bind(&LoadBalancer::ChangePassword, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 //addr and from are going to be the same
 void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
@@ -68,6 +71,84 @@ void LoadBalancer::Relay(char *buffer, unsigned n, sockaddr_in *addr)
   {
     LOGW("Send error code = " << send_err);
   }
+}
+void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  //create account is formed with
+  //message type first sizeof(MessageType) bytes
+  //16 bytes for the username
+  //40 bytes for password hash
+  //n must be exactly 56 + sizeof(MessageType) bytes then
+  if (n < 56 + sizeof(MessageType))
+  {
+    LOGW("Create account message only length " << n);
+  }
+  //move past message type since we already know its a createaccount
+  buffer += sizeof(MessageType);
+  //read username
+  char username[17] = {0};
+  memcpy(username, buffer, 16);
+  //read the password
+  char password[41] = {0};
+  memcpy(password, buffer+16, 40);
+  LOG("Creating account " << username << " password hash = " << password);
+  SendLoginMessage(rand()%2, addr);
+}
+void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  //create account is formed with
+  //message type first sizeof(MessageType) bytes
+  //16 bytes for the username
+  //40 bytes for password hash
+  //n must be exactly 56 + sizeof(MessageType) bytes then
+  if (n < 56 + sizeof(MessageType))
+  {
+    LOGW("login message only length " << n);
+  }
+  //move past message type since we already know its a createaccount
+  buffer += sizeof(MessageType);
+  //read username
+  char username[17] = {0};
+  memcpy(username, buffer, 16);
+  //read the password
+  char password[41] = {0};
+  memcpy(password, buffer+16, 40);
+  LOG("loging onto account " << username << " password hash = " << password);
+  SendLoginMessage(rand()%2, addr);
+}
+void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  //create account is formed with
+  //message type first sizeof(MessageType) bytes
+  //16 bytes for the username
+  //40 bytes for old password hash
+  //40 bytes for new password hash
+  //n must be exactly 96 + sizeof(MessageType) bytes then
+  if (n < 96 + sizeof(MessageType))
+  {
+    LOGW("Change password message only length " << n);
+  }
+  //move past message type since we already know its a createaccount
+  buffer += sizeof(MessageType);
+  //read username
+  char username[17] = {0};
+  memcpy(username, buffer, 16);
+  //read the password
+  char password[41] = {0};
+  memcpy(password, buffer+16, 40);
+  char newpassword[41] = {0};
+  memcpy(newpassword, buffer+56, 40);
+  LOG("change password on account " << username << " password hash = " << password << " new password = " << newpassword);
+  SendLoginMessage(rand()%2, addr);
+}
+void LoadBalancer::SendLoginMessage(bool is_valid, sockaddr_in *addr)
+{
+  //the reply to the client for the login/create account/change password
+  //message type is Login
+  *reinterpret_cast<MessageType*>(buffer) = protocol.LookUp("Login");
+  //first byte is wether it was successful or not 
+  buffer[sizeof(MessageType)] = is_valid;
+  stack.Send(buffer, sizeof(MessageType) + 1, addr, flags[from]);
 }
 void LoadBalancer::run()
 {

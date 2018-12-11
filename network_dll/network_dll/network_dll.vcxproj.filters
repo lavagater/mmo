@@ -18,6 +18,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="windows_macros.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_stack_dll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\asymetric_encryption.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mmo\bit_array.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
@@ -33,6 +42,9 @@
     <ClCompile Include="..\..\mmo\database.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\database_protocol.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mmo\encryption.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
@@ -42,10 +54,19 @@
     <ClCompile Include="..\..\mmo\frame_rate.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\load_balancer_protocol.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\logger.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mmo\meta.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mmo\network_stack.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\parser.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mmo\prioritization.cpp">
@@ -54,41 +75,38 @@
     <ClCompile Include="..\..\mmo\protocol.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\query.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mmo\reliability.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mmo\remote_database.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\signals.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\mmo\timer.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mmo\tokenizer.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
     <ClCompile Include="..\..\mmo\wyatt_sock.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
-    <ClCompile Include="windows_macros.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="network_stack_dll.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mmo\logger.cpp">
-      <Filter>mmo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mmo\asymetric_encryption.cpp">
-      <Filter>mmo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mmo\database_protocol.cpp">
-      <Filter>mmo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mmo\load_balancer_protocol.cpp">
-      <Filter>mmo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mmo\signals.cpp">
-      <Filter>mmo</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="windows_macros.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network_stack_dll.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\asymetric_encryption.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\bit_array.h">
       <Filter>mmo</Filter>
     </ClInclude>
@@ -104,6 +122,9 @@
     <ClInclude Include="..\..\mmo\database.h">
       <Filter>mmo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mmo\database_protocol.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\encryption.h">
       <Filter>mmo</Filter>
     </ClInclude>
@@ -116,10 +137,25 @@
     <ClInclude Include="..\..\mmo\frame_rate.h">
       <Filter>mmo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mmo\interpreter.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\load_balancer_protocol.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\logger.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\meta.h">
       <Filter>mmo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mmo\network_signals.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\network_stack.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\parser.h">
       <Filter>mmo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\prioritization.h">
@@ -128,45 +164,39 @@
     <ClInclude Include="..\..\mmo\protocol.h">
       <Filter>mmo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mmo\query.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\reliability.h">
       <Filter>mmo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\remote_database.h">
       <Filter>mmo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\mmo\signals.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\mmo\timer.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\tokenizer.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\types.h">
       <Filter>mmo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\wyatt_sock.h">
       <Filter>mmo</Filter>
     </ClInclude>
-    <ClInclude Include="windows_macros.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="network_stack_dll.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\logger.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\asymetric_encryption.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\database_protocol.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\load_balancer_protocol.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\network_signals.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mmo\signals.h">
-      <Filter>mmo</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\mmo\makefile">
+    <None Include="..\..\mmo\TokenKeywords.inl">
+      <Filter>mmo</Filter>
+    </None>
+    <None Include="..\..\mmo\Tokens.inl">
+      <Filter>mmo</Filter>
+    </None>
+    <None Include="..\..\mmo\TokenSymbols.inl">
       <Filter>mmo</Filter>
     </None>
   </ItemGroup>

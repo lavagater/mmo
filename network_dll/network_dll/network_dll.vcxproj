@@ -158,12 +158,15 @@
     <ClCompile Include="..\..\mmo\logger.cpp" />
     <ClCompile Include="..\..\mmo\meta.cpp" />
     <ClCompile Include="..\..\mmo\network_stack.cpp" />
+    <ClCompile Include="..\..\mmo\parser.cpp" />
     <ClCompile Include="..\..\mmo\prioritization.cpp" />
     <ClCompile Include="..\..\mmo\protocol.cpp" />
+    <ClCompile Include="..\..\mmo\query.cpp" />
     <ClCompile Include="..\..\mmo\reliability.cpp" />
     <ClCompile Include="..\..\mmo\remote_database.cpp" />
     <ClCompile Include="..\..\mmo\signals.cpp" />
     <ClCompile Include="..\..\mmo\timer.cpp" />
+    <ClCompile Include="..\..\mmo\tokenizer.cpp" />
     <ClCompile Include="..\..\mmo\wyatt_sock.cpp" />
     <ClCompile Include="network_stack_dll.cpp" />
     <ClCompile Include="windows_macros.cpp" />
@@ -180,23 +183,30 @@
     <ClInclude Include="..\..\mmo\event.h" />
     <ClInclude Include="..\..\mmo\event_types.h" />
     <ClInclude Include="..\..\mmo\frame_rate.h" />
+    <ClInclude Include="..\..\mmo\interpreter.h" />
     <ClInclude Include="..\..\mmo\load_balancer_protocol.h" />
     <ClInclude Include="..\..\mmo\logger.h" />
     <ClInclude Include="..\..\mmo\meta.h" />
     <ClInclude Include="..\..\mmo\network_signals.h" />
     <ClInclude Include="..\..\mmo\network_stack.h" />
+    <ClInclude Include="..\..\mmo\parser.h" />
     <ClInclude Include="..\..\mmo\prioritization.h" />
     <ClInclude Include="..\..\mmo\protocol.h" />
+    <ClInclude Include="..\..\mmo\query.h" />
     <ClInclude Include="..\..\mmo\reliability.h" />
     <ClInclude Include="..\..\mmo\remote_database.h" />
     <ClInclude Include="..\..\mmo\signals.h" />
     <ClInclude Include="..\..\mmo\timer.h" />
+    <ClInclude Include="..\..\mmo\tokenizer.h" />
+    <ClInclude Include="..\..\mmo\types.h" />
     <ClInclude Include="..\..\mmo\wyatt_sock.h" />
     <ClInclude Include="network_stack_dll.h" />
     <ClInclude Include="windows_macros.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\mmo\makefile" />
+    <None Include="..\..\mmo\TokenKeywords.inl" />
+    <None Include="..\..\mmo\Tokens.inl" />
+    <None Include="..\..\mmo\TokenSymbols.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

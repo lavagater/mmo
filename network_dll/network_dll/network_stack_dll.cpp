@@ -37,6 +37,8 @@ extern "C" {
     {
       id = dll_unused_ids.back();
       dll_unused_ids.pop_back();
+	  //make a new session
+	  dll_sessions[id] = session();
     }
     else
     {
@@ -62,10 +64,16 @@ extern "C" {
     dll_sessions[id].local = local;
     dll_sessions[id].server= server;
 
+	if (dll_sessions[id].flags[EncryptFlag])
+	{
+		LOGW("Encryption flag already set!!!");
+	}
+
     return id;
   }
   void DeleteSession(int id)
   {
+	  LOG("Deleting session " << id);
     //check if the id is not valid
     if (id < 0 || id > dll_sessions.size())
     {
@@ -78,7 +86,9 @@ extern "C" {
   }
   int SessionSend(int id, char *data, int length)
   {
+	  LOG("Sending " << length << " bytes id " << id);
     length = dll_sessions[id].stack->Send(data, length, &dll_sessions[id].server, dll_sessions[id].flags);
+	  LOG("Sent " << length << " bytes");
 	if (length == 0)
 	{
 	  LOGW("Sending message of length zero!!");
@@ -92,12 +102,16 @@ extern "C" {
 	{
 		LOGW("Recieving message of length zero!!");
 	}
-	//special case for encryption to set encryption bit
-	MessageType type = 0;
-	memcpy(&type, data, sizeof(MessageType));
-	if (type == dll_sessions[id].proto.LookUp("EncryptionKey"))
+	if (length > 0)
 	{
-		dll_sessions[id].flags.SetBit(EncryptFlag);
+		//special case for encryption to set encryption bit
+		MessageType type = 0;
+		memcpy(&type, data, sizeof(MessageType));
+		if (type == dll_sessions[id].proto.LookUp("EncryptionKey"))
+		{
+			LOG("Setting encryption for session " << id << " length = " << length);
+			dll_sessions[id].flags.SetBit(EncryptFlag);
+		}
 	}
 	return length;
   }
@@ -111,13 +125,14 @@ extern "C" {
     {
       key[i] = rand();
     }
+	LOG("Key of length " << length << " = " << key[0] << ", " << key[1] << ", " << key[2] << " ... " << key[length-1]);
     //set the encryption
     ((Encryption*)dll_sessions[id].stack->layers[2])->blowfish[dll_sessions[id].server] = BlowFish(key, length);
 
     //call some function to encrypt this message with an asymetric encryption
 	char buffer[MAXPACKETSIZE];
 	AsymetricEncryption as;
-	length = CreateEncryptionMessage(dll_sessions[id].proto, buffer, (char*)key, sizeof(key), as);
+	length = CreateEncryptionMessage(dll_sessions[id].proto, buffer, (char*)key, length, as);
 	dll_sessions[id].stack->Send(buffer, length, &dll_sessions[id].server, dll_sessions[id].flags);
 	//in the recieve call we will check for the response and set the encryption bit
   }

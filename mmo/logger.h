@@ -22,6 +22,7 @@
 #define LOGGER_H
 
 #include <fstream>
+#include <string>
 
 /*!
   \brief

@@ -5,6 +5,8 @@
 #include "logger.h"
 #include <unordered_map>
 #include <functional>
+#include <string.h>
+#include <cmath>
 
 class Adder
 {
@@ -23,13 +25,14 @@ public:
 	{
 		return lhs - rhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("subtract of std::string is undefined");
-		return lhs;
-	}
 };
+template<>
+inline std::string Subber::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("subtract of std::string is undefined");
+	return lhs;
+}
+
 class Timeser
 {
 public:
@@ -38,13 +41,13 @@ public:
 	{
 		return lhs * rhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("multiply of std::string is undefined");
-		return lhs;
-	}
 };
+template<>
+inline std::string Timeser::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("multiply of std::string is undefined");
+	return lhs;
+}
 class Divider
 {
 public:
@@ -53,13 +56,14 @@ public:
 	{
 		return lhs / rhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("divide of std::string is undefined");
-		return lhs;
-	}
 };
+template<>
+inline std::string Divider::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("divide of std::string is undefined");
+	return lhs;
+}
+
 class Modder
 {
 public:
@@ -68,13 +72,13 @@ public:
 	{
 		return lhs - rhs * std::floor(lhs / rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("modulo of std::string is undefined");
-		return lhs;
-	}
 };
+template<>
+inline std::string Modder::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("modulo of std::string is undefined");
+	return lhs;
+}
 
 class Equalityer
 {
@@ -84,19 +88,20 @@ public:
 	{
 		return T(lhs == rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		if (lhs == rhs)
-		{
-			return "1";
-		}
-		else
-		{
-			return "0";
-		}
-	}
 };
+template<>
+inline std::string Equalityer::operator()<std::string>(std::string lhs, std::string rhs)
+{
+	if (lhs == rhs)
+	{
+		return "1";
+	}
+	else
+	{
+		return "0";
+	}
+}
+
 class Inequalityer
 {
 public:
@@ -105,19 +110,19 @@ public:
 	{
 		return T(lhs != rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		if (lhs != rhs)
-		{
-			return "1";
-		}
-		else
-		{
-			return "0";
-		}
-	}
 };
+template<>
+inline std::string Inequalityer::operator()<std::string>(std::string lhs, std::string rhs)
+{
+	if (lhs != rhs)
+	{
+		return "1";
+	}
+	else
+	{
+		return "0";
+	}
+}
 
 class LessThaner
 {
@@ -127,13 +132,13 @@ public:
 	{
 		return T(lhs < rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search dvwev");
-		return lhs;
-	}
 };
+template<>
+inline std::string LessThaner::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search dvwev");
+	return lhs;
+}
 
 class LessThanOrEqualToer
 {
@@ -143,13 +148,13 @@ public:
 	{
 		return T(lhs <= rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search asdqwv");
-		return lhs;
-	}
 };
+template<>
+inline std::string LessThanOrEqualToer::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search asdqwv");
+	return lhs;
+}
 
 class GreaterThaner
 {
@@ -159,13 +164,13 @@ public:
 	{
 		return T(lhs > rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search awerhg");
-		return lhs;
-	}
 };
+template<>
+inline std::string GreaterThaner::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search awerhg");
+	return lhs;
+}
 
 class GreaterThanOrEqualToer
 {
@@ -175,147 +180,147 @@ public:
 	{
 		return T(lhs >= rhs);
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search rthr");
-		return lhs;
-	}
 };
+template<>
+inline std::string GreaterThanOrEqualToer::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search rthr");
+	return lhs;
+}
 
 class Logicaler
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(__attribute__((unused))T lhs, T rhs)
 	{
 		return rhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search wwbrte");
-		return lhs;
-	}
 };
+template<>
+inline std::string Logicaler::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search wwbrte");
+	return lhs;
+}
 
 class Positiver
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return +lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search sdvwegsdg");
-		return lhs;
-	}
 };
+template<>
+inline std::string Positiver::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search sdvwegsdg");
+	return lhs;
+}
 
 class Negator
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return -lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search sdvwegsdg");
-		return lhs;
-	}
-	template<>
-	unsigned operator()<unsigned>(unsigned lhs, unsigned rhs)
-	{
-		LOGW("This should not happen search sdvewsvgsxd");
-		return lhs;
-	}
 };
+template<>
+inline std::string Negator::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search sdvwegsdg");
+	return lhs;
+}
+template<>
+inline unsigned Negator::operator()<unsigned>(unsigned lhs, __attribute__((unused))unsigned rhs)
+{
+	LOGW("This should not happen search sdvewsvgsxd");
+	return lhs;
+}
 
 class LogicalNotter
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return !lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search rdhbr");
-		return lhs;
-	}
 };
+template<>
+inline std::string LogicalNotter::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search rdhbr");
+	return lhs;
+}
 
 class PreIncrementor
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return ++lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search tndfgdrtrd");
-		return lhs;
-	}
 };
+template<>
+inline std::string PreIncrementor::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search tndfgdrtrd");
+	return lhs;
+}
 
 class PreDecrementer
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return --lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search sdvwegsdg");
-		return lhs;
-	}
 };
+template<>
+inline std::string PreDecrementer::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search sdvwegsdg");
+	return lhs;
+}
 
 class PostIncrementer
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return ++lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search sdvwegsdg");
-		return lhs;
-	}
 };
+template<>
+inline std::string PostIncrementer::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search sdvwegsdg");
+	return lhs;
+}
 
 class PostDecrementor
 {
 public:
 	template<typename T>
-	T operator()(T lhs, T rhs)
+	T operator()(T lhs, __attribute__((unused))T rhs)
 	{
 		return --lhs;
 	}
-	template<>
-	std::string operator()<std::string>(std::string lhs, std::string rhs)
-	{
-		LOGW("This should not happen search sdvwegsdg");
-		return lhs;
-	}
 };
+template<>
+inline std::string PostDecrementor::operator()<std::string>(std::string lhs, __attribute__((unused))std::string rhs)
+{
+	LOGW("This should not happen search sdvwegsdg");
+	return lhs;
+}
 
 class Interpreter : public Visitor
 {
@@ -324,15 +329,13 @@ public:
 	std::unordered_map<std::string, Value> variables;
 	std::vector<std::unordered_map<Value, Value, ValueHash> *> maps;
 	std::vector<std::vector<Value> *> vectors;
-	//the arguments to be passed to main, format is [1 byte size of argument][the argument]...
-	const char *arguments; //note this can also be left blank and the arguments can be directly added to the variables
-						   //size in bytes of arguments char array
-	unsigned size;
+	std::vector<Value> arguments;
 	Value lastValue;
+	Value returnValue;
 	//this is set inside a break or continue node, 1 for break, 2 for continue
 	//it stops a scope and propegates up to the if/while where it is reset to 0
 	//return node uses this as well with a value of 3
-	int stopScope;
+	int stopScope = 0;
 	Interpreter()
 	{
 		functions["char"] = &ToChar;
@@ -347,9 +350,28 @@ public:
 		functions["GetKeys"] = std::bind(&Interpreter::GetKeys, this, std::placeholders::_1);;
 		functions["Size"] = &VectorSize;
 	}
+	~Interpreter()
+	{
+		for (unsigned i = 0; i < maps.size(); ++i)
+		{
+			delete maps[i];
+		}
+		for (unsigned i = 0; i < vectors.size(); ++i)
+		{
+			delete vectors[i];
+		}
+	}
 	int Visit(MainNode *node)
 	{
 		//for now im gonna assume the arguments are already in the variables
+		for (unsigned i = 0; i < node->parameters.size() && i < arguments.size(); ++i)
+		{
+			if (node->parameters[i])
+			{
+				node->parameters[i]->Walk(this);
+				*lastValue.pointer = arguments[i];
+			}
+		}
 		node->scope->Walk(this);
 		return 0;
 	}
@@ -362,6 +384,7 @@ public:
 	{
 		for (unsigned i = 0; i < node->statements.size(); ++i)
 		{
+			LOG("Statement " << i);
 			node->statements[i]->Walk(this);
 			if (stopScope)
 			{
@@ -372,7 +395,11 @@ public:
 	}
 	int Visit(ReturnNode *node)
 	{
-		node->Walk(this, false);
+		if (node->retrunValue)
+		{
+			node->retrunValue->Walk(this);
+			returnValue = lastValue;
+		}
 		stopScope = 3;
 		return 0;
 	}
@@ -512,6 +539,11 @@ public:
 			{
 				ret.type = Integer;
 				ret.m_int = function(lhs.m_int, int(rhs.m_char));
+			}
+			else if (rhs.type == Integer)
+			{
+				ret.type = Integer;
+				ret.m_int = function(lhs.m_int, rhs.m_int);
 			}
 			else if (rhs.type == Unsigned)
 			{
@@ -724,6 +756,8 @@ public:
 				ret.m_string = function(lhs.m_string, std::to_string(rhs.m_char));
 			}
 			break;
+			default:
+			break;
 		}
 		return ret;
 	}
@@ -758,6 +792,8 @@ public:
 		case String:
 			ret.m_char = args[0].m_string[0];
 			break;
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -769,12 +805,14 @@ public:
 		{
 			return ret;
 		}
+		LOG("type = " << args[0].type);
 		switch (args[0].type)
 		{
 		case Char:
 			ret.m_int = args[0].m_char;
 			break;
 		case Integer:
+			LOG("value = " << args[0].m_int);
 			ret = args[0];
 			break;
 		case Unsigned:
@@ -790,9 +828,13 @@ public:
 			ret.m_int = args[0].m_double;
 			break;
 		case String:
+		{
 			std::stringstream ss(args[0].m_string);
 			ss >> ret.m_int;
 			break;
+		}
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -825,9 +867,13 @@ public:
 			ret.m_unsigned = args[0].m_double;
 			break;
 		case String:
+		{
 			std::stringstream ss(args[0].m_string);
 			ss >> ret.m_unsigned;
 			break;
+		}
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -860,9 +906,13 @@ public:
 			ret.m_short = args[0].m_double;
 			break;
 		case String:
+		{
 			std::stringstream ss(args[0].m_string);
 			ss >> ret.m_short;
 			break;
+		}
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -895,9 +945,13 @@ public:
 			ret.m_float = args[0].m_double;
 			break;
 		case String:
+		{
 			std::stringstream ss(args[0].m_string);
 			ss >> ret.m_float;
 			break;
+		}
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -930,9 +984,13 @@ public:
 			ret = args[0];
 			break;
 		case String:
+		{
 			std::stringstream ss(args[0].m_string);
 			ss >> ret.m_double;
 			break;
+		}
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -974,6 +1032,8 @@ public:
 		case String:
 			ret = args[0];
 			break;
+		default:
+		break;
 		}
 		return ret;
 	}
@@ -1169,7 +1229,7 @@ public:
 			}
 			else
 			{
-				LOGW("Token::Assignment\Minus lhs is not a pointer");
+				LOGW("Token::Assignment/Minus lhs is not a pointer");
 			}
 			break;
 		case Token::AssignmentMultiply:
@@ -1518,6 +1578,8 @@ public:
 			}
 			break;
 		}
+		default:
+		break;
 		}
 		return 0;
 	}
@@ -1554,6 +1616,8 @@ public:
 			}
 			break;
 		}
+		default:
+		break;
 		}
 		return 0;
 	}
@@ -1564,13 +1628,16 @@ public:
 	}
 	int Visit(CallNode *node)
 	{
+		LOG("Call node");
 		std::vector<Value> args;
 		for (unsigned i = 0; i < node->arguments.size(); ++i)
 		{
 			node->arguments[i]->Walk(this);
+			LOG("adding argument " << lastValue.m_string);
 			args.push_back(lastValue);
 		}
 		std::string funcName = std::string(((NameReferenceNode*)node->left)->token.str, ((NameReferenceNode*)node->left)->token.length);
+		LOG("function = " << funcName);
 		if (functions.find(funcName) != functions.end())
 		{
 			lastValue = functions[funcName](args);

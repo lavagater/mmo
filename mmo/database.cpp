@@ -5,6 +5,7 @@
 #include <float.h>
 #include <algorithm>
 
+#include "logger.h"
 #include "database.h"
 #include "types.h"
 
@@ -12,6 +13,10 @@ Database::Database(const char *table_name) : size(0), num_ids(0), rows(),
 file(table_name, std::ios_base::binary | std::ios_base::in | std::ios_base::out),
 reusable_ids(), object_size(0)
 {
+	if (file.peek() == std::ifstream::traits_type::eof())
+	{
+		LOGW("Database file empty");
+	}
 	file_names[&file] = table_name;
 	//set the rows
 	unsigned num_rows;
@@ -89,6 +94,7 @@ reusable_ids(), object_size(0)
 
 		reusable_ids.push_back(temp);
 	}
+	LOG("wtf");
 }
 
 void Database::UpdateSize()
@@ -226,12 +232,14 @@ unsigned Database::Get(unsigned id, unsigned row, char *&data)
 
 void Database::Set(unsigned id, unsigned row, const void *data)
 {
+	LOG("1");
 	//find out how far into the object to get to the row we want
 	unsigned split_size = 0;
 	for (unsigned i = 0; i < row; ++i)
 	{
 		split_size += rows[i];
 	}
+	LOG("2");
 	//go to the spot in the file, (3 + rows.size()*3) * sizeof(unsigned) is the size of the header
 	file.seekg((3 + rows.size() * 3) * sizeof(unsigned) + id * object_size + split_size);
 	//get what the data was
@@ -240,15 +248,19 @@ void Database::Set(unsigned id, unsigned row, const void *data)
 	file.seekp((3 + rows.size() * 3) * sizeof(unsigned) + id * object_size + split_size);
 	//write the data
 	file.write(reinterpret_cast<const char*>(data), rows[row]);
+	LOG("3");
 
 	//update the skip list
 	if (sorted[row])
 	{
+	LOG("4");
 		unsigned node = FindNode(row, old_data, id);
 		RemoveNode(node, row);
+	LOG("5");
 		skip_lists[row].seekp(node + sizeof(unsigned));
 		skip_lists[row].write(reinterpret_cast<const char*>(data), rows[row]);
 		InsertNode(node, row, reinterpret_cast<const char*>(data), id);
+	LOG("6");
 	}
 	delete[] old_data;
 }
@@ -273,6 +285,7 @@ unsigned Database::Create()
 		size += 1;
 		UpdateSize();
 	}
+	LOG("New database entry id = " << id);
 	//for each sorted property set the value to random
 	unsigned split = 0;
 	for (unsigned i = 0; i < rows.size(); ++i)
@@ -343,6 +356,11 @@ std::vector<unsigned> Database::Find(unsigned row, char *value)
 std::vector<unsigned> Database::Find(unsigned row, char *min, char *max, int num_results, bool is_smallest)
 {
 	std::vector<unsigned> res;
+	if (sorted[row] == 0)
+	{
+		LOGW("Trying to find a non sorted value");
+		return res;
+	}
 	//getting the smallest we start at the smallest element and walk forward through the list
 	if (is_smallest)
 	{

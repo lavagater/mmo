@@ -12,6 +12,8 @@
 
 #include "load_balancer.h"
 #include "logger.h"
+#include "database_protocol.h"
+#include "query.h"
 
 
 LoadBalancer::LoadBalancer()
@@ -22,6 +24,8 @@ LoadBalancer::LoadBalancer()
   LOG("config loaded" << std::endl);
   sockaddr_in local;
   CreateAddress(0,static_cast<int>(config.properties["port"]),&local);
+  CreateAddress(static_cast<std::string>(config.properties["account_db_ip"]).c_str(),static_cast<int>(config.properties["account_db_port"]),&account_database);
+  flags[account_database].SetBit(ReliableFlag);
   Bind(sock, &local);
   SetNonBlocking(sock);
   Channel *channel = new Channel();
@@ -36,6 +40,7 @@ LoadBalancer::LoadBalancer()
   network_signals.signals[protocol.LookUp("CreateAccount")].Connect(std::bind(&LoadBalancer::CreateAccount, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&LoadBalancer::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("ChangePassword")].Connect(std::bind(&LoadBalancer::ChangePassword, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&LoadBalancer::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 //addr and from are going to be the same
 void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
@@ -92,7 +97,29 @@ void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
   char password[41] = {0};
   memcpy(password, buffer+16, 40);
   LOG("Creating account " << username << " password hash = " << password);
-  SendLoginMessage(rand()%2, addr);
+  //send query to database
+  query_id += 1;
+  query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
+  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
+    main(string username, string password)
+    {
+      print("This is the script\n");
+      print(username, "\n");
+      print(password, "\n");
+      vector res = find(0, username);
+      print(res, "\n");
+      if (Size(res) > 0)
+      {
+        return int(-1);
+      }
+      int id = create();
+      set(id, 0, username);
+      set(id, 1, password);
+      print("Script finished account id = ", id);
+      return int(id);
+    }
+  ), std::string(username), std::string(password));
+  stack.Send(buffer, len, &account_database, flags[account_database]);
 }
 void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -114,7 +141,34 @@ void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
   char password[41] = {0};
   memcpy(password, buffer+16, 40);
   LOG("loging onto account " << username << " password hash = " << password);
-  SendLoginMessage(rand()%2, addr);
+  //send query to database
+  query_id += 1;
+  query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
+  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
+    main(string username, string password)
+    {
+      print("Login\n");
+      print(username, "\n");
+      print(password, "\n");
+      vector res = find(0, username);
+      print(res, "\n");
+      if (Size(res) == 0)
+      {
+        print("Not found");
+        return int(-1);
+      }
+      string saved_pass = get(res[0], 1);
+      print("saved password = ", saved_pass, "\n");
+      if (saved_pass != password)
+      {
+        print("passwords dont match");
+        return int(-1);
+      }
+      print("Script finished account id = ", res[0]);
+      return int(res[0]);
+    }
+  ), std::string(username), std::string(password));
+  stack.Send(buffer, len, &account_database, flags[account_database]);
 }
 void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -139,16 +193,65 @@ void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
   char newpassword[41] = {0};
   memcpy(newpassword, buffer+56, 40);
   LOG("change password on account " << username << " password hash = " << password << " new password = " << newpassword);
-  SendLoginMessage(rand()%2, addr);
+  //send query to database
+  query_id += 1;
+  query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
+  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
+    main(string username, string password, string new_password)
+    {
+      print("change password\n");
+      print(username, "\n");
+      print(password, "\n");
+      print(new_password, "\n");
+      vector res = find(0, username);
+      print(res, "\n");
+      if (Size(res) == 0)
+      {
+        print("Not found");
+        return int(-1);
+      }
+      string saved_pass = get(res[0], 1);
+      print("saved password = ", saved_pass, "\n");
+      if (saved_pass != password)
+      {
+        print("passwords dont match");
+        return int(-1);
+      }
+      set(res[0], 1, new_password);
+      print("Script finished account id = ", res[0]);
+      return int(res[0]);
+    }
+  ), std::string(username), std::string(password));
+  stack.Send(buffer, len, &account_database, flags[account_database]);
 }
-void LoadBalancer::SendLoginMessage(bool is_valid, sockaddr_in *addr)
+void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
 {
+  (void)addr;
+  unsigned id;
+  unsigned size;
+  char *data = 0;
+  ParseQueryResponse(buffer, n, id, data, size);
+  LOG("id = " <<id<<" size = " << size);
+  if (size == sizeof(int))
+  {
+    LOG("return value = " << *reinterpret_cast<int*>(data));
+  }
+  //here we should signal based on the id
+  query_callbacks[id](data, size);
+}
+void LoadBalancer::SendLoginMessage(sockaddr_in addr, char *data, unsigned size)
+{
+  if (size != sizeof(int))
+  {
+    LOGW("Incorrect size = " << size);
+  }
+  int is_valid = *reinterpret_cast<int*>(data);
   //the reply to the client for the login/create account/change password
   //message type is Login
   *reinterpret_cast<MessageType*>(buffer) = protocol.LookUp("Login");
-  //first byte is wether it was successful or not 
+  //first byte is wether it was successful or not, -1 not successfull, 1 successfull
   buffer[sizeof(MessageType)] = is_valid;
-  stack.Send(buffer, sizeof(MessageType) + 1, addr, flags[from]);
+  stack.Send(buffer, sizeof(MessageType) + 1, &addr, flags[from]);
 }
 void LoadBalancer::run()
 {

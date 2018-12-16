@@ -21,15 +21,17 @@ int main(int argc, char **argv)
     return 1;
   }
   std::string tbl = argv[1] + std::string(".tbl");
+  std::cout << "tabel name = " << tbl << std::endl;
   std::vector<unsigned> rows;
   std::vector<unsigned> types;
   std::vector<unsigned> sorted;
-  for (int i = 2; i < argc; ++i)
+  for (int i = 2; i < argc; i += 3)
   {
     rows.push_back(atoi(argv[i]));
-    rows.push_back(atoi(argv[i+1]));
-    rows.push_back(atoi(argv[i+2]));
+    types.push_back(atoi(argv[i+1]));
+    sorted.push_back(atoi(argv[i+2]));
   }
+  std::cout << "make databse file" << std::endl;
   //create the file
   Database db(tbl.c_str(), rows, types, sorted);
   return 0;

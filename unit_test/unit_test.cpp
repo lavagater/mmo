@@ -25,6 +25,7 @@
 #include "prioritization.h"
 #include "encryption.h"
 #include "database.h"
+#include "types.h"
 #include "event.h"
 #include "protocol.h"
 #include "signals.h"
@@ -1022,8 +1023,8 @@ bool TestEncryptionLayer()
 bool TestDatabase()
 {
 	std::vector<unsigned> rows = {16,8,8,2,1,4};
-	std::vector<unsigned> types = { Database::Types::String, Database::Types::Double, Database::Types::Double, 
-		                              Database::Types::Short, Database::Types::Char, Database::Types::Integer };
+	std::vector<unsigned> types = { Types::String, Types::Double, Types::Double, 
+		                              Types::Short, Types::Char, Types::Integer };
   std::vector<unsigned> sorted = {1, 1, 1, 1, 1, 1};
 	//makes a new table replacing the old one
 	Database db("generated/test_table.tbl", rows, types, sorted);

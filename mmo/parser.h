@@ -8,6 +8,7 @@
 #include <iostream>
 #include "tokenizer.h"
 #include "types.h"
+#include "logger.h"
 
 class Visitor;
 class MainNode;
@@ -266,35 +267,35 @@ IndexNode *IndexRule(std::vector<Token> &tokens, unsigned &index);
 class Visitor
 {
 public:
-	virtual int Visit(AbstractNode *node) { return 1; }
-	virtual int Visit(MainNode *node) { return 1; }
-	virtual int Visit(ClassNode *node) { return 1; }
-	virtual int Visit(StatementNode *node) { return 1; }
-	virtual int Visit(TypeNode *node) { return 1; }
-	virtual int Visit(PointerTypeNode *node) { return 1; }
-	virtual int Visit(ReferenceTypeNode *node) { return 1; }
-	virtual int Visit(NamedTypeNode *node) { return 1; }
-	virtual int Visit(FunctionTypeNode *node) { return 1; }
-	virtual int Visit(ScopeNode *node) { return 1; }
-	virtual int Visit(FunctionNode *node) { return 1; }
-	virtual int Visit(LabelNode *node) { return 1; }
-	virtual int Visit(GotoNode *node) { return 1; }
-	virtual int Visit(ReturnNode *node) { return 1; }
-	virtual int Visit(BreakNode *node) { return 1; }
-	virtual int Visit(ContinueNode *node) { return 1; }
-	virtual int Visit(ExpressionNode *node) { return 1; }
-	virtual int Visit(IfNode *node) { return 1; }
-	virtual int Visit(WhileNode *node) { return 1; }
-	virtual int Visit(ForNode *node) { return 1; }
-	virtual int Visit(LiteralNode *node) { return 1; }
-	virtual int Visit(NameReferenceNode *node) { return 1; }
-	virtual int Visit(BinaryOperatorNode *node) { return 1; }
-	virtual int Visit(UnaryOperatorNode *node) { return 1; }
-	virtual int Visit(PostExpressionNode *node) { return 1; }
-	virtual int Visit(MemberAccessNode *node) { return 1; }
-	virtual int Visit(CallNode *node) { return 1; }
-	virtual int Visit(CastNode *node) { return 1; }
-	virtual int Visit(IndexNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))AbstractNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))MainNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ClassNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))StatementNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))TypeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))PointerTypeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ReferenceTypeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))NamedTypeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))FunctionTypeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ScopeNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))FunctionNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))LabelNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))GotoNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ReturnNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))BreakNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ContinueNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ExpressionNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))IfNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))WhileNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))ForNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))LiteralNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))NameReferenceNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))BinaryOperatorNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))UnaryOperatorNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))PostExpressionNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))MemberAccessNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))CallNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))CastNode *node) { return 1; }
+	virtual int Visit(__attribute__((unused))IndexNode *node) { return 1; }
 };
 
 class SetupLiterals : public Visitor
@@ -415,6 +416,8 @@ public:
 				case '\\':
 					node->value.m_char = '\\';
 					break;
+				default:
+					break;
 				}
 			}
 			node->value.type = Char;
@@ -434,6 +437,8 @@ public:
 		case Token::False:
 			node->value.m_int = 0;
 			node->value.type = Integer;
+			break;
+		default:
 			break;
 		}
 		return 0;

@@ -1,5 +1,7 @@
+
 #include "parser.h"
 #include "logger.h"
+
 
 static Token *lastAccepted;
 std::vector<AbstractNode*> all_nodes;
@@ -33,6 +35,8 @@ size_t ValueHash::operator()(const Value &rhs) const
 	case Blob:
 		ret = std::hash<char *>()(rhs.data);
 		break;
+	default:
+	break;
 	}
 	return ret;
 }
@@ -67,6 +71,8 @@ bool operator==(const Value &lhs, const Value &rhs)
 		case Blob:
 			return lhs.data == rhs.data;
 			break;
+		default:
+		break;
 		}
 	}
 	return false;
@@ -408,13 +414,13 @@ ExpressionNode *Expression7Rule(std::vector<Token> &tokens, unsigned &index)
 ExpressionNode *ValueRule(std::vector<Token> &tokens, unsigned &index)
 {
 	ExpressionNode *node = 0;
-	if (node = LiteralRule(tokens, index))
+	if ((node = LiteralRule(tokens, index)))
 	{
 	}
-	else if (node = GroupedExpressionRule(tokens, index))
+	else if ((node = GroupedExpressionRule(tokens, index)))
 	{
 	}
-	else if (node = NameReferenceRule(tokens, index))
+	else if ((node = NameReferenceRule(tokens, index)))
 	{
 		while (ExpressionNode *temp = NameReferenceRule(tokens, index))
 		{
@@ -448,7 +454,7 @@ ExpressionNode *GroupedExpressionRule(std::vector<Token> &tokens, unsigned &inde
 {
 	if (!Accept(tokens, Token::OpenParentheses, index))
 	{
-		return false;
+		return 0;
 	}
 	ExpressionNode *node = Expect(ExpressionRule(tokens, index));
 	Expect(tokens, Token::CloseParentheses, index);
@@ -503,7 +509,7 @@ IfNode *ElseRule(std::vector<Token> &tokens, unsigned &index)
 		return 0;
 	}
 	IfNode *node = CreateAbstractNode<IfNode>();
-	if (node->elseIf = IfRule(tokens, index))
+	if ((node->elseIf = IfRule(tokens, index)))
 	{
 	}
 	else
@@ -567,10 +573,10 @@ NameReferenceNode *ParameterRule(std::vector<Token> &tokens, unsigned &index)
 StatementNode *StatementRule(std::vector<Token> &tokens, unsigned &index)
 {
 	StatementNode *node = 0;
-	if (node = FreeStatementRule(tokens, index))
+	if ((node = FreeStatementRule(tokens, index)))
 	{
 	}
-	else if (node = DelimitedStatementRule(tokens, index))
+	else if ((node = DelimitedStatementRule(tokens, index)))
 	{
 		Expect(tokens, Token::Semicolon, index);
 	}
@@ -581,10 +587,10 @@ StatementNode *StatementRule(std::vector<Token> &tokens, unsigned &index)
 StatementNode *FreeStatementRule(std::vector<Token> &tokens, unsigned&index)
 {
 	StatementNode *node = 0;
-	if (node = IfRule(tokens, index))
+	if ((node = IfRule(tokens, index)))
 	{
 	}
-	else if (node = WhileRule(tokens, index))
+	else if ((node = WhileRule(tokens, index)))
 	{
 	}
 	return node;
@@ -602,10 +608,10 @@ StatementNode *DelimitedStatementRule(std::vector<Token> &tokens, unsigned &inde
 	{
 		node = CreateAbstractNode<ContinueNode>();
 	}
-	else if (node = ReturnRule(tokens, index))
+	else if ((node = ReturnRule(tokens, index)))
 	{
 	}
-	else if (node = ExpressionRule(tokens, index))
+	else if ((node = ExpressionRule(tokens, index)))
 	{
 	}
 	return node;

@@ -2,7 +2,7 @@
 #define QUERY_H
 
 #include "database.h"
-#include "Parser.h"
+#include "parser.h"
 #include "tokenizer.h"
 #include "interpreter.h"
 #include <vector>
@@ -18,12 +18,12 @@ public:
 	Query(Database &db);
 	~Query();
 	Database &db;
-	Interpreter interpreter;
-	bool Compile(std::string code, char *data);
+	bool Compile(std::string code, std::vector<Value> &parameters, Value &);
+	static int PackValue(char *buffer,Value value);
 	//functions for scripting language
 	Value GetDatabase(std::vector<Value> args);
 	Value CreateDatabase(std::vector<Value> args);
-	Value FindDatabase(std::vector<Value> args);
+	Value FindDatabase(std::vector<Value> args, Interpreter &interpreter);
 	Value DeleteDatabase(std::vector<Value> args);
 	Value SetDatabase(std::vector<Value> args);
 };

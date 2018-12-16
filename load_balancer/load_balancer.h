@@ -28,14 +28,18 @@ public:
   void Login(char *buffer, unsigned n, sockaddr_in *addr);
   void BadLogin(char *buffer, unsigned n, sockaddr_in *addr);
   void ChangePassword(char *buffer, unsigned n, sockaddr_in *addr);
-  void SendLoginMessage(bool is_valid, sockaddr_in *addr);
+  void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
+  void SendLoginMessage(sockaddr_in addr, char *data, unsigned size);
 private:
   Config config;
   SOCKET sock;
   NetworkStack stack;
   std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
+  std::unordered_map<unsigned, std::function<void(char *, unsigned)> > query_callbacks;
+  unsigned query_id;
   char buffer[MAXPACKETSIZE];
   sockaddr_in from;
+  sockaddr_in account_database;
   AsymetricEncryption encryptor;
   ProtocolLoader protocol;
   NetworkSignals network_signals;

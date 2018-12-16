@@ -19,7 +19,7 @@ DfaState *AddState(Token::TokenType acceptingState)
 
 void AddEdge(DfaState *from, DfaState *to, char c)
 {
-	from->links[c] = to;
+	from->links[(int)c] = to;
 }
 
 void AddDefaultEdge(DfaState *from, DfaState *to)
@@ -34,7 +34,7 @@ void ReadToken(DfaState *startingState, const char *stream, Token &out)
 	int i;
 	for (i = 0; stream[i]; ++i)
 	{
-		if (startingState->links[stream[i]] == 0)
+		if (startingState->links[(int)stream[i]] == 0)
 		{
 			if (startingState->links[sizeof(startingState->links) / sizeof(startingState->links[0]) - 1] != 0)
 			{
@@ -50,7 +50,7 @@ void ReadToken(DfaState *startingState, const char *stream, Token &out)
 		}
 		else
 		{
-			startingState = startingState->links[stream[i]];
+			startingState = startingState->links[(int)stream[i]];
 			if (startingState->acceptingToken != 0)
 			{
 				lastAccepted = startingState;
@@ -87,7 +87,7 @@ void DeleteStateAndChildren(DfaState *root)
 
 static void CheckForKeyWord(Token &out, const char *str, Token::TokenType type)
 {
-	int len = strlen(str);
+	unsigned len = strlen(str);
 	if (len == out.length && memcmp(out.str, str, out.length) == 0)
 	{
 		out.tokenType = type;
@@ -108,15 +108,15 @@ void ReadLanguageToken(DfaState *startingState, const char *stream, Token &out)
 DfaState *CreateOrAdd(DfaState *node, char c)
 {
 	DfaState *ret;
-	if (node->links[c] == 0)
+	if (node->links[(int)c] == 0)
 	{
 		ret = new DfaState;
 		ret->acceptingToken = Token::Invalid;
-		node->links[c] = ret;
+		node->links[(int)c] = ret;
 	}
 	else
 	{
-		ret = node->links[c];
+		ret = node->links[(int)c];
 	}
 	return ret;
 }
@@ -291,7 +291,6 @@ static void AddOperatorRule(DfaState *dfa, const char *str, Token::TokenType sta
 	DfaState *next = dfa;
 	for (int i = 0; i < len; ++i)
 	{
-		DfaState *prev = next;
 		next = CreateOrAdd(next, str[i]);
 	}
 	next->acceptingToken = state;

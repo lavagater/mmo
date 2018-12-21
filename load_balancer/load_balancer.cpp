@@ -97,6 +97,10 @@ void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
   char password[41] = {0};
   memcpy(password, buffer+16, 40);
   LOG("Creating account " << username << " password hash = " << password);
+  for (int i = 0; i < 40; ++i)
+  {
+    LOG("password[" << i << "] = " << password[i]);
+  }
   //send query to database
   query_id += 1;
   query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
@@ -141,6 +145,10 @@ void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
   char password[41] = {0};
   memcpy(password, buffer+16, 40);
   LOG("loging onto account " << username << " password hash = " << password);
+  for (int i = 0; i < 40; ++i)
+  {
+    LOG("password[" << i << "] = " << password[i]);
+  }
   //send query to database
   query_id += 1;
   query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
@@ -221,7 +229,7 @@ void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
       print("Script finished account id = ", res[0]);
       return int(res[0]);
     }
-  ), std::string(username), std::string(password));
+  ), std::string(username), std::string(password), std::string(newpassword));
   stack.Send(buffer, len, &account_database, flags[account_database]);
 }
 void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)

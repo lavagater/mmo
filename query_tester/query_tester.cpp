@@ -51,7 +51,7 @@ int main()
   std::vector<Value> arguments;
   Value username;
   username.type = Types::String;
-  username.m_string = "lavagater";
+  username.m_string = "πτδδΣß";
   arguments.push_back(username);
   Value password;
   password.type = Types::String;

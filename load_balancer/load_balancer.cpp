@@ -90,8 +90,9 @@ void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
   }
   //move past message type since we already know its a createaccount
   buffer += sizeof(MessageType);
-  //read username
+  //read username, TODO:double the size to account for the wide characters
   char username[17] = {0};
+  //TODO make a blobstruct for the username
   memcpy(username, buffer, 16);
   //read the password
   char password[41] = {0};

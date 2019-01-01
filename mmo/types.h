@@ -16,4 +16,11 @@ enum Types
 	num
 };
 
+//useful struct that contains the information needed for the blob type
+struct BlobStruct
+{
+	char *data;
+	unsigned size;
+};
+
 #endif

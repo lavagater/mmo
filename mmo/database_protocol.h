@@ -24,6 +24,15 @@ int FillValues(char *buffer, T value)
 
 //specializations
 template<>
+inline int FillValues<BlobStruct>(char *buffer, BlobStruct next)
+{
+	//add integer to the buffer
+	buffer[0] = Types::Blob;
+  *reinterpret_cast<unsigned*>(buffer+1) = next.size;
+  memcpy(next.data, buffer + 1 + sizeof(unsigned), next.size);
+  return 1 + sizeof(unsigned) + next.size;
+}
+template<>
 inline int FillValues<int>(char *buffer, int next)
 {
 	//add integer to the buffer

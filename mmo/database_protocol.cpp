@@ -34,6 +34,12 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
 		case Double:
 			ret.m_double = *reinterpret_cast<double*>(buffer);
 			return 1 + sizeof(double);
+    case Blob:
+    {
+      ret.size = *reinterpret_cast<unsigned*>(buffer);
+      ret.data = buffer + sizeof(unsigned);
+      return 1+sizeof(int)+sizeof(unsigned); 
+    }
 		case String:
 		{
       LOG("String switch");

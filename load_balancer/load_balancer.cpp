@@ -90,27 +90,27 @@ void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
   }
   //move past message type since we already know its a createaccount
   buffer += sizeof(MessageType);
-  //read username, TODO:double the size to account for the wide characters
-  char username[17] = {0};
-  //TODO make a blobstruct for the username
-  memcpy(username, buffer, 16);
+  //read username
+  char username[33] = {0};
+  memcpy(username, buffer, 32);
+  BlobStruct user_blob;
+  user_blob.data = username;
+  user_blob.size = 32;
+  buffer += 32;
   //read the password
-  char password[41] = {0};
-  memcpy(password, buffer+16, 40);
-  LOG("Creating account " << username << " password hash = " << password);
-  for (int i = 0; i < 40; ++i)
-  {
-    LOG("password[" << i << "] = " << password[i]);
-  }
+  char password[81] = {0};
+  memcpy(password, buffer, 80);
+  BlobStruct pass_blob;
+  pass_blob.data = password;
+  pass_blob.size = 80;
+  buffer += 80;
   //send query to database
   query_id += 1;
   query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
-  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
-    main(string username, string password)
+  int len = CreateQueryMessage(protocol, query_id, &LoadBalancer::buffer[0], STRINGIZE(
+    main(blob username, blob password)
     {
       print("This is the script\n");
-      print(username, "\n");
-      print(password, "\n");
       vector res = find(0, username);
       print(res, "\n");
       if (Size(res) > 0)
@@ -123,8 +123,9 @@ void LoadBalancer::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
       print("Script finished account id = ", id);
       return int(id);
     }
-  ), std::string(username), std::string(password));
-  stack.Send(buffer, len, &account_database, flags[account_database]);
+  ), user_blob, pass_blob);
+  LOG("query message length = " << len);
+  stack.Send(&LoadBalancer::buffer[0], len, &account_database, flags[account_database]);
 }
 void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -140,25 +141,26 @@ void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
   //move past message type since we already know its a createaccount
   buffer += sizeof(MessageType);
   //read username
-  char username[17] = {0};
-  memcpy(username, buffer, 16);
+  char username[33] = {0};
+  memcpy(username, buffer, 32);
+  BlobStruct user_blob;
+  user_blob.data = username;
+  user_blob.size = 32;
+  buffer += 32;
   //read the password
-  char password[41] = {0};
-  memcpy(password, buffer+16, 40);
-  LOG("loging onto account " << username << " password hash = " << password);
-  for (int i = 0; i < 40; ++i)
-  {
-    LOG("password[" << i << "] = " << password[i]);
-  }
+  char password[81] = {0};
+  memcpy(password, buffer, 80);
+  BlobStruct pass_blob;
+  pass_blob.data = password;
+  pass_blob.size = 80;
+  buffer += 80;
   //send query to database
   query_id += 1;
   query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
-  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
-    main(string username, string password)
+  int len = CreateQueryMessage(protocol, query_id, &LoadBalancer::buffer[0], STRINGIZE(
+    main(blob username, blob password)
     {
       print("Login\n");
-      print(username, "\n");
-      print(password, "\n");
       vector res = find(0, username);
       print(res, "\n");
       if (Size(res) == 0)
@@ -176,8 +178,8 @@ void LoadBalancer::Login(char *buffer, unsigned n, sockaddr_in *addr)
       print("Script finished account id = ", res[0]);
       return int(res[0]);
     }
-  ), std::string(username), std::string(password));
-  stack.Send(buffer, len, &account_database, flags[account_database]);
+  ), user_blob, pass_blob);
+  stack.Send(&LoadBalancer::buffer[0], len, &account_database, flags[account_database]);
 }
 void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -194,24 +196,34 @@ void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
   //move past message type since we already know its a createaccount
   buffer += sizeof(MessageType);
   //read username
-  char username[17] = {0};
-  memcpy(username, buffer, 16);
+  char username[33] = {0};
+  memcpy(username, buffer, 32);
+  BlobStruct user_blob;
+  user_blob.data = username;
+  user_blob.size = 32;
+  buffer += 32;
   //read the password
-  char password[41] = {0};
-  memcpy(password, buffer+16, 40);
-  char newpassword[41] = {0};
-  memcpy(newpassword, buffer+56, 40);
-  LOG("change password on account " << username << " password hash = " << password << " new password = " << newpassword);
+  char password[81] = {0};
+  memcpy(password, buffer, 80);
+  BlobStruct pass_blob;
+  pass_blob.data = password;
+  pass_blob.size = 80;
+  buffer += 80;
+  //read the new password
+  char newpassword[81] = {0};
+  memcpy(newpassword, buffer, 80);
+  BlobStruct newpass_blob;
+  newpass_blob.data = newpassword;
+  newpass_blob.size = 80;
+  buffer += 80;
   //send query to database
   query_id += 1;
+  LOG("query_id = " << query_id);
   query_callbacks[query_id] = std::bind(&LoadBalancer::SendLoginMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
-  int len = CreateQueryMessage(protocol, query_id, buffer, STRINGIZE(
-    main(string username, string password, string new_password)
+  int len = CreateQueryMessage(protocol, query_id, &LoadBalancer::buffer[0], STRINGIZE(
+    main(blob username, blob password, blob new_password)
     {
       print("change password\n");
-      print(username, "\n");
-      print(password, "\n");
-      print(new_password, "\n");
       vector res = find(0, username);
       print(res, "\n");
       if (Size(res) == 0)
@@ -219,19 +231,16 @@ void LoadBalancer::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
         print("Not found");
         return int(-1);
       }
-      string saved_pass = get(res[0], 1);
-      print("saved password = ", saved_pass, "\n");
+      blob saved_pass = get(res[0], 1);
       if (saved_pass != password)
       {
-        print("passwords dont match");
         return int(-1);
       }
       set(res[0], 1, new_password);
-      print("Script finished account id = ", res[0]);
       return int(res[0]);
     }
-  ), std::string(username), std::string(password), std::string(newpassword));
-  stack.Send(buffer, len, &account_database, flags[account_database]);
+  ), user_blob, pass_blob, newpass_blob);
+  stack.Send(&LoadBalancer::buffer[0], len, &account_database, flags[account_database]);
 }
 void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -241,11 +250,12 @@ void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
   char *data = 0;
   ParseQueryResponse(buffer, n, id, data, size);
   LOG("id = " <<id<<" size = " << size);
-  if (size == sizeof(int))
-  {
-    LOG("return value = " << *reinterpret_cast<int*>(data));
-  }
   //here we should signal based on the id
+  if (query_callbacks.find(id) == query_callbacks.end())
+  {
+    LOGW("id " << id << " not in the callbacks");
+    return;
+  }
   query_callbacks[id](data, size);
 }
 void LoadBalancer::SendLoginMessage(sockaddr_in addr, char *data, unsigned size)

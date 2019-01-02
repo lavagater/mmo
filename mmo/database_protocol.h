@@ -8,10 +8,13 @@
 */
 #ifndef DATABASE_PROTOCOL_H
 #define DATABASE_PROTOCOL_H
+
 #include "protocol.h"
 #include "logger.h"
 #include "parser.h"
 #include "types.h"
+
+#include <cstring>
 
 //returns the amount written into the buffer
 template<typename T>
@@ -29,7 +32,7 @@ inline int FillValues<BlobStruct>(char *buffer, BlobStruct next)
 	//add integer to the buffer
 	buffer[0] = Types::Blob;
   *reinterpret_cast<unsigned*>(buffer+1) = next.size;
-  memcpy(next.data, buffer + 1 + sizeof(unsigned), next.size);
+  memcpy(buffer + 1 + sizeof(unsigned), next.data, next.size);
   return 1 + sizeof(unsigned) + next.size;
 }
 template<>

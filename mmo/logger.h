@@ -28,7 +28,7 @@
   \brief
     Turns a buffer into hex
 */
-std::string ToHexString(char *buffer, int length);
+std::string ToHexString(const char *buffer, int length);
 
 /*!
   \brief

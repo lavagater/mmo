@@ -38,7 +38,7 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
     {
       ret.size = *reinterpret_cast<unsigned*>(buffer);
       ret.data = buffer + sizeof(unsigned);
-      return 1+sizeof(int)+sizeof(unsigned); 
+      return 1+ret.size+sizeof(unsigned); 
     }
 		case String:
 		{
@@ -64,7 +64,7 @@ bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &s
 {
     if (size < sizeof(MessageType) + sizeof(short))
     {
-      LOGW("ParseQueryMessage bad packet");
+      LOGW("ParseQueryMessage bad packet size = " << size);
       return false;
     }
     //skip the message type

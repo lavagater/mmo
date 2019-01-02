@@ -69,6 +69,16 @@ Value Query::SetDatabase(std::vector<Value> args)
 		data.push_back(buffer);
 		memcpy(buffer, ret.m_string.c_str(), ret.m_string.length());
 		break;
+	case Blob:
+	    if (ret.type != Blob)
+		{
+			LOGW("Passing type " << ret.type << " to function taking blob");
+		}
+		buffer = new char[db.rows[row]];
+		memset(buffer, 0, db.rows[row]);
+		data.push_back(buffer);
+		memcpy(buffer, ret.data, ret.size);
+		break;
 	default:
 	break;
 	}
@@ -156,6 +166,16 @@ Value Query::FindDatabase(std::vector<Value> args, Interpreter &interpreter)
 		data.push_back(buffer);
 		memcpy(buffer, ret.m_string.c_str(), ret.m_string.length());
 		break;
+	case Blob:
+	    if (ret.type != Blob)
+		{
+			LOGW("Passing type " << ret.type << " to function taking blob");
+		}
+		buffer = new char[db.rows[row]];
+		memset(buffer, 0, db.rows[row]);
+		data.push_back(buffer);
+		memcpy(buffer, ret.data, ret.size);
+		break;
 	default:
 	break;
 	}
@@ -219,6 +239,11 @@ Value Query::GetDatabase(std::vector<Value> args)
 	case String:
 		ret.m_string = std::string(buffer, n);
 		break;
+	case Blob:
+		ret.data = new char[n];
+		ret.size = n;
+		data.push_back(ret.data);
+	    break;
 	default:
 	break;
 	}

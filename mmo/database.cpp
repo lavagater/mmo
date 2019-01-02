@@ -594,6 +594,7 @@ int Database::Compare(unsigned row, const char *lhs, const char*rhs)
 		break;
 	}
 	case String:
+	case Blob:
 	{
 		return memcmp(lhs, rhs, rows[row]);
 		break;
@@ -636,6 +637,7 @@ void Database::MakeLargest(unsigned row, char *data)
 		break;
 	}
 	case String:
+	case Blob:
 	{
 		memset(data, (unsigned char)(-1), rows[row]);
 		break;
@@ -906,24 +908,26 @@ unsigned Database::AddNode(unsigned row, const  char *data, unsigned id)
 }
 
 //helper for printing node names
-static std::string name_node(unsigned id, unsigned file_id, unsigned level, char *data, unsigned row)
+static std::string name_node(unsigned id, unsigned file_id, unsigned level, char *data, unsigned row, Database &db)
 {
 	std::stringstream ss;
 	ss << "\"id" + std::to_string(id) + "_" + std::to_string(file_id) + "_" + std::to_string(level) + "\\n";
-	if (row == Char)
+	if (db.types[row] == Char)
 		ss << *reinterpret_cast<char*>(data);
-	if (row == Short)
+	if (db.types[row] == Short)
 		ss << *reinterpret_cast<short*>(data);
-	if (row == Integer)
+	if (db.types[row] == Integer)
 		ss << *reinterpret_cast<int*>(data);
-	if (row == Float)
+	if (db.types[row] == Float)
 		ss << *reinterpret_cast<float*>(data);
-	if (row == Double)
+	if (db.types[row] == Double)
 		ss << *reinterpret_cast<double*>(data);
-	if (row == Unsigned)
+	if (db.types[row] == Unsigned)
 		ss << *reinterpret_cast<int*>(data);
-	if (row == String)
+	if (db.types[row] == String)
 		ss.write("String", 6);
+	if (db.types[row] == Blob)
+		ss << ToHexString(data, db.rows[row]);
 	ss << "\"";
 	return ss.str();
 }
@@ -961,11 +965,11 @@ std::string Database::ToGraphViz(unsigned row)
 			skip_lists[row].seekg(next);
 			skip_lists[row].read(reinterpret_cast<char*>(&nextid), sizeof(nextid));
 			skip_lists[row].read(data_n, rows[row]);
-			graph += name_node(id, walker, i, data, rows[row]) + " -> " + name_node(nextid, next, i, data_n, rows[row]) + ";\n";
+			graph += name_node(id, walker, i, data, row, *this) + " -> " + name_node(nextid, next, i, data_n, row, *this) + ";\n";
 			if (i != 0)
 			{
-				graph += "{rank = same; " + name_node(id, walker, i - 1, data, rows[row]) + " " + name_node(id, walker, i, data, rows[row]) + "}";
-				graph += name_node(id, walker, i - 1, data, rows[row]) + " -> " + name_node(id, walker, i, data, rows[row]) + ";\n";
+				graph += "{rank = same; " + name_node(id, walker, i - 1, data, row, *this) + " " + name_node(id, walker, i, data, row, *this) + "}";
+				graph += name_node(id, walker, i - 1, data, row, *this) + " -> " + name_node(id, walker, i, data, row, *this) + ";\n";
 			}
 		}
 		//seek to the first next pointer

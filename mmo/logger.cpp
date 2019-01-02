@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <sstream>
 
-std::string ToHexString(char *buffer, int length)
+std::string ToHexString(const char *buffer, int length)
 {
   std::stringstream ss;
   ss << std::hex;

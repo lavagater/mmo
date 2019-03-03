@@ -13,18 +13,40 @@
 #include "load_balancer.h"
 #include "logger.h"
 #include "database_protocol.h"
+#include "load_balancer_protocol.h"
 #include "query.h"
 
 
-LoadBalancer::LoadBalancer()
-  :sock(CreateSocket(IPPROTO_UDP)),
-   stack(sock)
+LoadBalancer::LoadBalancer(Config &config)
+  :config(config),
+   sock(CreateSocket(IPPROTO_UDP)),
+   stack(sock),
+   query_id(0),
+   protocol(static_cast<std::string>(config.properties["proto_dir"]))
 {
-  config.Init("resources/load_balancer.conf");
-  LOG("config loaded" << std::endl);
   sockaddr_in local;
   CreateAddress(0,static_cast<int>(config.properties["port"]),&local);
   CreateAddress(static_cast<std::string>(config.properties["account_db_ip"]).c_str(),static_cast<int>(config.properties["account_db_port"]),&account_database);
+  //add zones from config to the zones
+  LOG("reading zones from config");
+  unsigned zone_id = 0;
+  while(1)
+  {
+    std::stringstream ss;
+    ss << "zone";
+    ss << zone_id++;
+    ss << "_";
+    if (config.properties[ss.str() + "name"].type == type_null)
+    {
+      LOG("No Zones");
+      break;
+    }
+    sockaddr_in zone_addr;
+    CreateAddress(static_cast<std::string>(config.properties[ss.str()+"ip"]).c_str(),static_cast<int>(config.properties[ss.str()+"port"]),&zone_addr);
+    zones[zone_addr] = static_cast<std::string>(config.properties[ss.str() + "name"]);
+    zone_array.push_back(zone_addr);
+  }
+  LOG("finished reading zones from config");
   flags[account_database].SetBit(ReliableFlag);
   Bind(sock, &local);
   SetNonBlocking(sock);
@@ -41,6 +63,7 @@ LoadBalancer::LoadBalancer()
   network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&LoadBalancer::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("ChangePassword")].Connect(std::bind(&LoadBalancer::ChangePassword, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&LoadBalancer::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("Forward")].Connect(std::bind(&LoadBalancer::ForwardResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 //addr and from are going to be the same
 void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
@@ -264,13 +287,46 @@ void LoadBalancer::SendLoginMessage(sockaddr_in addr, char *data, unsigned size)
   {
     LOGW("Incorrect size = " << size);
   }
-  int is_valid = *reinterpret_cast<int*>(data);
+  int id = *reinterpret_cast<int*>(data);
+  LOG("player id = " << id);
   //the reply to the client for the login/create account/change password
   //message type is Login
   *reinterpret_cast<MessageType*>(buffer) = protocol.LookUp("Login");
-  //first byte is wether it was successful or not, -1 not successfull, 1 successfull
-  buffer[sizeof(MessageType)] = is_valid;
-  stack.Send(buffer, sizeof(MessageType) + 1, &addr, flags[from]);
+  *reinterpret_cast<int*>(buffer+sizeof(MessageType)) = id;
+  //TODO free these when the client disconnects
+  clients[addr] = id;
+  clients_by_id[id] = addr;
+  //TODO make a better system for this
+  //tell the zone about the new player
+  stack.Send(buffer, sizeof(MessageType) + sizeof(id), &addr, flags[from]);
+  LOG("send it size = " << zone_array.size() << " address of first element =  " << &(zone_array[0]));
+  stack.Send(buffer, sizeof(MessageType) + sizeof(id), &(zone_array[0]), flags[from]);
+LOG("sent it");
+}
+void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  (void)addr;
+  unsigned id;
+  int dest;
+  buffer = ParseForwardMessage(buffer, n, dest, id);
+  if (dest == 0)
+  {
+    LOG("forwarding message to client with id " << id);
+  }
+  else
+  {
+    LOG("forwarding message to zone " << zones[zone_array[id]]);
+  }
+  if (dest == 0)
+  {
+    addr = &clients_by_id[id];
+  }
+  else
+  {
+    addr = &zone_array[id];
+  }
+  //send the message
+  stack.Send(buffer, n, addr, flags[*addr]);
 }
 void LoadBalancer::run()
 {
@@ -296,12 +352,15 @@ void LoadBalancer::run()
   }
 }
 
+
 int main()
 {
   //setup the network stack
   Init();
-
-  LoadBalancer lb;
+  Config config;
+  config.Init("resources/load_balancer.conf");
+  LOG("config loaded" << std::endl);
+  LoadBalancer lb(config);
   lb.run();
   return 420;
 }

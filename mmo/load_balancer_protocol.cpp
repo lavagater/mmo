@@ -34,3 +34,32 @@ short ReadEncryptionMessage(char *data, unsigned size, char *key, AsymetricEncry
     memcpy(key, data+sizeof(ret), ret*sizeof(unsigned));
     return ret;
 }
+
+char *ParseForwardMessage(char *data, unsigned &size, int &dest, unsigned &id)
+{
+    //           type            dest            id           any data in message
+    if (size < sizeof(MessageType) + sizeof(char) + sizeof(unsigned) + 1)
+    {
+        return 0;
+    }
+    dest = *reinterpret_cast<unsigned char*>(data+sizeof(MessageType));
+    id = *reinterpret_cast<unsigned*>(data+sizeof(MessageType) + sizeof(char));
+    size -= sizeof(MessageType) + sizeof(char) + sizeof(unsigned);
+    return data + sizeof(MessageType) + sizeof(char) + sizeof(unsigned);
+}
+
+
+void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, int dest, unsigned id, char *output)
+{
+    //shift over the message
+    for (unsigned i = 1; i <= size; ++i)
+    {
+        output[size-i + sizeof(MessageType) + sizeof(char) + sizeof(unsigned)] = data[size-i];
+    }
+    *reinterpret_cast<MessageType*>(output) = protocol.LookUp("Forward");
+    output += sizeof(MessageType);
+    *reinterpret_cast<char*>(output) = dest;
+    output += sizeof(char);
+    *reinterpret_cast<unsigned*>(output) = id;
+    size += sizeof(MessageType) + sizeof(char) + sizeof(unsigned);
+}

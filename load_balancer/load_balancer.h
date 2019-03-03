@@ -16,10 +16,11 @@
 #include "logger.h"
 #include "network_signals.h"
 
+
 class LoadBalancer
 {
 public:
-  LoadBalancer();
+  LoadBalancer(Config &config);
   void run();
   //network messages
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
@@ -29,12 +30,18 @@ public:
   void BadLogin(char *buffer, unsigned n, sockaddr_in *addr);
   void ChangePassword(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
+  void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void SendLoginMessage(sockaddr_in addr, char *data, unsigned size);
 private:
-  Config config;
+  Config &config;
   SOCKET sock;
   NetworkStack stack;
   std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
+  std::unordered_map<sockaddr_in, std::string, SockAddrHash> zones;
+  std::vector<sockaddr_in> zone_array;
+  //TODO: listen for disconnect signal and erase the client
+  std::unordered_map<sockaddr_in, unsigned, SockAddrHash> clients;
+  std::unordered_map<unsigned, sockaddr_in> clients_by_id;
   std::unordered_map<unsigned, std::function<void(char *, unsigned)> > query_callbacks;
   unsigned query_id;
   char buffer[MAXPACKETSIZE];

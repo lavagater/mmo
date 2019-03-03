@@ -21,7 +21,8 @@ DatabaseApp::DatabaseApp(Config &conf, std::string dbfile)
   db(dbfile.c_str()),
   query(db),
   sock(CreateSocket(IPPROTO_UDP)),
-  stack(sock)
+  stack(sock),
+  protocol(static_cast<std::string>(config.properties["proto_dir"]))
 {
   std::cout << "start" << std::endl;
   //setup the network stack

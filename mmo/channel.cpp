@@ -11,13 +11,13 @@ int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute_
     stack->connections.insert(std::make_pair(*dest, ConnectionState()));
     LOG("send new connection, id = " << stack->connections[*dest].connection_id);
   }
-  LOG("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
+  LOGN("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   return bytes;
 }
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOG("Recieving " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
+  LOGN("Recieving " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {
@@ -28,7 +28,7 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
       {
         //send a pong message
         *buffer = Pong;
-        LOG("Sending pong");
+        LOGN("Sending pong");
         stack->Send(buffer, bytes, location, flags, layer_id);
         return 0;
       }
@@ -83,7 +83,7 @@ void Channel::Update(double dt)
       *reinterpret_cast<double*>(buffer+1) = stack->timer.GetTotalTime();
       BitArray<HEADERSIZE> flags;
       flags.SetBit(MessageTypeFlag);
-      LOG("Sending Ping");
+      LOGN("Sending Ping");
       stack->Send(buffer, 1+sizeof(double), &it->first, flags, layer_id);
       //reset timer
       it->second.ping_timer = TIME_BETWEEN_PINGS;

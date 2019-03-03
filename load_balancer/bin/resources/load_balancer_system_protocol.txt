@@ -1,5 +1,0 @@
-EncryptionKey
-Relay
-CreateAccount
-Login
-ChangePassword

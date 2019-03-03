@@ -27,6 +27,16 @@ bool operator==(const sockaddr_in &lhs, const sockaddr_in &rhs)
   return lhs.sin_addr.s_addr == rhs.sin_addr.s_addr && lhs.sin_port == rhs.sin_port;
 }
 
+bool operator<(const sockaddr_in &lhs, const sockaddr_in &rhs)
+{
+  //if ips are the same compare ports, otherwise just compare ip
+  if (lhs.sin_addr.s_addr == rhs.sin_addr.s_addr)
+  	return lhs.sin_port < rhs.sin_port;
+  else
+  	return lhs.sin_addr.s_addr < rhs.sin_addr.s_addr;
+	
+}
+
 size_t SimpleHash(unsigned key)
 {
   for (unsigned i = 0; i < 17; ++i)
@@ -85,7 +95,7 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 		last_error= GetError();
 		return last_error;
 	}
-	LOG("Recieve " << recv << " bytes");
+	LOGN("Recieve " << recv << " bytes");
 	//packet cant be less than the header size, the packet must be bad
 	if (recv < HEADERSIZE/8)
 	{

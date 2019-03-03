@@ -158,11 +158,18 @@ public:
 	size_t operator()(const sockaddr_in &rhs) const;
 };
 
+
 /*!
 	\brief
 	  Comparison for sockaddr_in so that it can be used as a key
 */
 bool operator==(const sockaddr_in &lhs, const sockaddr_in &rhs);
+
+/*!
+	\brief
+	  less than for sockaddr_in so that it can be used as a key to a set
+*/
+bool operator<(const sockaddr_in &lhs, const sockaddr_in &rhs);
 
 /*!
 	\brief

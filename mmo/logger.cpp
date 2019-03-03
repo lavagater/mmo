@@ -23,9 +23,9 @@ std::string ToHexString(const char *buffer, int length)
 	return ss.str();
 }
 
-std::fstream Logger::Notification()
+std::fstream Logger::Notification(std::string filename)
 {
-  std::fstream file("generated/logger_notifications.log", std::ios_base::app);
+  std::fstream file(filename, std::ios_base::app);
   file << std::endl;
   file << "********************************************************" << std::endl;
   auto now = std::chrono::system_clock::now();

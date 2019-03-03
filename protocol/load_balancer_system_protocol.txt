@@ -3,3 +3,5 @@ Relay
 CreateAccount
 Login
 ChangePassword
+Forward
+LookUp

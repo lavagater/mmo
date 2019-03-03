@@ -4,16 +4,16 @@
 #include <iostream>
 #include <string>
 
-ProtocolLoader::ProtocolLoader()
+ProtocolLoader::ProtocolLoader(std::string protocol_directory)
 {
-    protocol_files.push_back("resources/database_system_protocol.txt");
-    protocol_files.push_back("resources/load_balancer_system_protocol.txt");
-    protocol_files.push_back("resources/zone_system_protocol.txt");
-    protocol_files.push_back("resources/client_system_protocol.txt");
-    protocol_files.push_back("resources/database_game_protocol.txt");
-    protocol_files.push_back("resources/load_balancer_game_protocol.txt");
-    protocol_files.push_back("resources/zone_game_protocol.txt");
-    protocol_files.push_back("resources/client_game_protocol.txt");
+    protocol_files.push_back(protocol_directory + "database_system_protocol.txt");
+    protocol_files.push_back(protocol_directory + "load_balancer_system_protocol.txt");
+    protocol_files.push_back(protocol_directory + "zone_system_protocol.txt");
+    protocol_files.push_back(protocol_directory + "client_system_protocol.txt");
+    protocol_files.push_back(protocol_directory + "database_game_protocol.txt");
+    protocol_files.push_back(protocol_directory + "load_balancer_game_protocol.txt");
+    protocol_files.push_back(protocol_directory + "zone_game_protocol.txt");
+    protocol_files.push_back(protocol_directory + "client_game_protocol.txt");
 }
 
 void ProtocolLoader::LoadProtocol()
@@ -23,6 +23,10 @@ void ProtocolLoader::LoadProtocol()
     for (unsigned i = 0;i < protocol_files.size(); ++i)
     {
         std::ifstream file(protocol_files[i]);
+        if (!file.good())
+        {
+            LOGW("protocol file " << protocol_files[i] << " failed to open");
+        }
         while(file.good() && !file.eof())
         {
             std::string name;

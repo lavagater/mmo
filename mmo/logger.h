@@ -34,7 +34,13 @@ std::string ToHexString(const char *buffer, int length);
   \brief
     Macro to add usefull information to the log
 */
-#define LOG(x) Logger::Notification() << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x
+#define LOG(x) Logger::Notification("generated/logger_notifications.log") << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x
+
+/*!
+  /brief
+    Logger used for low level network traffic
+*/
+#define LOGN(x) Logger::Notification("generated/logger_network.log") << "File " << __FILE__ << " Function " << __FUNCTION__ << " Line " << __LINE__ << "\n" << x
 
 
 /*!
@@ -57,7 +63,7 @@ public:
     \return
       the file stream
   */
-  static std::fstream Notification();
+  static std::fstream Notification(std::string file);
   /*!
     \brief
       opens the log file and returns it by value. Also adds the current time to the log.

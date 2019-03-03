@@ -22,8 +22,9 @@ class ProtocolLoader
 public:
   /**
    * @brief Constructor adds the normal/system protocol file names to the protocol_files
+   * @param protocol_directory string of the directory where the protocol files are located
    */
-  ProtocolLoader();
+  ProtocolLoader(std::string protocol_directory);
   /**
    * @brief Reads all the protocol files and adds them to the messages_types
    */

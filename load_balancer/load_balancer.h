@@ -15,13 +15,17 @@
 #include "load_balancer_protocol.h"
 #include "logger.h"
 #include "network_signals.h"
+#include "dispatcher.h"
 
+#include <memory>
 
 class LoadBalancer
 {
 public:
   LoadBalancer(Config &config);
   void run();
+  //called from dispatcher so no raw memory is used, only shared pointers and copies
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
   //network messages
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void Relay(char *buffer, unsigned n, sockaddr_in *addr);
@@ -36,6 +40,7 @@ private:
   Config &config;
   SOCKET sock;
   NetworkStack stack;
+  Dispatcher dispatcher;
   std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
   std::unordered_map<sockaddr_in, std::string, SockAddrHash> zones;
   std::vector<sockaddr_in> zone_array;

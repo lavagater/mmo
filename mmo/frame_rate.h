@@ -8,7 +8,8 @@
 */
 #ifndef FRAM_H
 #define FRAM_H
-#include <time.h>
+#include <chrono>
+
 /*!
   \brief
     Does timing.
@@ -46,9 +47,9 @@ private:
 	//the previous time, for GetPrevTime
 	double last_time;
   //the time at the creation of the frame rate
-  timespec start;
+  std::chrono::system_clock::time_point start;
   //the time at the last GetTime call
-	timespec prev;
+	std::chrono::system_clock::time_point prev;
 };
 
 #endif

@@ -2,15 +2,14 @@
 
 FrameRate::FrameRate()
 {
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &prev);
+  start = std::chrono::high_resolution_clock::now();
+	prev = std::chrono::high_resolution_clock::now();
 	last_time = 0;
 }
 double FrameRate::GetTime()
 {
-	timespec curr;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr);
-	last_time = curr.tv_sec - prev.tv_sec + (curr.tv_nsec - prev.tv_nsec) / 1000000000.0;
+	std::chrono::system_clock::time_point curr = std::chrono::high_resolution_clock::now();
+	last_time = std::chrono::duration_cast<std::chrono::nanoseconds>(curr-prev).count() / 1000000000.0;
 	prev = curr;
 	return last_time;
 }
@@ -20,7 +19,6 @@ double FrameRate::GetPrevTime()
 }
 double FrameRate::GetTotalTime()
 {
-  timespec curr;
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr);
-  return curr.tv_sec - start.tv_sec + (curr.tv_nsec - start.tv_nsec) / 1000000000.0;
+  std::chrono::system_clock::time_point curr = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(curr - start).count() / 1000000000.0;
 }

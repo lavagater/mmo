@@ -53,10 +53,12 @@ size_t SockAddrHash::operator()(const sockaddr_in &rhs) const
 
 int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer)
 {
+	LOG("1");
 	//create a new buffer that can be added too
 	char new_buf[MAXPACKETSIZE] = {0};//set to all zero for debugging
 	//leave room in buffer for header
 	memcpy(new_buf+HEADERSIZE/8, buffer, bytes);
+	LOG("2");
 
 	int sent = bytes;
 	int i = start_layer;
@@ -66,6 +68,8 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 	}
 	for (;i >= 0; --i)
 	{
+	LOG("i = " << i << " layer = " << layers[i]);
+
 		//leave room in buffer for header
 		sent = layers[i]->Send(new_buf+HEADERSIZE/8, sent, dest, flags);
 		//if a layer sends 0 bytes then we stop
@@ -74,6 +78,7 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 			last_error = sent;
 			return sent;
 		}
+	LOG("i2 = " << i);
 	}
 	//put flags into buffer
 	for (unsigned i = 0; i < HEADERSIZE/8; ++i)
@@ -83,6 +88,7 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 	sent += HEADERSIZE/8;
 	//update bytes sent for bandwidth
 	bytes_sent += sent;
+	LOG("3");
 	//calling the socket library send function
 	return ::Send(sock, new_buf, sent, dest);
 }

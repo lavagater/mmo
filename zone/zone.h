@@ -14,14 +14,17 @@
 #include "protocol.h"
 #include "load_balancer_protocol.h"
 #include "logger.h"
+#include "dispatcher.h"
 #include "network_signals.h"
 #include <unordered_set>
+#include <memory>
 
 class Zone
 {
 public:
   Zone(Config &config);
   void run();
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
   //network messages
   
   /** these are tests thngs foir sample game **/
@@ -36,7 +39,7 @@ public:
     double x_dest = 0;
     double y_dest = 0;
     unsigned id;
-    sockaddr_in *lb_addr;
+    sockaddr_in lb_addr;
   };
   std::unordered_map<unsigned, Player> players;
 
@@ -45,6 +48,7 @@ public:
 private:
   Config &config;
   SOCKET sock;
+  Dispatcher dispatcher;
   NetworkStack stack;
   std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
   std::unordered_map<unsigned, std::function<void(char *, unsigned)> > query_callbacks;

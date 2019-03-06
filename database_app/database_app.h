@@ -17,11 +17,15 @@
 #include "logger.h"
 #include "asymetric_encryption.h"
 #include "network_signals.h"
+#include "dispatcher.h"
+
+#include <memory>
 
 class DatabaseApp
 {
 public:
   DatabaseApp(Config &conf, std::string dbfile);
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
   void run();
   void QueryCall(char *buffer, int n, sockaddr_in *addr);
 
@@ -30,6 +34,7 @@ public:
   Query query;
   SOCKET sock;
   NetworkStack stack;
+  Dispatcher dispatcher;
   std::unordered_map<sockaddr_in, BitArray<HEADERSIZE>, SockAddrHash> flags;
   char buffer[MAXPACKETSIZE];
   sockaddr_in from;

@@ -1303,7 +1303,7 @@ bool TestDatabaseDelete()
 
 bool TestProtocol()
 {
-	ProtocolLoader pl;
+	ProtocolLoader pl("../../protocol/");
 	pl.LoadProtocol();
 	std::cout << "billy" << std::endl;
 	if (pl.message_types["one"] != 0)

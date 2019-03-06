@@ -14,6 +14,7 @@
 #include "database_protocol.h"
 #include "query.h"
 #include "zone.h"
+#include "utils.h"
 
 Zone::Zone(Config &config)
   :config(config),
@@ -47,9 +48,11 @@ void Zone::OnZoneTest(char *buffer, unsigned n, sockaddr_in *addr)
   }
   (void)addr;
   (void)n;
+  char *saved = buffer;
   //set the new destination
   buffer += sizeof(MessageType);
   unsigned id = *reinterpret_cast<unsigned*>(buffer);
+  LOG("Got message from player " << id);
   buffer += sizeof(unsigned);
   players[id].x_dest = *reinterpret_cast<double*>(buffer);
   buffer += sizeof(double);
@@ -60,14 +63,17 @@ void Zone::OnZoneTest(char *buffer, unsigned n, sockaddr_in *addr)
   buffer += sizeof(double);
   *reinterpret_cast<double*>(buffer) = players[id].y_pos;
   buffer += sizeof(double);
-  unsigned size = buffer - &this->buffer[0];
+  unsigned size = buffer - saved;
   for (auto it = players.begin(); it != players.end(); ++it)
   {
+    LOG("Sending to player " << it->first);
     char msg[500];
     unsigned message_size = size;
     //TODO: maybe forward mesasage can send to multiple places???
-    CreateForwardMessage(protocol, this->buffer, message_size, 0, id, msg);
-    stack.Send(msg, message_size, it->second.lb_addr, flags[*it->second.lb_addr]);
+    CreateForwardMessage(protocol, saved, message_size, 0, it->first, msg);
+    LOG("new message size = " << message_size << " sending to " << &it->second.lb_addr);
+    stack.Send(msg, message_size, &it->second.lb_addr, flags[it->second.lb_addr]);
+    LOG("sent");
   }
 }
 void Zone::Login(char *buffer, unsigned n, sockaddr_in *addr)
@@ -76,7 +82,8 @@ void Zone::Login(char *buffer, unsigned n, sockaddr_in *addr)
   //got a new player
   buffer += sizeof(MessageType);
   unsigned id = *reinterpret_cast<unsigned*>(buffer);
-  players[id].lb_addr = addr;
+  LOG("New player id = " << id);
+  players[id].lb_addr = *addr;
   players[id].id = id;
   //tell the player about ever other player
 }
@@ -96,26 +103,33 @@ void Zone::GameUpdate(double dt)
     it->second.y_pos += y_delta / dist * dt;
   }
 }
+void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
+{
+  //if from is a new address at it to the load balancers
+  if (known_addr.find(from) == known_addr.end())
+  {
+    load_balancers.insert(from);
+  }
+  LOG("Recieved message of length " << size);
+  MessageType type = 0;
+  memcpy(&type, data.get(), sizeof(MessageType));
+  LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
+  network_signals.signals[type](data.get(), size, &addr);
+}
 void Zone::run()
 {
   //main loop
   while(true)
   {
+    dispatcher.Update();
     //check for messages
     int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-    //if from is a new address at it to the load balancers
-    if (known_addr.find(from) == known_addr.end())
-    {
-      load_balancers.insert(from);
-    }
     flags[from].SetBit(ReliableFlag);
     if (n >= (int)sizeof(MessageType))
     {
-      LOG("Recieved message of length " << n);
-      MessageType type = 0;
-      memcpy(&type, buffer, sizeof(MessageType));
-      LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
-      network_signals.signals[type](buffer, n, &from);
+      std::shared_ptr<char> data(new char[MAXPACKETSIZE], array_deleter<char>());
+      memcpy(data.get(), buffer, n);
+      dispatcher.Dispatch(std::bind(&Zone::OnRecieve, this, data, n, from));
     }
     else if (n != EBLOCK && n != 0)
     {
@@ -125,6 +139,36 @@ void Zone::run()
     GameUpdate(stack.timer.GetPrevTime());
   }
 }
+
+//void Zone::run()
+//{
+//  //main loop
+//  while(true)
+//  {
+//    //check for messages
+//    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
+//    //if from is a new address at it to the load balancers
+//    if (known_addr.find(from) == known_addr.end())
+//    {
+//      load_balancers.insert(from);
+//    }
+//    flags[from].SetBit(ReliableFlag);
+//    if (n >= (int)sizeof(MessageType))
+//    {
+//      LOG("Recieved message of length " << n);
+//      MessageType type = 0;
+//      memcpy(&type, buffer, sizeof(MessageType));
+//      LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
+//      network_signals.signals[type](buffer, n, &from);
+//    }
+//    else if (n != EBLOCK && n != 0)
+//    {
+//      LOGW("recv Error code " << n);
+//    }
+//    stack.Update();
+//    GameUpdate(stack.timer.GetPrevTime());
+//  }
+//}
 
 int main()
 {

@@ -16,6 +16,7 @@
 #include "logger.h"
 #include "network_signals.h"
 #include "dispatcher.h"
+#include "account_manager.h"
 
 #include <memory>
 
@@ -27,16 +28,11 @@ public:
   //called from dispatcher so no raw memory is used, only shared pointers and copies
   void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
   //network messages
-  void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void Relay(char *buffer, unsigned n, sockaddr_in *addr);
-  void CreateAccount(char *buffer, unsigned n, sockaddr_in *addr);
-  void Login(char *buffer, unsigned n, sockaddr_in *addr);
-  void BadLogin(char *buffer, unsigned n, sockaddr_in *addr);
-  void ChangePassword(char *buffer, unsigned n, sockaddr_in *addr);
+  void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr);
-  void SendLoginMessage(sockaddr_in addr, char *data, unsigned size);
-private:
+//private:  Let them all have it
   Config &config;
   SOCKET sock;
   NetworkStack stack;
@@ -55,6 +51,7 @@ private:
   AsymetricEncryption encryptor;
   ProtocolLoader protocol;
   NetworkSignals network_signals;
+  AccountManager account_manager;
 };
 
 #endif

@@ -6,6 +6,8 @@
   \brief
     Dispatcher used to send all the messages from one place.
 */
+#ifndef DISPATCHER_H
+#define DISPATCHER_H
 #include <functional>
 #include <queue>
 
@@ -21,3 +23,4 @@ public:
 private:
   std::queue<std::function<void()> > messages;
 };
+#endif

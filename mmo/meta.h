@@ -8,6 +8,7 @@
 #ifndef META_H
 #define META_H
 #include <stdlib.h>
+#include <string>
 #include <string.h>
 #include <cassert>
 

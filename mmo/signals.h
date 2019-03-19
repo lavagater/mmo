@@ -32,6 +32,7 @@ public:
 class Connection
 {
 public:
+  Connection();
   Connection(ConnectionProxy);
   Connection(const Connection &rhs);
   Connection &operator=(const Connection &rhs);

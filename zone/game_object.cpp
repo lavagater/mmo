@@ -2,8 +2,12 @@
 
 GameObject::~GameObject()
 {
-    for (auto it = components.begin(); it != components.end(); ++it)
+  for (auto it = components.begin(); it != components.end(); ++it)
+  {
+    if (it->second)
     {
-        RemoveComponent(it->first);
+        delete it->second;
     }
+  }
+  components.clear();
 }

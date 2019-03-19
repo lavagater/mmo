@@ -16,6 +16,7 @@
 #include "zone.h"
 #include "utils.h"
 #include "player_controller_component.h"
+#include "terrain_component.h"
 #include "transform_component.h"
 
 Zone::Zone(Config &config)
@@ -42,6 +43,15 @@ Zone::Zone(Config &config)
 
   //30 updates a second
   dispatcher.Dispatch(std::bind(&Zone::GameUpdate, this, std::placeholders::_1), 1.0/30.0);
+
+  //add some hard coded terrain objects
+  for (int i = 0; i < 10; ++i)
+  {
+    GameObject *obj = CreateGameObject();
+    ADDCOMP(obj, TransformComponent);
+    GETCOMP(obj, TransformComponent)->position = Eigen::Vector2d(5,5-i);
+    ADDCOMP(obj, TerrainComponent);
+  }
 }
 
 GameObject *Zone::CreateGameObject()
@@ -68,6 +78,12 @@ void Zone::Login(char *buffer, unsigned n, sockaddr_in *addr)
   //got a new player
   buffer += sizeof(MessageType);
   unsigned id = *reinterpret_cast<unsigned*>(buffer);
+  if (players.find(id) != players.end())
+  {
+    GameObject *player = players[id];
+    players.erase(players.find(id));
+    RemoveGameObject(player);
+  }
   LOG("New player id = " << id);
   //this should be done using a player archtype
   players[id] = CreateGameObject();

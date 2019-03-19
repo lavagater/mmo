@@ -11,6 +11,10 @@ ConnectionProxy::ConnectionProxy(InternalConnection *conn)
   internal_connection = conn;
 }
 
+Connection::Connection()
+{
+  internal_connection = 0;
+}
 Connection::Connection(ConnectionProxy proxy)
 {
   internal_connection = proxy.internal_connection;

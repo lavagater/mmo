@@ -15,6 +15,8 @@
 #include "query.h"
 #include "zone.h"
 #include "utils.h"
+#include "player_controller_component.h"
+#include "transform_component.h"
 
 Zone::Zone(Config &config)
   :config(config),
@@ -37,45 +39,29 @@ Zone::Zone(Config &config)
   stack.AddLayer(encryption);
   protocol.LoadProtocol();
   network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&Zone::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  network_signals.signals[protocol.LookUp("ZoneTest")].Connect(std::bind(&Zone::OnZoneTest, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+  //30 updates a second
+  dispatcher.Dispatch(std::bind(&Zone::GameUpdate, this, std::placeholders::_1), 1.0/30.0);
 }
-void Zone::OnZoneTest(char *buffer, unsigned n, sockaddr_in *addr)
+
+GameObject *Zone::CreateGameObject()
 {
-  if (n < sizeof(MessageType) + sizeof(unsigned) + sizeof(double) + sizeof(double))
+  GameObject *obj = new GameObject();
+  obj->zone = this;
+  all_objects.insert(obj);
+  return obj;
+}
+
+void Zone::RemoveGameObject(GameObject *obj)
+{
+  auto it = all_objects.find(obj);
+  if (it != all_objects.end())
   {
-    LOG("Player update invalid size");
-    return;
-  }
-  (void)addr;
-  (void)n;
-  char *saved = buffer;
-  //set the new destination
-  buffer += sizeof(MessageType);
-  unsigned id = *reinterpret_cast<unsigned*>(buffer);
-  LOG("Got message from player " << id);
-  buffer += sizeof(unsigned);
-  players[id].x_dest = *reinterpret_cast<double*>(buffer);
-  buffer += sizeof(double);
-  players[id].y_dest = *reinterpret_cast<double*>(buffer);
-  buffer += sizeof(double);
-  //tell each player about the new destination
-  *reinterpret_cast<double*>(buffer) = players[id].x_pos;
-  buffer += sizeof(double);
-  *reinterpret_cast<double*>(buffer) = players[id].y_pos;
-  buffer += sizeof(double);
-  unsigned size = buffer - saved;
-  for (auto it = players.begin(); it != players.end(); ++it)
-  {
-    LOG("Sending to player " << it->first);
-    char msg[500];
-    unsigned message_size = size;
-    //TODO: maybe forward mesasage can send to multiple places???
-    CreateForwardMessage(protocol, saved, message_size, 0, it->first, msg);
-    LOG("new message size = " << message_size << " sending to " << &it->second.lb_addr);
-    stack.Send(msg, message_size, &it->second.lb_addr, flags[it->second.lb_addr]);
-    LOG("sent");
+    delete obj;
+    all_objects.erase(it);
   }
 }
+
 void Zone::Login(char *buffer, unsigned n, sockaddr_in *addr)
 {
   (void)n;
@@ -83,25 +69,21 @@ void Zone::Login(char *buffer, unsigned n, sockaddr_in *addr)
   buffer += sizeof(MessageType);
   unsigned id = *reinterpret_cast<unsigned*>(buffer);
   LOG("New player id = " << id);
-  players[id].lb_addr = *addr;
-  players[id].id = id;
-  //tell the player about ever other player
+  //this should be done using a player archtype
+  players[id] = CreateGameObject();
+  ADDCOMP(players[id], PlayerControllerComponent);
+  ADDCOMP(players[id], TransformComponent);
+  GETCOMP(players[id], PlayerControllerComponent)->lb_addr = *addr;
+  GETCOMP(players[id], PlayerControllerComponent)->id = id;
+  //signal that the new player joined
+  player_joined_signal(players[id]);
 }
 void Zone::GameUpdate(double dt)
 {
-  //move like the players or something
-  for (auto it = players.begin(); it != players.end(); ++it)
-  {
-    double x_delta = it->second.x_dest - it->second.x_pos;
-    double y_delta = it->second.y_dest - it->second.y_pos;
-    if (x_delta == 0 && y_delta == 0)
-    {
-      break;
-    }
-    double dist = std::sqrt(x_delta * x_delta + y_delta * y_delta);
-    it->second.x_pos += x_delta / dist * dt;
-    it->second.y_pos += y_delta / dist * dt;
-  }
+  //call the update again
+  dispatcher.Dispatch(std::bind(&Zone::GameUpdate, this, std::placeholders::_1), 1.0/30.0);
+  //send the update signal
+  update_signal(dt);
 }
 void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
 {
@@ -136,39 +118,8 @@ void Zone::run()
       LOGW("recv Error code " << n);
     }
     stack.Update();
-    GameUpdate(stack.timer.GetPrevTime());
   }
 }
-
-//void Zone::run()
-//{
-//  //main loop
-//  while(true)
-//  {
-//    //check for messages
-//    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-//    //if from is a new address at it to the load balancers
-//    if (known_addr.find(from) == known_addr.end())
-//    {
-//      load_balancers.insert(from);
-//    }
-//    flags[from].SetBit(ReliableFlag);
-//    if (n >= (int)sizeof(MessageType))
-//    {
-//      LOG("Recieved message of length " << n);
-//      MessageType type = 0;
-//      memcpy(&type, buffer, sizeof(MessageType));
-//      LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
-//      network_signals.signals[type](buffer, n, &from);
-//    }
-//    else if (n != EBLOCK && n != 0)
-//    {
-//      LOGW("recv Error code " << n);
-//    }
-//    stack.Update();
-//    GameUpdate(stack.timer.GetPrevTime());
-//  }
-//}
 
 int main()
 {

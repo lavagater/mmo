@@ -37,8 +37,12 @@ public:
   void Login(char *buffer, unsigned n, sockaddr_in *addr);
   void BadLogin(char *buffer, unsigned n, sockaddr_in *addr);
   void ChangePassword(char *buffer, unsigned n, sockaddr_in *addr);
+  //client wants to know the username of the player with a certain id
+  //TODO: move this into a game specific class that gets all the important info for the character
+  void GetUsername(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void SendLoginMessage(sockaddr_in addr, char *data, unsigned size);
+  void SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id);
 private:
   LoadBalancer *load_balancer;
 };

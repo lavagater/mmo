@@ -16,7 +16,9 @@
 #include "logger.h"
 #include "dispatcher.h"
 #include "network_signals.h"
+#include "game_object.h"
 #include <unordered_set>
+#include <map>
 #include <memory>
 
 class Zone
@@ -25,27 +27,19 @@ public:
   Zone(Config &config);
   void run();
   void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
+  GameObject *CreateGameObject();
+  void RemoveGameObject(GameObject *obj);
   //network messages
-  
-  /** these are tests thngs foir sample game **/
-  void OnZoneTest(char *buffer, unsigned n, sockaddr_in *addr);
+
+
   void Login(char *buffer, unsigned n, sockaddr_in *addr);
   void GameUpdate(double dt);
-  class Player
-  {
-    public:
-    double x_pos = 0;
-    double y_pos = 0;
-    double x_dest = 0;
-    double y_dest = 0;
-    unsigned id;
-    sockaddr_in lb_addr;
-  };
-  std::unordered_map<unsigned, Player> players;
+  std::unordered_map<unsigned, GameObject*> players;
+  std::map<std::pair<int, int>, std::unordered_set<GameObject*> > terrain;
+  std::unordered_set<GameObject*> all_objects;
 
   /********************************************/
 
-private:
   Config &config;
   SOCKET sock;
   Dispatcher dispatcher;
@@ -63,6 +57,8 @@ private:
   AsymetricEncryption encryptor;
   ProtocolLoader protocol;
   NetworkSignals network_signals;
+  Signals<double> update_signal;
+  Signals<GameObject*> player_joined_signal;
 };
 
 #endif

@@ -12,6 +12,7 @@ void AccountManager::SetUp(LoadBalancer *load_balancer)
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("CreateAccount")].Connect(std::bind(&AccountManager::CreateAccount, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("Login")].Connect(std::bind(&AccountManager::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("ChangePassword")].Connect(std::bind(&AccountManager::ChangePassword, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  load_balancer->network_signals.signals[load_balancer->protocol.LookUp("LookUp")].Connect(std::bind(&AccountManager::GetUsername, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 void AccountManager::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -177,7 +178,6 @@ void AccountManager::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
       return int(res[0]);
     }
   ), user_blob, pass_blob, newpass_blob);
-  //TODO: account database maybe should be a member of this class?
   load_balancer->stack.Send(&load_balancer->buffer[0], len, &load_balancer->account_database, load_balancer->flags[load_balancer->account_database]);
 }
 void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned size)
@@ -198,7 +198,34 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
   //TODO make a better system for this
   //tell the zone about the new player
   load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &addr, load_balancer->flags[addr]);
-  LOG("send it size = " << load_balancer->zone_array.size() << " address of first element =  " << &(load_balancer->zone_array[0]));
   load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &(load_balancer->zone_array[0]), load_balancer->flags[load_balancer->zone_array[0]]);
-LOG("sent it");
+}
+
+void AccountManager::SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id)
+{
+  *reinterpret_cast<MessageType*>(load_balancer->buffer) = load_balancer->protocol.LookUp("LookUp");
+  *reinterpret_cast<unsigned*>(load_balancer->buffer+sizeof(MessageType)) = id;
+  memcpy(&load_balancer->buffer[0] + sizeof(MessageType) + sizeof(unsigned), data, size);
+  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id) + size, &addr, load_balancer->flags[addr]);
+}
+
+void AccountManager::GetUsername(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  if (n < sizeof(int))
+  {
+    LOGW("Incorrect size = " << n);
+    return;
+  }
+  buffer += sizeof(MessageType);
+  unsigned id = *reinterpret_cast<int*>(buffer);
+  load_balancer->query_id += 1;
+  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::SendUsername, this, *addr, std::placeholders::_1, std::placeholders::_2, id);
+  int len = CreateQueryMessage(load_balancer->protocol, load_balancer->query_id, &load_balancer->buffer[0], STRINGIZE(
+    main(unsigned id)
+    {
+      print("looking up id ", unsigned(id));
+      return get(unsigned(id), 0);
+    }
+  ), id);
+  load_balancer->stack.Send(&load_balancer->buffer[0], len, &load_balancer->account_database, load_balancer->flags[load_balancer->account_database]);
 }

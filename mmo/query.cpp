@@ -241,6 +241,7 @@ Value Query::GetDatabase(std::vector<Value> args)
 		break;
 	case Blob:
 		ret.data = new char[n];
+		memcpy(ret.data, buffer, n);
 		ret.size = n;
 		data.push_back(ret.data);
 	    break;
@@ -289,6 +290,7 @@ int Query::PackValue(char *buffer, Value value)
 	{
 		case Types::Blob:
 		//blobs are easy just copy data
+		LOG("Copying data : " << ToHexString(value.data, value.size));
 		memcpy(buffer, value.data,value.size);
 		ret += value.size;
 		break;
@@ -354,6 +356,10 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	std::cout << "Running script!!" << std::endl;
 	std::vector<Token> tokens;
 
+	//free data from last tree
+    FreeAbstractNodes();
+	FreeData();
+
 	//make the tokens!
 	const char *str = code.c_str();
 	DfaState *dfa = CreateLanguageDfa();
@@ -384,13 +390,11 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	}
 	catch (std::exception &)
 	{
-		FreeAbstractNodes();
 		LOG("Tree bad");
 		return false;
 	}
 	if (node == 0)
 	{
-		FreeAbstractNodes();
 		LOG("Tree bad");
 		return false;
 	}
@@ -413,7 +417,5 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	//set the return value
 	returnValue = interpreter.returnValue;
 
-	FreeAbstractNodes();
-	FreeData();
 	return true;
 }

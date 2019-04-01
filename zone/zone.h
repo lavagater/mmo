@@ -33,10 +33,14 @@ public:
 
 
   void Login(char *buffer, unsigned n, sockaddr_in *addr);
+  void PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_addr, char *player_data, unsigned size);
+  void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void GameUpdate(double dt);
   std::unordered_map<unsigned, GameObject*> players;
   std::map<std::pair<int, int>, std::unordered_set<GameObject*> > terrain;
   std::unordered_set<GameObject*> all_objects;
+  unsigned next_gameobject_id;
+  std::vector<unsigned> unused_gameobject_ids;
 
   /********************************************/
 
@@ -50,6 +54,7 @@ public:
   char buffer[MAXPACKETSIZE];
   sockaddr_in from;
   sockaddr_in account_database;
+  sockaddr_in players_database;
   //set of the known addresses from start, i.e. databases
   std::unordered_set<sockaddr_in, SockAddrHash> known_addr;
   //set of load balancers

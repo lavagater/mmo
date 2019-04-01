@@ -4,6 +4,7 @@
 
 Query::Query(Database &db) : db(db)
 {
+	interpreter = 0;
 }
 
 void Query::FreeData()
@@ -13,6 +14,8 @@ void Query::FreeData()
 		delete data[i];
 	}
 	data.clear();
+	delete interpreter;
+	interpreter = 0;
 }
 
 Query::~Query()
@@ -290,7 +293,6 @@ int Query::PackValue(char *buffer, Value value)
 	{
 		case Types::Blob:
 		//blobs are easy just copy data
-		LOG("Copying data : " << ToHexString(value.data, value.size));
 		memcpy(buffer, value.data,value.size);
 		ret += value.size;
 		break;
@@ -357,7 +359,7 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	std::vector<Token> tokens;
 
 	//free data from last tree
-    FreeAbstractNodes();
+  FreeAbstractNodes();
 	FreeData();
 
 	//make the tokens!
@@ -404,18 +406,18 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	pass1.Visit(node);
 	LOG("did pass 1");
 
-	//run the code!!!
-	Interpreter interpreter;
-	interpreter.arguments = parameters;
-	interpreter.functions["print"] = &print;
-	interpreter.functions["get"] = std::bind(&Query::GetDatabase, this, std::placeholders::_1);
-	interpreter.functions["set"] = std::bind(&Query::SetDatabase, this, std::placeholders::_1);
-	interpreter.functions["create"] = std::bind(&Query::CreateDatabase, this, std::placeholders::_1);
-	interpreter.functions["delete"] = std::bind(&Query::DeleteDatabase, this, std::placeholders::_1);
-	interpreter.functions["find"] = std::bind(&Query::FindDatabase, this, std::placeholders::_1, std::ref(interpreter));
-	interpreter.Visit(node);
+	//make the new interpreter
+	interpreter = new Interpreter();
+	interpreter->arguments = parameters;
+	interpreter->functions["print"] = &print;
+	interpreter->functions["get"] = std::bind(&Query::GetDatabase, this, std::placeholders::_1);
+	interpreter->functions["set"] = std::bind(&Query::SetDatabase, this, std::placeholders::_1);
+	interpreter->functions["create"] = std::bind(&Query::CreateDatabase, this, std::placeholders::_1);
+	interpreter->functions["delete"] = std::bind(&Query::DeleteDatabase, this, std::placeholders::_1);
+	interpreter->functions["find"] = std::bind(&Query::FindDatabase, this, std::placeholders::_1, std::ref(*interpreter));
+	interpreter->Visit(node);
 	//set the return value
-	returnValue = interpreter.returnValue;
-
+	returnValue = interpreter->returnValue;
+	//dont delete the interpreter so it stays alive in case the return value is pointing to memory inside the interpreter
 	return true;
 }

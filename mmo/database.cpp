@@ -21,24 +21,27 @@ reusable_ids(), object_size(0)
 	//set the rows
 	unsigned num_rows;
 	file.read(reinterpret_cast<char*>(&num_rows), sizeof(unsigned));
-
+  LOG("Database has " << num_rows << " rows");
 
 	for (unsigned i = 0; i < num_rows; ++i)
 	{
 		//size
 		unsigned row_size;
 		file.read(reinterpret_cast<char*>(&row_size), sizeof(unsigned));
+    LOG("row[" << i << "] = " << row_size);
 
 		rows.push_back(row_size);
 		//type
 		unsigned row_type;
 		file.read(reinterpret_cast<char*>(&row_type), sizeof(unsigned));
+    LOG("row[" << i << "] type = " << row_type);
 
 
 		types.push_back(row_type);
 		//is_sorted
 		unsigned row_is_sorted;
 		file.read(reinterpret_cast<char*>(&row_is_sorted), sizeof(unsigned));
+    LOG("row[" << i << "] sorted = " << row_type);
 
 
 		sorted.push_back(row_is_sorted);
@@ -94,7 +97,6 @@ reusable_ids(), object_size(0)
 
 		reusable_ids.push_back(temp);
 	}
-	LOG("wtf");
 }
 
 void Database::UpdateSize()
@@ -232,14 +234,12 @@ unsigned Database::Get(unsigned id, unsigned row, char *&data)
 
 void Database::Set(unsigned id, unsigned row, const void *data)
 {
-	LOG("1");
 	//find out how far into the object to get to the row we want
 	unsigned split_size = 0;
 	for (unsigned i = 0; i < row; ++i)
 	{
 		split_size += rows[i];
 	}
-	LOG("2");
 	//go to the spot in the file, (3 + rows.size()*3) * sizeof(unsigned) is the size of the header
 	file.seekg((3 + rows.size() * 3) * sizeof(unsigned) + id * object_size + split_size);
 	//get what the data was
@@ -248,19 +248,15 @@ void Database::Set(unsigned id, unsigned row, const void *data)
 	file.seekp((3 + rows.size() * 3) * sizeof(unsigned) + id * object_size + split_size);
 	//write the data
 	file.write(reinterpret_cast<const char*>(data), rows[row]);
-	LOG("3");
 
 	//update the skip list
 	if (sorted[row])
 	{
-	LOG("4");
 		unsigned node = FindNode(row, old_data, id);
 		RemoveNode(node, row);
-	LOG("5");
 		skip_lists[row].seekp(node + sizeof(unsigned));
 		skip_lists[row].write(reinterpret_cast<const char*>(data), rows[row]);
 		InsertNode(node, row, reinterpret_cast<const char*>(data), id);
-	LOG("6");
 	}
 	delete[] old_data;
 }

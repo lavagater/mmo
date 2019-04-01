@@ -4,5 +4,7 @@
 class TransformComponent : public Component
 {
 public:
+  void Load(std::istream &stream);
+  void Write(std::ostream &stream);
   Eigen::Vector2d position;
 };

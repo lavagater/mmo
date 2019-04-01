@@ -32,6 +32,10 @@ public:
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr);
+  void OnClientDisconnect(const sockaddr_in *addr);
+  void RemoveClient(sockaddr_in addr);
+  sockaddr_in GetZone(std::string zone_name);
+  std::string GetZone(sockaddr_in *addr);
 //private:  Let them all have it
   Config &config;
   SOCKET sock;
@@ -47,6 +51,7 @@ public:
   unsigned query_id;
   char buffer[MAXPACKETSIZE];
   sockaddr_in from;
+  sockaddr_in players_database;
   sockaddr_in account_database;
   AsymetricEncryption encryptor;
   ProtocolLoader protocol;

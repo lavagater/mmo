@@ -267,6 +267,7 @@ IndexNode *IndexRule(std::vector<Token> &tokens, unsigned &index);
 class Visitor
 {
 public:
+  virtual ~Visitor() {}
 	virtual int Visit(__attribute__((unused))AbstractNode *node) { return 1; }
 	virtual int Visit(__attribute__((unused))MainNode *node) { return 1; }
 	virtual int Visit(__attribute__((unused))ClassNode *node) { return 1; }

@@ -1633,7 +1633,6 @@ public:
 		for (unsigned i = 0; i < node->arguments.size(); ++i)
 		{
 			node->arguments[i]->Walk(this);
-			LOG("adding argument " << lastValue.m_string);
 			args.push_back(lastValue);
 		}
 		std::string funcName = std::string(((NameReferenceNode*)node->left)->token.str, ((NameReferenceNode*)node->left)->token.length);

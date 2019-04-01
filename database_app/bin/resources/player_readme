@@ -1,0 +1,10 @@
+Structure for the player database
+4 bytes unsigned for account database id, sorted
+16 bytes string zone name, sorted
+8 bytes double x position, not sorted
+8 bytes double y position, not sorted
+8 bytes double total hp, sorted
+8 bytes double current hp, not sorted
+8 bytes total mana, sorted
+8 bytes currrent mana, not sorted
+8 bytes strength, sorted

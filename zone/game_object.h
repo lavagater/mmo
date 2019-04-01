@@ -10,8 +10,8 @@
 
 //macros to make make function calls nicer (because cant go from tempate to char *)
 #define GETCOMP(gameobject, comp) reinterpret_cast<comp*>((gameobject)->components[#comp])
-#define ADDCOMP(gameobject, comp) (gameobject)->AddComponent<comp>(#comp);
-#define RMCOMP(gameobject, comp) (gameobject)->RemoveComponent(#comp);
+#define ADDCOMP(gameobject, comp) (gameobject)->AddComponent<comp>(#comp)
+#define RMCOMP(gameobject, comp) (gameobject)->RemoveComponent(#comp)
 
 class Zone;
 
@@ -40,6 +40,11 @@ public:
       components.erase(it);
     }
   }
+  //zone specific id
+  unsigned id;
+  //a number that the client uses to determine what kind of object it is
+  //its pretty much just a hard coded hack
+  unsigned type;
   //pointer to the zone, for all the fun signals and what not
   Zone *zone;
   //map of all the components of this game object

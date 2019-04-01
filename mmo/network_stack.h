@@ -13,6 +13,7 @@
 #include "wyatt_sock.h"
 #include "frame_rate.h"
 #include "bit_array.h"
+#include "signals.h"
 
 /*!
   \brief
@@ -291,6 +292,10 @@ public:
 	    The last error that was encountered
 	*/
 	int last_error;
+	/**
+	 * @brief signal for when a connection is discconected
+	 */
+	Signals<const sockaddr_in *> disconnected;
 private:
 	SOCKET sock;
 	//bytes_sent time_start and time split are for getting the bandwidth

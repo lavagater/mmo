@@ -9,10 +9,48 @@
 void AccountManager::SetUp(LoadBalancer *load_balancer)
 {
   this->load_balancer = load_balancer;
+  //the life time of the account manager is assumed to be the life time of the program
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("CreateAccount")].Connect(std::bind(&AccountManager::CreateAccount, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("Login")].Connect(std::bind(&AccountManager::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("ChangePassword")].Connect(std::bind(&AccountManager::ChangePassword, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("LookUp")].Connect(std::bind(&AccountManager::GetUsername, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  load_balancer->stack.disconnected.Connect(std::bind(&AccountManager::OnClientDisconnect, this, std::placeholders::_1));
+}
+void AccountManager::OnClientDisconnect(const sockaddr_in *addr)
+{
+  if (load_balancer->clients.find(*addr) == load_balancer->clients.end())
+    return;
+  char buffer[MAXPACKETSIZE];
+  //need to figure out which zone the client is in
+  load_balancer->query_id += 1;
+  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::SendDisconnectMessage, this, *addr, std::placeholders::_1, std::placeholders::_2);
+  int len = CreateQueryMessage(load_balancer->protocol, load_balancer->query_id, &buffer[0], STRINGIZE(
+    main(unsigned id)
+    {
+      vector res = find(0, id);
+      if (Size(res) == 0)
+      {
+        print("player not found... account ", id);
+      }
+      string zone_name = get(res[0], 1);
+      print("Client of id ", id, " disconnecting from zone ", zone_name, "\n");
+      return zone_name;
+    }
+  ), load_balancer->clients[*addr]);
+  load_balancer->stack.Send(&buffer[0], len, &load_balancer->players_database, load_balancer->flags[load_balancer->players_database]);
+}
+void AccountManager::SendDisconnectMessage(sockaddr_in client_addr, char *buffer, unsigned size)
+{
+  (void)(size);
+  std::string zone = std::string(buffer);
+  sockaddr_in zone_addr = load_balancer->GetZone(zone);
+  char message[MAXPACKETSIZE];
+  buffer = &message[0];
+  *reinterpret_cast<MessageType*>(buffer) = load_balancer->protocol.LookUp("Disconnected");
+  buffer += sizeof(MessageType);
+  *reinterpret_cast<sockaddr_in*>(buffer) = client_addr;
+  buffer += sizeof(sockaddr_in);
+  load_balancer->stack.Send(message, buffer - &message[0], &zone_addr, load_balancer->flags[zone_addr]);
 }
 void AccountManager::CreateAccount(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -188,17 +226,54 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
   }
   int id = *reinterpret_cast<int*>(data);
   LOG("player id = " << id);
-  //the reply to the client for the login/create account/change password
-  //message type is Login
-  *reinterpret_cast<MessageType*>(load_balancer->buffer) = load_balancer->protocol.LookUp("Login");
-  *reinterpret_cast<int*>(load_balancer->buffer+sizeof(MessageType)) = id;
-  //TODO free these when the client disconnects
   load_balancer->clients[addr] = id;
   load_balancer->clients_by_id[id] = addr;
-  //TODO make a better system for this
+  //do a db query to find out which zone the client is in
+  load_balancer->query_id += 1;
+  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::SendLoginMessageQuery, this, id, std::placeholders::_1, std::placeholders::_2);
+  int len = CreateQueryMessage(load_balancer->protocol, load_balancer->query_id, &load_balancer->buffer[0], STRINGIZE(
+    main(unsigned id)
+    {
+      print("Getting players zone\n");
+      //get the id
+      vector res = find(0, id);
+      print(res, "\n");
+      if (Size(res) == 0)
+      {
+        print("Player does not exist,lets create it\n");
+        int new_player = create();
+        print("created\n");
+        //set the account id
+        set(new_player, 0, id);
+        print("id set\n");
+        set(new_player, 1, "first zone");
+        print("zone set\n");
+        //set the x and y position to zero
+        set(new_player, 2, 0);
+        print("x pos set\n");
+        set(new_player, 3, 0);
+        print("y pos set\n");
+        return get(new_player, 1);
+      }
+      return get(res[0], 1);
+    }
+  ), id);
+  load_balancer->stack.Send(load_balancer->buffer, len, &load_balancer->players_database, load_balancer->flags[load_balancer->players_database]);
+}
+
+void AccountManager::SendLoginMessageQuery(unsigned id, char *data, unsigned size)
+{
+  (void)(size);
+  std::string zone = std::string(data);
+  sockaddr_in zone_addr = load_balancer->GetZone(zone);
+  LOG("Player " << id << " logging on to zone " << zone);
+  *reinterpret_cast<MessageType*>(load_balancer->buffer) = load_balancer->protocol.LookUp("Login");
+  *reinterpret_cast<int*>(load_balancer->buffer+sizeof(MessageType)) = id;
   //tell the zone about the new player
-  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &addr, load_balancer->flags[addr]);
-  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &(load_balancer->zone_array[0]), load_balancer->flags[load_balancer->zone_array[0]]);
+  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &load_balancer->clients_by_id[id], load_balancer->flags[load_balancer->clients_by_id[id]]);
+  //when sending to the zone add the clients address to the end
+  *reinterpret_cast<sockaddr_in*>(load_balancer->buffer+sizeof(MessageType)+sizeof(id)) = load_balancer->clients_by_id[id];
+  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id)+sizeof(sockaddr_in), &zone_addr, load_balancer->flags[zone_addr]);
 }
 
 void AccountManager::SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id)

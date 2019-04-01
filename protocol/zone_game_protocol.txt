@@ -1,2 +1,4 @@
 PlayerMove
-TerrainPosition
+UpdatePosition
+Teleport
+DeleteObject

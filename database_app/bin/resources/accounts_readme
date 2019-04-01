@@ -1,0 +1,3 @@
+Format of the accounts database
+32 byte blob for username
+32 byte blob for password

@@ -18,6 +18,8 @@ public:
 	Query(Database &db);
 	~Query();
 	Database &db;
+	//the interpreter is a pointer so that it can stay alive after the compile function call
+	Interpreter *interpreter;
 	bool Compile(std::string code, std::vector<Value> &parameters, Value &);
 	static int PackValue(char *buffer,Value value);
 	//functions for scripting language

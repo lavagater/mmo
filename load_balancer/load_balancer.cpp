@@ -28,6 +28,7 @@ LoadBalancer::LoadBalancer(Config &config)
   sockaddr_in local;
   CreateAddress(0,static_cast<int>(config.properties["port"]),&local);
   CreateAddress(static_cast<std::string>(config.properties["account_db_ip"]).c_str(),static_cast<int>(config.properties["account_db_port"]),&account_database);
+  CreateAddress(static_cast<std::string>(config.properties["players_db_ip"]).c_str(),static_cast<int>(config.properties["players_db_port"]),&players_database);
   //add zones from config to the zones
   LOG("reading zones from config");
   unsigned zone_id = 0;
@@ -62,7 +63,8 @@ LoadBalancer::LoadBalancer(Config &config)
   network_signals.signals[protocol.LookUp("Relay")].Connect(std::bind(&LoadBalancer::Relay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&LoadBalancer::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Forward")].Connect(std::bind(&LoadBalancer::ForwardResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  
+  stack.disconnected.Connect(std::bind(&LoadBalancer::OnClientDisconnect, this, std::placeholders::_1));
+
   account_manager.SetUp(this);
 }
 //addr and from are going to be the same
@@ -113,7 +115,7 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr)
   }
   else
   {
-    LOG("forwarding message to zone " << zones[zone_array[id]]);
+    LOG("forwarding message to zone " << GetZone(&zone_array[id]));
   }
   if (dest == 0)
   {
@@ -121,6 +123,9 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr)
   }
   else
   {
+    //when forwarding messages to the zone servers we add where the message came from to the end
+    *reinterpret_cast<sockaddr_in*>(buffer+n) = *addr;
+    n += sizeof(sockaddr_in);
     addr = &zone_array[id];
   }
   //send the message
@@ -143,7 +148,7 @@ void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
   {
     query_callbacks[id](data, size);
     //remove the id to save memory
-    //query_callbacks.erase(query_callbacks.find(id));
+    query_callbacks.erase(query_callbacks.find(id));
   }
 }
 void LoadBalancer::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
@@ -153,6 +158,21 @@ void LoadBalancer::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr
   memcpy(&type, data.get(), sizeof(MessageType));
   LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
   network_signals.signals[type](data.get(), size, &addr);
+}
+void LoadBalancer::OnClientDisconnect(const sockaddr_in *addr)
+{
+  //use dispatcher so that all the Client disconnect callbacks can still access clients
+  dispatcher.Dispatch(std::bind(&LoadBalancer::RemoveClient, this, *addr));
+}
+void LoadBalancer::RemoveClient(sockaddr_in addr)
+{
+  if (clients.find(addr) != clients.end())
+  {
+    unsigned id = clients[addr];
+    LOG("Removing client " << id);
+    clients.erase(clients.find(addr));
+    clients_by_id.erase(clients_by_id.find(id));
+  }
 }
 void LoadBalancer::run()
 {
@@ -165,14 +185,14 @@ void LoadBalancer::run()
     flags[from].SetBit(ReliableFlag);
     if (n >= (int)sizeof(MessageType))
     {
-          if (clients.find(from) != clients.end())
-    {
-      LOG("Recieved message from client");
-    }
-    else if (zones.find(from) != zones.end())
-    {
-      LOG("Redived message from " << zones[from]);
-    }
+      if (clients.find(from) != clients.end())
+      {
+        LOG("Recieved message from client");
+      }
+      else if (zones.find(from) != zones.end())
+      {
+        LOG("Redived message from " << GetZone(&from));
+      }
       std::shared_ptr<char> data(new char[MAXPACKETSIZE], array_deleter<char>());
       memcpy(data.get(), buffer, n);
       dispatcher.Dispatch(std::bind(&LoadBalancer::OnRecieve, this, data, n, from));
@@ -185,6 +205,22 @@ void LoadBalancer::run()
   }
 }
 
+sockaddr_in LoadBalancer::GetZone(std::string zone_name)
+{
+  for (auto it = zones.begin(); it != zones.end(); ++it)
+  {
+    if (it->second == zone_name)
+    {
+      return it->first;
+    }
+  }
+  LOG("Zone " << zone_name << " not found, sending to " << zones.begin()->second);
+  return zones.begin()->first;
+}
+std::string LoadBalancer::GetZone(sockaddr_in *addr)
+{
+  return zones[*addr];
+}
 
 int main()
 {

@@ -1,0 +1,29 @@
+Object1
+0
+TransformComponent 5 5
+TerrainComponent
+StaticObjectComponent
+Object2
+0
+TransformComponent 5 4
+TerrainComponent
+StaticObjectComponent
+Object3
+0
+TransformComponent 5 3
+TerrainComponent
+StaticObjectComponent
+Object4
+0
+TransformComponent 5 2
+TerrainComponent
+StaticObjectComponent
+Object5
+0
+TransformComponent 4 1
+TerrainComponent
+StaticObjectComponent
+teleporter
+1
+TransformComponent -4 1
+StaticObjectComponent

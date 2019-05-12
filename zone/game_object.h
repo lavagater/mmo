@@ -6,6 +6,7 @@
 #define GAMEOBJECT_H
 
 #include "component.h"
+#include "wyatt_sock.h"
 #include <unordered_map>
 
 //macros to make make function calls nicer (because cant go from tempate to char *)
@@ -40,11 +41,15 @@ public:
       components.erase(it);
     }
   }
+  //send message saying this object is deleted
+  void SendDeleteMessage();
   //zone specific id
   unsigned id;
   //a number that the client uses to determine what kind of object it is
   //its pretty much just a hard coded hack
   unsigned type;
+  //for debugging
+  std::string name;
   //pointer to the zone, for all the fun signals and what not
   Zone *zone;
   //map of all the components of this game object

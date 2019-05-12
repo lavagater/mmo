@@ -17,6 +17,7 @@
 #include "dispatcher.h"
 #include "network_signals.h"
 #include "game_object.h"
+#include "utils.h"
 #include <unordered_set>
 #include <map>
 #include <memory>
@@ -26,7 +27,7 @@ class Zone
 public:
   Zone(Config &config);
   void run();
-  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags);
   GameObject *CreateGameObject();
   void RemoveGameObject(GameObject *obj);
   //network messages
@@ -37,9 +38,13 @@ public:
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void GameUpdate(double dt);
   std::unordered_map<unsigned, GameObject*> players;
-  std::map<std::pair<int, int>, std::unordered_set<GameObject*> > terrain;
+
+  //collision things
+  std::vector<std::unordered_map<std::pair<int, int>, std::unordered_set<GameObject*>, pair_hash>> colliders;
+  std::vector<std::vector<unsigned>> collision_groups;
+
   std::unordered_set<GameObject*> all_objects;
-  unsigned next_gameobject_id;
+  unsigned next_gameobject_id=0;
   std::vector<unsigned> unused_gameobject_ids;
 
   /********************************************/

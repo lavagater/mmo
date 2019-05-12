@@ -86,7 +86,12 @@ int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, B
 	//calling the socket library send function
 	return ::Send(sock, new_buf, sent, dest);
 }
-int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
+int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in *location)
+{
+	BitArray<HEADERSIZE> flags;
+	return Receive(buffer, max_bytes, location, flags);
+}
+int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
 	//calling the socket library Receive function
 	int recv = ::Receive(sock, buffer, max_bytes, location);
@@ -103,7 +108,6 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location)
 		return MALEFORMEDPACKET;
 	}
 	//set the flags
-	BitArray<HEADERSIZE> flags;
 	for (unsigned i = 0; i < HEADERSIZE/8; ++i)
 	{
 		flags.buffer[i] = buffer[i];

@@ -58,13 +58,13 @@ void DatabaseApp::QueryCall(char *buffer, int n, sockaddr_in *addr)
   n = CreateQueryResponse(protocol, id, buffer, returnValue);
   stack.Send(buffer, n, addr, flags[*addr]);
 }
-void DatabaseApp::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
+void DatabaseApp::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags)
 {
   LOG("Recieved message of length " << size);
   MessageType type = 0;
   memcpy(&type, data.get(), sizeof(MessageType));
   LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
-  network_signals.signals[type](data.get(), size, &addr);
+  network_signals.signals[type](data.get(), size, &addr, sent_flags);
 }
 void DatabaseApp::run()
 {
@@ -73,13 +73,14 @@ void DatabaseApp::run()
   {
     dispatcher.Update();
     //check for messages
-    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
+    BitArray<HEADERSIZE> sent_flags;
+    int n = stack.Receive(buffer, MAXPACKETSIZE, &from, sent_flags);
     flags[from].SetBit(ReliableFlag);
     if (n >= (int)sizeof(MessageType))
     {
       std::shared_ptr<char> data(new char[MAXPACKETSIZE], array_deleter<char>());
       memcpy(data.get(), buffer, n);
-      dispatcher.Dispatch(std::bind(&DatabaseApp::OnRecieve, this, data, n, from));
+      dispatcher.Dispatch(std::bind(&DatabaseApp::OnRecieve, this, data, n, from, sent_flags));
     }
     else if (n != EBLOCK && n != 0)
     {
@@ -88,29 +89,6 @@ void DatabaseApp::run()
     stack.Update();
   }
 }
-//void DatabaseApp::run()
-//{
-//  LOG("run");
-//  while(true)
-//  {
-//    //check for messages
-//    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-//    flags[from].SetBit(ReliableFlag);
-//    if (n >= (int)sizeof(MessageType))
-//    {
-//      LOG("Recieved message of length " << n);
-//      MessageType type = 0;
-//      memcpy(&type, buffer, sizeof(MessageType));
-//      LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
-//      network_signals.signals[type](buffer, n, &from);
-//    }
-//    else if (n != EBLOCK && n != 0)
-//    {
-//      LOGW("recv Error code " << n);
-//    }
-//    stack.Update();
-//  }
-//}
 
 int main()
 {

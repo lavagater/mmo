@@ -37,7 +37,7 @@ short ReadEncryptionMessage(char *data, unsigned size, char *key, AsymetricEncry
 
 char *ParseForwardMessage(char *data, unsigned &size, int &dest, unsigned &id)
 {
-    //           type            dest            id           any data in message
+    //           type                dest            id           any data in message
     if (size < sizeof(MessageType) + sizeof(char) + sizeof(unsigned) + 1)
     {
         return 0;

@@ -62,7 +62,7 @@ LoadBalancer::LoadBalancer(Config &config)
   network_signals.signals[protocol.LookUp("EncryptionKey")].Connect(std::bind(&LoadBalancer::EncryptionKey, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Relay")].Connect(std::bind(&LoadBalancer::Relay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&LoadBalancer::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  network_signals.signals[protocol.LookUp("Forward")].Connect(std::bind(&LoadBalancer::ForwardResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  network_signals.signals[protocol.LookUp("Forward")].Connect(std::bind(&LoadBalancer::ForwardResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   stack.disconnected.Connect(std::bind(&LoadBalancer::OnClientDisconnect, this, std::placeholders::_1));
 
   account_manager.SetUp(this);
@@ -103,19 +103,28 @@ void LoadBalancer::Relay(char *buffer, unsigned n, sockaddr_in *addr)
   }
 }
 
-void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr)
+void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, BitArray<HEADERSIZE> sent_flags)
 {
   (void)addr;
   unsigned id;
   int dest;
+  LOG("Parse forward message");
   buffer = ParseForwardMessage(buffer, n, dest, id);
+  if (buffer == 0)
+  {
+    LOGW("Forawrd message malformed");
+    return;
+  }
+  LOG("Parsed forward message");
+  MessageType type = 0;
+  memcpy(&type, buffer, sizeof(MessageType));
   if (dest == 0)
   {
-    LOG("forwarding message to client with id " << id);
+    LOG("forwarding message to client with id " << id << " message type = " << protocol.LookUp(type));
   }
   else
   {
-    LOG("forwarding message to zone " << GetZone(&zone_array[id]));
+    LOG("forwarding message to zone " << GetZone(&zone_array[id]) << " message type = " << protocol.LookUp(type));
   }
   if (dest == 0)
   {
@@ -129,7 +138,11 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr)
     addr = &zone_array[id];
   }
   //send the message
-  stack.Send(buffer, n, addr, flags[*addr]);
+  BitArray<HEADERSIZE> new_flags = flags[*addr];
+  //keep the reliability of the message being forwarded
+  new_flags.SetBit(ReliableFlag, sent_flags[ReliableFlag]);
+  stack.Send(buffer, n, addr, new_flags);
+  LOG("sent");
 }
 void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
 {
@@ -151,13 +164,13 @@ void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
     query_callbacks.erase(query_callbacks.find(id));
   }
 }
-void LoadBalancer::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
+void LoadBalancer::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags)
 {
   LOG("Recieved message of length " << size);
   MessageType type = 0;
   memcpy(&type, data.get(), sizeof(MessageType));
   LOG("Recieved message type " << protocol.LookUp(type) << ":" << type);
-  network_signals.signals[type](data.get(), size, &addr);
+  network_signals.signals[type](data.get(), size, &addr, sent_flags);
 }
 void LoadBalancer::OnClientDisconnect(const sockaddr_in *addr)
 {
@@ -181,21 +194,27 @@ void LoadBalancer::run()
   {
     dispatcher.Update();
     //check for messages
-    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
-    flags[from].SetBit(ReliableFlag);
+    BitArray<HEADERSIZE> sent_flags;
+    int n = stack.Receive(buffer, MAXPACKETSIZE, &from, sent_flags);
     if (n >= (int)sizeof(MessageType))
     {
+      flags[from].SetBit(ReliableFlag);
       if (clients.find(from) != clients.end())
       {
-        LOG("Recieved message from client");
+        LOG("Recieved message from client " << clients[from]);
       }
       else if (zones.find(from) != zones.end())
       {
         LOG("Redived message from " << GetZone(&from));
       }
+      else
+      {
+        LOG("Recieved message from unknown");
+      }
+      
       std::shared_ptr<char> data(new char[MAXPACKETSIZE], array_deleter<char>());
       memcpy(data.get(), buffer, n);
-      dispatcher.Dispatch(std::bind(&LoadBalancer::OnRecieve, this, data, n, from));
+      dispatcher.Dispatch(std::bind(&LoadBalancer::OnRecieve, this, data, n, from, sent_flags));
     }
     else if (n != EBLOCK && n != 0)
     {

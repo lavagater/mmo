@@ -25,7 +25,7 @@ class DatabaseApp
 {
 public:
   DatabaseApp(Config &conf, std::string dbfile);
-  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags);
   void run();
   void QueryCall(char *buffer, int n, sockaddr_in *addr);
 

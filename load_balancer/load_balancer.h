@@ -26,12 +26,12 @@ public:
   LoadBalancer(Config &config);
   void run();
   //called from dispatcher so no raw memory is used, only shared pointers and copies
-  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr);
+  void OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags);
   //network messages
   void Relay(char *buffer, unsigned n, sockaddr_in *addr);
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
-  void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr);
+  void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, BitArray<HEADERSIZE> flags);
   void OnClientDisconnect(const sockaddr_in *addr);
   void RemoveClient(sockaddr_in addr);
   sockaddr_in GetZone(std::string zone_name);

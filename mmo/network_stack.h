@@ -260,6 +260,21 @@ public:
 	    The number of bytes that are in buffer, not the number of bytes read from the wire
 	*/
 	int Receive(char* buffer, int max_bytes, sockaddr_in *location);
+		/*!
+	  \brief
+	    Recieves data from wire then sends it through every layers Receive function in opposite order
+	  \param buffer
+	    The location to plop the data
+	  \param max_bytes
+	    The largest packet that fits into the buffer
+	  \param location
+	    The entity that we recieved from
+		\param flags
+		  The flags that this packet was sent with.
+	  \return
+	    The number of bytes that are in buffer, not the number of bytes read from the wire
+	*/
+	int Receive(char* buffer, int max_bytes, sockaddr_in *location, BitArray<HEADERSIZE> &flags);
 	/*!
 	  \brief
 	    This is ment to be called every frame

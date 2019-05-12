@@ -29,8 +29,9 @@ std::fstream Logger::Notification(std::string filename)
   file << std::endl;
   file << "********************************************************" << std::endl;
   auto now = std::chrono::system_clock::now();
+  auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
-  file << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X") << std::endl;
+  file << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X") << " raw time = " << now_ms.time_since_epoch().count() << std::endl;
   //add the time
   return file;
 }
@@ -40,8 +41,9 @@ std::fstream Logger::Warning()
   file << std::endl;
   file << "********************************************************" << std::endl;
   auto now = std::chrono::system_clock::now();
+  auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
-  file << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X") << std::endl;
+  file << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X") << " raw time = " << now_ms.time_since_epoch().count() << std::endl;
   //add the time
   return file;
 }

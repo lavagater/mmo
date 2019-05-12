@@ -1,4 +1,7 @@
 PlayerMove
+PlayerJoined
 UpdatePosition
 Teleport
 DeleteObject
+Movement
+Shoot

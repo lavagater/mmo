@@ -11,7 +11,7 @@
 class NetworkSignals
 {
 public:
-  std::unordered_map<MessageType, Signals<char*, unsigned, sockaddr_in*>> signals;
+  std::unordered_map<MessageType, Signals<char*, unsigned, sockaddr_in*, BitArray<HEADERSIZE>>> signals;
 };
 
 #endif

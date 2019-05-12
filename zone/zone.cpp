@@ -19,6 +19,7 @@
 #include "terrain_component.h"
 #include "transform_component.h"
 #include "static_object_component.h"
+#include "collider_component.h"
 
 Zone::Zone(Config &config)
   :config(config),
@@ -45,7 +46,34 @@ Zone::Zone(Config &config)
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&Zone::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&Zone::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  //load level file
+  //setup collision groups
+  std::fstream collision_grid("resources/collision_groups.txt");
+  while(!collision_grid.eof())
+  {
+    colliders.emplace_back();
+    std::string line;
+    std::getline(collision_grid, line);
+    std::stringstream ss(line);
+    std::vector<unsigned> temp_group;
+    int group = 0;
+    while(!ss.eof())
+    {
+      int is_checked;
+      ss >> is_checked;
+      if (is_checked)
+      {
+        temp_group.push_back(group);
+      }
+      group += 1;
+    }
+    collision_groups.push_back(temp_group);
+  }
+
+  //load level file, find a way to decouple this from zone
+  //maybe have a base class of a component loader and have a vector
+  //of component loaders like system components, shooter components
+  //and each of them know how to load specific components and an virtual function
+  //is called with the component name
   std::fstream level("resources/level.txt");
   GameObject *obj;
   while(!level.eof())
@@ -66,10 +94,15 @@ Zone::Zone(Config &config)
     {
       ADDCOMP(obj, StaticObjectComponent)->Load(level);
     }
+    else if (comp_name == "ColliderComponent")
+    {
+      ADDCOMP(obj, ColliderComponent)->Load(level);
+    }
     else
     {
       //if the name is not a component then its the next gameobject
       obj = CreateGameObject();
+      obj->name = comp_name;
       //read the object type
       level >> obj->type;
     }
@@ -119,11 +152,16 @@ void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_add
   LOG("New player id = " << id);
   //this should be done using a player archtype
   players[id] = CreateGameObject();
-  ADDCOMP(players[id], PlayerControllerComponent);
   ADDCOMP(players[id], TransformComponent);
+  ADDCOMP(players[id], ColliderComponent);
+  GETCOMP(players[id], ColliderComponent)->shape = new Circle();
+  ((Circle*)GETCOMP(players[id], ColliderComponent)->shape)->radius = 0.5;
+  GETCOMP(players[id], ColliderComponent)->shape->object = players[id];
+  ADDCOMP(players[id], PlayerControllerComponent);
   GETCOMP(players[id], PlayerControllerComponent)->lb_addr = lb_addr;
   GETCOMP(players[id], PlayerControllerComponent)->client_addr = client_addr;
   GETCOMP(players[id], PlayerControllerComponent)->id = id;
+  players[id]->name = "player" + std::to_string(id);
   if (size == sizeof(double)*2)
   {
     GETCOMP(players[id], TransformComponent)->position = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
@@ -195,10 +233,11 @@ void Zone::GameUpdate(double dt)
 {
   //call the update again
   dispatcher.Dispatch(std::bind(&Zone::GameUpdate, this, std::placeholders::_1), 1.0/30.0);
+  std::cout << "dt = " << dt << "          \r" << std::flush;
   //send the update signal
   update_signal(dt);
 }
-void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr)
+void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags)
 {
   //if from is a new address at it to the load balancers
   if (known_addr.find(from) == known_addr.end())
@@ -213,7 +252,7 @@ void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr
   {
     LOG(ToHexString(data.get(), size));
   }
-  network_signals.signals[type](data.get(), size, &addr);
+  network_signals.signals[type](data.get(), size, &addr, sent_flags);
 }
 void Zone::run()
 {
@@ -222,13 +261,14 @@ void Zone::run()
   {
     dispatcher.Update();
     //check for messages
-    int n = stack.Receive(buffer, MAXPACKETSIZE, &from);
+    BitArray<HEADERSIZE> sent_flags;
+    int n = stack.Receive(buffer, MAXPACKETSIZE, &from, sent_flags);
     flags[from].SetBit(ReliableFlag);
     if (n >= (int)sizeof(MessageType))
     {
       std::shared_ptr<char> data(new char[MAXPACKETSIZE], array_deleter<char>());
       memcpy(data.get(), buffer, n);
-      dispatcher.Dispatch(std::bind(&Zone::OnRecieve, this, data, n, from));
+      dispatcher.Dispatch(std::bind(&Zone::OnRecieve, this, data, n, from, sent_flags));
     }
     else if (n != EBLOCK && n != 0)
     {

@@ -37,7 +37,7 @@ int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HE
         //extract new ping
         double ping = stack->timer.GetTotalTime() - *reinterpret_cast<double*>(buffer+1);
         //rolling average
-        stack->connections[*location].ping = stack->connections[*location].ping * 0.9 + ping * 0.1;
+        stack->connections[*location].ping = ping;
         stack->connections[*location].time_since_ping = 0;
         return 0;
       }

@@ -109,10 +109,13 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, 
   unsigned id;
   int dest;
   LOG("Parse forward message");
+  char *temp = buffer;
   buffer = ParseForwardMessage(buffer, n, dest, id);
   if (buffer == 0)
   {
-    LOGW("Forawrd message malformed");
+    MessageType type = 0;
+    memcpy(&type, temp, sizeof(MessageType));
+    LOGW("Forawrd message malformed, forward message = "<<type);
     return;
   }
   LOG("Parsed forward message");

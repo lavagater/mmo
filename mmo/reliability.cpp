@@ -102,7 +102,6 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
         //Mark that this packet no longer needs resending
         resends[*location][ack%RESENDSIZE].packet = 0;
       }
-      LOG("Just ack");
       return 0;
     }
     else
@@ -133,7 +132,7 @@ int Reliability::Receive(char* buffer, int bytes, sockaddr_in* location, BitArra
       }
       if (acks[ack%RESENDSIZE] == ack)
       {
-        LOG("already seen message");
+        LOG("already seen message, ack = " << ack);
         //we have already seen this message
         //send ack message again
         BitArray<HEADERSIZE> temp;
@@ -180,6 +179,7 @@ void Reliability::Update(__attribute__((unused))double dt)
             //there is probably an issue with their connection and we probably should not bonbard them with resent packets
             it->second[i].time = cur_time + resend_time;
             //resend the message
+            LOG("Resending Message");
             stack->Send(it->second[i].packet, it->second[i].bytes, &it->first, it->second[i].flags, layer_id-1);
           }
         }

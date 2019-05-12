@@ -52,7 +52,7 @@ void PlayerControllerComponent::OnPlayerJoined(char *buffer, unsigned n, sockadd
   (void)addr;
   if (n < sizeof(MessageType) + sizeof(unsigned) + sizeof(sockaddr_in))
   {
-    LOG("Position Update request");
+    LOG("Player joined malformed message");
     return;
   }
   sockaddr_in client_addr = *reinterpret_cast<sockaddr_in*>(buffer+n-sizeof(sockaddr_in));

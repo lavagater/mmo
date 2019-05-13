@@ -19,9 +19,8 @@
 //size in bytes of the acknowlegement number, max size is sizeof(unsigned)
 #define ACKSIZE 2
 
-//this is how many ping times before resending a packet 
-#define RESENDFRACTION 0.0
-
+//minum wait time between resends in seconds, actual resend time is RESENDTIME + 2*ping
+#define RESENDTIME 0.1
 
 /*!
   \brief

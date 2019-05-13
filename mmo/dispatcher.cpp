@@ -38,7 +38,7 @@ void Dispatcher::Update()
   }
   if (messages.size() > 0)
   {
-      messages.back()();
+      messages.front()();
       messages.pop();
   }
 }

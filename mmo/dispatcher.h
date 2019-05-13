@@ -10,8 +10,8 @@
 #define DISPATCHER_H
 
 #include "frame_rate.h"
+#include "thread_safe_queue.h"
 #include <functional>
-#include <queue>
 
 struct TimedMessage
 {
@@ -33,7 +33,7 @@ public:
   void Update();
   FrameRate timer;
 private:
-  std::queue<std::function<void()> > messages;
+  ThreadSafeQueue<std::function<void()> > messages;
   std::vector<TimedMessage> timed_messages;
 };
 #endif

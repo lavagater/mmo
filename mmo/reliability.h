@@ -22,7 +22,6 @@
 //minum wait time between resends in seconds, actual resend time is RESENDTIME + 2*ping
 #define RESENDTIME 0.1
 
-
 /*!
   \brief
     This class saves all the information needed to resend a packet

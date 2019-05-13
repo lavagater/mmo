@@ -171,7 +171,7 @@ void Reliability::Update(__attribute__((unused))double dt)
         if (it->second[i].packet)
         {
           //get the time to send message, a fraction of the ping time
-          float resend_time = stack->connections[it->first].ping * RESENDFRACTION;
+          float resend_time = stack->connections[it->first].ping * 2 + RESENDTIME;
           //check if the time the message was sent was more than resend_tme ago
           if (cur_time - it->second[i].time >= resend_time)
           {

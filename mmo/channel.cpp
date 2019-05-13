@@ -17,7 +17,6 @@ int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute_
 
 int Channel::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
-  LOGN("Recieving " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   //check if this is a ping/pong message
   if (flags[MessageTypeFlag])
   {

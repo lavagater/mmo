@@ -53,6 +53,7 @@ size_t SockAddrHash::operator()(const sockaddr_in &rhs) const
 
 int NetworkStack::Send(const char* buffer, int bytes, const sockaddr_in* dest, BitArray<HEADERSIZE> &flags, int start_layer)
 {
+  LOGN("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
 	//create a new buffer that can be added too
 	char new_buf[MAXPACKETSIZE] = {0};//set to all zero for debugging
 	//leave room in buffer for header
@@ -100,7 +101,7 @@ int NetworkStack::Receive(char* buffer, int max_bytes, sockaddr_in* location, Bi
 		last_error= GetError();
 		return last_error;
 	}
-	LOGN("Recieve " << recv << " bytes");
+  LOGN("Recieving " << recv << " bytes mesage = " << ToHexString(buffer, recv));
 	//packet cant be less than the header size, the packet must be bad
 	if (recv < HEADERSIZE/8)
 	{

@@ -11,7 +11,6 @@ int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute_
     stack->connections.insert(std::make_pair(*dest, ConnectionState()));
     LOG("send new connection, id = " << stack->connections[*dest].connection_id);
   }
-  LOGN("Sending " << bytes << " bytes mesage = " << ToHexString(buffer, bytes));
   return bytes;
 }
 

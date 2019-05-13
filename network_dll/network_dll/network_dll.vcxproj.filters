@@ -96,6 +96,9 @@
     <ClCompile Include="..\..\mmo\wyatt_sock.cpp">
       <Filter>mmo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mmo\dispatcher.cpp">
+      <Filter>mmo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="windows_macros.h">
@@ -186,6 +189,15 @@
       <Filter>mmo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\mmo\wyatt_sock.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\dispatcher.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\utils.h">
+      <Filter>mmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mmo\thread_safe_queue.h">
       <Filter>mmo</Filter>
     </ClInclude>
   </ItemGroup>

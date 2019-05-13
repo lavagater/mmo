@@ -20,7 +20,7 @@
 #define ACKSIZE 2
 
 //this is how many ping times before resending a packet 
-#define RESENDFRACTION 3.0
+#define RESENDFRACTION 0.0
 
 
 /*!

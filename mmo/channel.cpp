@@ -5,6 +5,7 @@
 
 int Channel::Send(char* buffer, int bytes, const sockaddr_in* dest, __attribute__((unused))BitArray<HEADERSIZE> &flags)
 {
+  (void)(buffer);
   //create the connection for this address if not already created
   if (stack->connections.find(*dest) == stack->connections.end())
   {

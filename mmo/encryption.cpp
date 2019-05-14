@@ -43,6 +43,10 @@ int Encryption::Send(char* buffer, int bytes, const sockaddr_in* dest, BitArray<
 }
 int Encryption::Receive(char* buffer, int bytes, sockaddr_in* location, BitArray<HEADERSIZE> &flags)
 {
+  if (bytes <= 0)
+  {
+    return bytes;
+  }
   if (flags[EncryptFlag])
   {
     //if there is no key set for this encryption then we cant do anything with it...

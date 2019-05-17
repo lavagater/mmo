@@ -226,17 +226,22 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
   }
   int id = *reinterpret_cast<int*>(data);
   LOG("player id = " << id);
+  if (id < 0)
+  {
+    SendLoginMessageQuery(id, "");
+    return;
+  }
   load_balancer->clients[addr] = id;
   load_balancer->clients_by_id[id] = addr;
   //do a db query to find out which zone the client is in
   load_balancer->query_id += 1;
-  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::SendLoginMessageQuery, this, id, std::placeholders::_1, std::placeholders::_2);
+  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::OnLoginMessageQuery, this, id, std::placeholders::_1, std::placeholders::_2);
   int len = CreateQueryMessage(load_balancer->protocol, load_balancer->query_id, &load_balancer->buffer[0], STRINGIZE(
-    main(unsigned id)
+    main(int id)
     {
       print("Getting players zone\n");
       //get the id
-      vector res = find(0, id);
+      vector res = find(0, int(id));
       print(res, "\n");
       if (Size(res) == 0)
       {
@@ -261,19 +266,27 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
   load_balancer->stack.Send(load_balancer->buffer, len, &load_balancer->players_database, load_balancer->flags[load_balancer->players_database]);
 }
 
-void AccountManager::SendLoginMessageQuery(unsigned id, char *data, unsigned size)
+void AccountManager::SendLoginMessageQuery(int id, std::string zone)
 {
-  (void)(size);
-  std::string zone = std::string(data);
-  sockaddr_in zone_addr = load_balancer->GetZone(zone);
   LOG("Player " << id << " logging on to zone " << zone);
   *reinterpret_cast<MessageType*>(load_balancer->buffer) = load_balancer->protocol.LookUp("Login");
   *reinterpret_cast<int*>(load_balancer->buffer+sizeof(MessageType)) = id;
-  //tell the zone about the new player
   load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &load_balancer->clients_by_id[id], load_balancer->flags[load_balancer->clients_by_id[id]]);
-  //when sending to the zone add the clients address to the end
-  *reinterpret_cast<sockaddr_in*>(load_balancer->buffer+sizeof(MessageType)+sizeof(id)) = load_balancer->clients_by_id[id];
-  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id)+sizeof(sockaddr_in), &zone_addr, load_balancer->flags[zone_addr]);
+  if (id >= 0)
+  {
+    //tell the zone about the new player
+    //when sending to the zone add the clients address to the end
+    sockaddr_in zone_addr = load_balancer->GetZone(zone);
+    *reinterpret_cast<sockaddr_in*>(load_balancer->buffer+sizeof(MessageType)+sizeof(id)) = load_balancer->clients_by_id[id];
+    load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id)+sizeof(sockaddr_in), &zone_addr, load_balancer->flags[zone_addr]);
+  }
+}
+
+void AccountManager::OnLoginMessageQuery(int id, char *data, unsigned size)
+{
+  (void)(size);
+  std::string zone = std::string(data);
+  SendLoginMessageQuery(id, zone);
 }
 
 void AccountManager::SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id)

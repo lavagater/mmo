@@ -42,7 +42,8 @@ public:
   void GetUsername(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
   void SendLoginMessage(sockaddr_in addr, char *data, unsigned size);
-  void SendLoginMessageQuery(unsigned id, char *buffer, unsigned size);
+  void OnLoginMessageQuery(int id, char *buffer, unsigned size);
+  void SendLoginMessageQuery(int id, std::string zone);
   void OnClientDisconnect(const sockaddr_in *addr);
   void SendDisconnectMessage(sockaddr_in client_addr, char *buffer, unsigned size);
   void SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id);

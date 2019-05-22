@@ -37,7 +37,7 @@ int CreateEncryptionMessage(ProtocolLoader &protocol, char *buffer, char *key, s
 short ReadEncryptionMessage(char *data, unsigned size, char *key, AsymetricEncryption &encryptor);
 
 /**
- * @brief extracts where the message should be forwarded to.
+ * @brief extracts where the message should be forwarded to., DEPRECATED
  * @param size The size in bytes of data, gets filled in with the size of the return data.
  * @param dest Gets filled in with 0 if the mewssage is ment for clients, or filled in with 1 is the message is ment for zone
  * @param id the id of zone or client this should be sent to.
@@ -45,6 +45,6 @@ short ReadEncryptionMessage(char *data, unsigned size, char *key, AsymetricEncry
  */
 char *ParseForwardMessage(char *data, unsigned &size, int &dest, unsigned &id);
 
-void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, int dest, unsigned id, char *output);
+void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, unsigned id, char *output);
 
 #endif

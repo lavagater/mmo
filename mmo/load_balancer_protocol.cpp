@@ -1,4 +1,5 @@
 #include "load_balancer_protocol.h"
+#include "logger.h"
 #include <string.h>
 
 int CreateEncryptionMessage(ProtocolLoader &protocol,char *buffer, char *key, short size, AsymetricEncryption &encryptor)
@@ -49,17 +50,16 @@ char *ParseForwardMessage(char *data, unsigned &size, int &dest, unsigned &id)
 }
 
 
-void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, int dest, unsigned id, char *output)
+void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, unsigned id, char *output)
 {
     //shift over the message
     for (unsigned i = 1; i <= size; ++i)
     {
-        output[size-i + sizeof(MessageType) + sizeof(char) + sizeof(unsigned)] = data[size-i];
+        output[size-i + sizeof(MessageType) + sizeof(unsigned)] = data[size-i];
     }
     *reinterpret_cast<MessageType*>(output) = protocol.LookUp("Forward");
     output += sizeof(MessageType);
-    *reinterpret_cast<char*>(output) = dest;
-    output += sizeof(char);
     *reinterpret_cast<unsigned*>(output) = id;
-    size += sizeof(MessageType) + sizeof(char) + sizeof(unsigned);
+    LOGW("Creating forward message to id " << id);
+    size += sizeof(MessageType) + sizeof(unsigned);
 }

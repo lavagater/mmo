@@ -20,6 +20,13 @@
 
 #include <memory>
 
+//simple struct for the information about a client
+struct ClientInfo
+{
+  sockaddr_in addr;
+  std::string zone;
+};
+
 class LoadBalancer
 {
 public:
@@ -31,10 +38,10 @@ public:
   void Relay(char *buffer, unsigned n, sockaddr_in *addr);
   void EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr);
   void QueryResponse(char *buffer, unsigned n, sockaddr_in *addr);
-  void ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, BitArray<HEADERSIZE> flags);
+  void ForwardResponse(char *buffer, unsigned n, const sockaddr_in *addr, BitArray<HEADERSIZE> flags);
   void OnClientDisconnect(const sockaddr_in *addr);
   void RemoveClient(sockaddr_in addr);
-  sockaddr_in GetZone(std::string zone_name);
+  const sockaddr_in &GetZone(std::string zone_name);
   std::string GetZone(sockaddr_in *addr);
 //private:  Let them all have it
   Config &config;
@@ -46,7 +53,7 @@ public:
   std::vector<sockaddr_in> zone_array;
   //TODO: listen for disconnect signal and erase the client
   std::unordered_map<sockaddr_in, unsigned, SockAddrHash> clients;
-  std::unordered_map<unsigned, sockaddr_in> clients_by_id;
+  std::unordered_map<unsigned, ClientInfo> clients_by_id;
   std::unordered_map<unsigned, std::function<void(char *, unsigned)> > query_callbacks;
   unsigned query_id;
   char buffer[MAXPACKETSIZE];

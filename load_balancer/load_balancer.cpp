@@ -103,50 +103,92 @@ void LoadBalancer::Relay(char *buffer, unsigned n, sockaddr_in *addr)
   }
 }
 
-void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, BitArray<HEADERSIZE> sent_flags)
+
+void LoadBalancer::ForwardResponse(char *buffer, unsigned n, const sockaddr_in *addr, BitArray<HEADERSIZE> sent_flags)
 {
-  (void)addr;
-  unsigned id;
-  int dest;
-  LOG("Parse forward message");
-  char *temp = buffer;
-  buffer = ParseForwardMessage(buffer, n, dest, id);
-  if (buffer == 0)
+  if (n < sizeof(MessageType) + sizeof(unsigned))
   {
-    MessageType type = 0;
-    memcpy(&type, temp, sizeof(MessageType));
-    LOGW("Forawrd message malformed, forward message = "<<type);
+    LOGW("Forawrd message size bad");
     return;
   }
-  LOG("Parsed forward message");
-  MessageType type = 0;
-  memcpy(&type, buffer, sizeof(MessageType));
-  if (dest == 0)
+  //get the client id from the message
+  if (clients.find(*addr) == clients.end())
   {
-    LOG("forwarding message to client with id " << id << " message type = " << protocol.LookUp(type));
-  }
-  else
-  {
-    LOG("forwarding message to zone " << GetZone(&zone_array[id]) << " message type = " << protocol.LookUp(type));
-  }
-  if (dest == 0)
-  {
-    addr = &clients_by_id[id];
+    if (zones.find(*addr) == zones.end())
+    {
+      LOGW("Forward message came from not client or zone, discarding");
+      return;
+    }
+    //the forward message came from the zone so the address to send to is a client
+    unsigned id = *reinterpret_cast<unsigned*>(buffer + sizeof(MessageType));
+    LOGW("Forward Message to client with id " << id);
+    addr = &clients_by_id[id].addr;
+    //move the buffer past the forward message to send the actual message
+    buffer += sizeof(MessageType) + sizeof(unsigned);
+    n -= sizeof(MessageType) + sizeof(unsigned);
   }
   else
   {
     //when forwarding messages to the zone servers we add where the message came from to the end
     *reinterpret_cast<sockaddr_in*>(buffer+n) = *addr;
     n += sizeof(sockaddr_in);
-    addr = &zone_array[id];
+    //get the zone that the player is in
+    std::string zone = clients_by_id[clients[*addr]].zone;
+    addr = &GetZone(zone);
+    buffer += sizeof(MessageType);
+    n -= sizeof(MessageType);
   }
   //send the message
   BitArray<HEADERSIZE> new_flags = flags[*addr];
   //keep the reliability of the message being forwarded
   new_flags.SetBit(ReliableFlag, sent_flags[ReliableFlag]);
   stack.Send(buffer, n, addr, new_flags);
-  LOG("sent");
 }
+
+//void LoadBalancer::ForwardResponse(char *buffer, unsigned n, sockaddr_in *addr, BitArray<HEADERSIZE> sent_flags)
+//{
+//  (void)addr;
+//  unsigned id;
+//  int dest;
+//  LOG("Parse forward message");
+//  char *temp = buffer;
+//  buffer = ParseForwardMessage(buffer, n, dest, id);
+//  if (buffer == 0)
+//  {
+//    MessageType type = 0;
+//    memcpy(&type, temp, sizeof(MessageType));
+//    LOGW("Forawrd message malformed, forward message = "<<type);
+//    return;
+//  }
+//  LOG("Parsed forward message");
+//  MessageType type = 0;
+//  memcpy(&type, buffer, sizeof(MessageType));
+//  if (clients.find(*addr) != clients.end())
+//  {
+//    LOG("forwarding message to client with id " << id << " message type = " << protocol.LookUp(type));
+//  }
+//  else
+//  {
+//    LOG("forwarding message to zone " << GetZone(&zone_array[id]) << " message type = " << protocol.LookUp(type));
+//  }
+//  if (dest == 0)
+//  {
+//    addr = &clients_by_id[id];
+//  }
+//  else
+//  {
+//    //when forwarding messages to the zone servers we add where the message came from to the end
+//    *reinterpret_cast<sockaddr_in*>(buffer+n) = *addr;
+//    n += sizeof(sockaddr_in);
+//    addr = &zone_array[id];
+//  }
+//  //send the message
+//  BitArray<HEADERSIZE> new_flags = flags[*addr];
+//  //keep the reliability of the message being forwarded
+//  new_flags.SetBit(ReliableFlag, sent_flags[ReliableFlag]);
+//  stack.Send(buffer, n, addr, new_flags);
+//  LOG("sent");
+//}
 void LoadBalancer::QueryResponse(char *buffer, unsigned n, sockaddr_in *addr)
 {
   (void)addr;
@@ -227,7 +269,7 @@ void LoadBalancer::run()
   }
 }
 
-sockaddr_in LoadBalancer::GetZone(std::string zone_name)
+const sockaddr_in &LoadBalancer::GetZone(std::string zone_name)
 {
   for (auto it = zones.begin(); it != zones.end(); ++it)
   {

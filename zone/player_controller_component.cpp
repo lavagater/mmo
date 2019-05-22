@@ -41,7 +41,7 @@ void PlayerControllerComponent::SendPlayerInfo(GameObject *reciever)
 
   //send the message to the new player
   unsigned size = buffer - &msg[0];
-  CreateForwardMessage(game_object->zone->protocol, msg, size, 0, GETCOMP(reciever, PlayerControllerComponent)->id, msg);
+  CreateForwardMessage(game_object->zone->protocol, msg, size, GETCOMP(reciever, PlayerControllerComponent)->id, msg);
   //this message will be reliable(default) because its the only time when the players id and zone id are sent
   int len = game_object->zone->stack.Send(msg, size, &GETCOMP(reciever, PlayerControllerComponent)->lb_addr, game_object->zone->flags[GETCOMP(reciever, PlayerControllerComponent)->lb_addr]);
   LOG("Sent " << len << " bytes");
@@ -244,7 +244,7 @@ void PlayerControllerComponent::SendMoveMessage()
     char msg[500];
     unsigned message_size = size;
     //TODO: maybe forward mesasage can send to multiple places???
-    CreateForwardMessage(game_object->zone->protocol, saved, message_size, 0, it->first, msg);
+    CreateForwardMessage(game_object->zone->protocol, saved, message_size, it->first, msg);
     LOG("new message size = " << message_size << " sending to " << &GETCOMP(it->second, PlayerControllerComponent)->lb_addr);
     game_object->zone->stack.Send(msg, message_size, &GETCOMP(it->second, PlayerControllerComponent)->lb_addr, game_object->zone->flags[GETCOMP(it->second, PlayerControllerComponent)->lb_addr]);
     LOG("sent");

@@ -37,7 +37,7 @@ void GameObject::SendDeleteMessage()
     }
     char msg[500];
     unsigned message_size = size;
-    CreateForwardMessage(zone->protocol, buffer, message_size, 0, it->first, msg);
+    CreateForwardMessage(zone->protocol, buffer, message_size, it->first, msg);
     zone->stack.Send(msg, message_size, &GETCOMP(it->second, PlayerControllerComponent)->lb_addr, zone->flags[GETCOMP(it->second, PlayerControllerComponent)->lb_addr]);
   }
 }

@@ -51,7 +51,7 @@ void StaticObjectComponent::SendPositionUpdate(GameObject *player)
 
   //send the message to the new player
   unsigned size = buffer - &msg[0];
-  CreateForwardMessage(game_object->zone->protocol, msg, size, 0, GETCOMP(player, PlayerControllerComponent)->id, msg);
+  CreateForwardMessage(game_object->zone->protocol, msg, size, GETCOMP(player, PlayerControllerComponent)->id, msg);
   game_object->zone->stack.Send(msg, size, &GETCOMP(player, PlayerControllerComponent)->lb_addr, game_object->zone->flags[GETCOMP(player, PlayerControllerComponent)->lb_addr]);
 }
 

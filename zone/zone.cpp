@@ -165,6 +165,7 @@ void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_add
   if (size == sizeof(double)*2)
   {
     GETCOMP(players[id], TransformComponent)->position = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
+    GETCOMP(players[id], PlayerControllerComponent)->destination = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
   }
   else
   {

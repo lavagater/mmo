@@ -68,7 +68,7 @@ void BounceComponent::SendMoveMessage()
     LOG("Sending movement update to player " << it->first);
     char msg[500];
     unsigned message_size = size;
-    CreateForwardMessage(game_object->zone->protocol, saved, message_size, 0, it->first, msg);
+    CreateForwardMessage(game_object->zone->protocol, saved, message_size, it->first, msg);
     LOG("new message size = " << message_size << " sending to " << &GETCOMP(it->second, PlayerControllerComponent)->lb_addr);
     //make the message non reliable
     BitArray<HEADERSIZE> flags = game_object->zone->flags[GETCOMP(it->second, PlayerControllerComponent)->lb_addr];

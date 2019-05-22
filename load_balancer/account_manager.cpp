@@ -232,7 +232,7 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
     return;
   }
   load_balancer->clients[addr] = id;
-  load_balancer->clients_by_id[id] = addr;
+  load_balancer->clients_by_id[id].addr = addr;
   //do a db query to find out which zone the client is in
   load_balancer->query_id += 1;
   load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::OnLoginMessageQuery, this, id, std::placeholders::_1, std::placeholders::_2);
@@ -271,13 +271,13 @@ void AccountManager::SendLoginMessageQuery(int id, std::string zone)
   LOG("Player " << id << " logging on to zone " << zone);
   *reinterpret_cast<MessageType*>(load_balancer->buffer) = load_balancer->protocol.LookUp("Login");
   *reinterpret_cast<int*>(load_balancer->buffer+sizeof(MessageType)) = id;
-  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &load_balancer->clients_by_id[id], load_balancer->flags[load_balancer->clients_by_id[id]]);
+  load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id), &load_balancer->clients_by_id[id].addr, load_balancer->flags[load_balancer->clients_by_id[id].addr]);
   if (id >= 0)
   {
     //tell the zone about the new player
     //when sending to the zone add the clients address to the end
     sockaddr_in zone_addr = load_balancer->GetZone(zone);
-    *reinterpret_cast<sockaddr_in*>(load_balancer->buffer+sizeof(MessageType)+sizeof(id)) = load_balancer->clients_by_id[id];
+    *reinterpret_cast<sockaddr_in*>(load_balancer->buffer+sizeof(MessageType)+sizeof(id)) = load_balancer->clients_by_id[id].addr;
     load_balancer->stack.Send(load_balancer->buffer, sizeof(MessageType) + sizeof(id)+sizeof(sockaddr_in), &zone_addr, load_balancer->flags[zone_addr]);
   }
 }
@@ -286,6 +286,8 @@ void AccountManager::OnLoginMessageQuery(int id, char *data, unsigned size)
 {
   (void)(size);
   std::string zone = std::string(data);
+  //save the players zone, so forward messages can go there
+  load_balancer->clients_by_id[id].zone = zone;
   SendLoginMessageQuery(id, zone);
 }
 

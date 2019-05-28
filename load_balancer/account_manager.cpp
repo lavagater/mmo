@@ -18,8 +18,11 @@ void AccountManager::SetUp(LoadBalancer *load_balancer)
 }
 void AccountManager::OnClientDisconnect(const sockaddr_in *addr)
 {
-  if (load_balancer->clients.find(*addr) == load_balancer->clients.end())
+  if (load_balancer->clients.find(*addr) == load_balancer->clients.end() || load_balancer->clients[*addr] == -1)
+  {
+    LOG("Client that was not logged in has disconnected");
     return;
+  }
   char buffer[MAXPACKETSIZE];
   //need to figure out which zone the client is in
   load_balancer->query_id += 1;
@@ -144,7 +147,7 @@ void AccountManager::Login(char *buffer, unsigned n, sockaddr_in *addr)
         print("Not found");
         return int(-1);
       }
-      string saved_pass = get(res[0], 1);
+      blob saved_pass = get(res[0], 1);
       print("saved password = ", saved_pass, "\n");
       if (saved_pass != password)
       {
@@ -218,6 +221,19 @@ void AccountManager::ChangePassword(char *buffer, unsigned n, sockaddr_in *addr)
   ), user_blob, pass_blob, newpass_blob);
   load_balancer->stack.Send(&load_balancer->buffer[0], len, &load_balancer->account_database, load_balancer->flags[load_balancer->account_database]);
 }
+void AccountManager::AddClient(int id, sockaddr_in *addr)
+{
+  //remove old clients first
+  sockaddr_in old_addr = load_balancer->clients_by_id[id].addr;
+  auto it = load_balancer->clients.find(old_addr);
+  if (it != load_balancer->clients.end())
+  {
+    load_balancer->clients.erase(it);
+  }
+  //add new client
+  load_balancer->clients[*addr] = id;
+  load_balancer->clients_by_id[id].addr = *addr;
+}
 void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned size)
 {
   if (size != sizeof(int))
@@ -226,13 +242,12 @@ void AccountManager::SendLoginMessage(sockaddr_in addr, char *data, unsigned siz
   }
   int id = *reinterpret_cast<int*>(data);
   LOG("player id = " << id);
+  AddClient(id, &addr);
   if (id < 0)
   {
     SendLoginMessageQuery(id, "");
     return;
   }
-  load_balancer->clients[addr] = id;
-  load_balancer->clients_by_id[id].addr = addr;
   //do a db query to find out which zone the client is in
   load_balancer->query_id += 1;
   load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&AccountManager::OnLoginMessageQuery, this, id, std::placeholders::_1, std::placeholders::_2);

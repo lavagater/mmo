@@ -47,6 +47,7 @@ public:
   void OnClientDisconnect(const sockaddr_in *addr);
   void SendDisconnectMessage(sockaddr_in client_addr, char *buffer, unsigned size);
   void SendUsername(sockaddr_in addr, char *data, unsigned size, unsigned id);
+  void AddClient(int id, sockaddr_in *addr);
 private:
   LoadBalancer *load_balancer;
 };

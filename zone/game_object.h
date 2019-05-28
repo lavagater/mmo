@@ -7,6 +7,7 @@
 
 #include "component.h"
 #include "wyatt_sock.h"
+#include "signals.h"
 #include <unordered_map>
 
 //macros to make make function calls nicer (because cant go from tempate to char *)
@@ -54,6 +55,8 @@ public:
   Zone *zone;
   //map of all the components of this game object
   std::unordered_map<std::string, Component*> components;
+  //signal that this object is removed, so that anywhere that has pointers to this object can clean up
+  Signals<GameObject*> destroy_signal;
 };
 
 #endif

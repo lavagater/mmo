@@ -103,12 +103,14 @@ bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &s
 
 int CreateQueryResponse(ProtocolLoader &protocol, unsigned id, char *buffer, Value returnValue)
 {
+  LOG("CreateQueryResponse start");
   int ret = 0;
   *reinterpret_cast<MessageType*>(buffer) = protocol.LookUp("Query");
   ret += sizeof(MessageType);
   *reinterpret_cast<unsigned*>(buffer+ret) = id;
   ret += sizeof(unsigned);
   ret += Query::PackValue(buffer+ret, returnValue);
+  LOG("CreateQueryResponse end");
   return ret;
 }
 bool ParseQueryResponse(char *buffer, int length, unsigned &id, char *&data, unsigned &size)

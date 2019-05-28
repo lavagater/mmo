@@ -569,6 +569,10 @@ ColliderComponent
 0
 0.5
 2
+GateComponent
+5.63
+-2.7
+"second zone"
 gate1_(1)
 1
 TransformComponent
@@ -579,3 +583,7 @@ ColliderComponent
 0
 0.5
 2
+GateComponent
+-6.5
+0.5
+"second zone"

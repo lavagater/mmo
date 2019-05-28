@@ -54,9 +54,15 @@ void DatabaseApp::QueryCall(char *buffer, int n, sockaddr_in *addr)
   //execute the script
   Value returnValue;
   query.Compile(script, parameters, returnValue);
+  //if there is no return value we are done here
+  if (returnValue.type == Types::Blob && returnValue.size == 0)
+  {
+    return;
+  }
   //send back the return value
   n = CreateQueryResponse(protocol, id, buffer, returnValue);
   stack.Send(buffer, n, addr, flags[*addr]);
+  LOG("Query Call done");
 }
 void DatabaseApp::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags)
 {

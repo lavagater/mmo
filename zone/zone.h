@@ -44,6 +44,7 @@ public:
   std::vector<std::vector<unsigned>> collision_groups;
 
   std::unordered_set<GameObject*> all_objects;
+  std::unordered_map<unsigned, GameObject*> object_by_id;
   unsigned next_gameobject_id=0;
   std::vector<unsigned> unused_gameobject_ids;
 

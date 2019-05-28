@@ -9,5 +9,7 @@ void TransformComponent::Load(std::istream &stream)
 void TransformComponent::Write(std::ostream &stream)
 {
   stream << position.x();
+  stream << "\n";
   stream << position.y();
+  stream << "\n";
 }

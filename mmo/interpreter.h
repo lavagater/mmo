@@ -1416,15 +1416,15 @@ public:
 				if (lhs.type == rhs.type)
 				{
 					lhs.type = Integer;
-					if (lhs.type == Vector)
+					if (rhs.type == Vector)
 					{
 						lhs.m_int = lhs.m_vector != rhs.m_vector;
 					}
-					else if (lhs.type == Map)
+					else if (rhs.type == Map)
 					{
 						lhs.m_int = lhs.m_map != rhs.m_map;
 					}
-					else if (lhs.type == Blob)
+					else if (rhs.type == Blob)
 					{
 						if (lhs.size == rhs.size)
 						{

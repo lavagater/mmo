@@ -20,6 +20,9 @@
 #include "transform_component.h"
 #include "static_object_component.h"
 #include "collider_component.h"
+#include "gate_component.h"
+#include "movement_component.h"
+#include "interactive_component.h"
 
 Zone::Zone(Config &config)
   :config(config),
@@ -98,6 +101,10 @@ Zone::Zone(Config &config)
     {
       ADDCOMP(obj, ColliderComponent)->Load(level);
     }
+    else if (comp_name == "GateComponent")
+    {
+      ADDCOMP(obj, GateComponent)->Load(level);
+    }
     else
     {
       //if the name is not a component then its the next gameobject
@@ -126,12 +133,21 @@ GameObject *Zone::CreateGameObject()
     obj->id = next_gameobject_id++; 
   }
   obj->zone = this;
+  object_by_id[obj->id] = obj;
   all_objects.insert(obj);
   return obj;
 }
 
 void Zone::RemoveGameObject(GameObject *obj)
 {
+  LOGW("Remove object");
+  //remove object from map
+  auto map_it = object_by_id.find(obj->id);
+  if (map_it != object_by_id.end())
+  {
+    object_by_id.erase(map_it);
+  }
+  //remove object from set
   auto it = all_objects.find(obj);
   if (it != all_objects.end())
   {
@@ -139,6 +155,7 @@ void Zone::RemoveGameObject(GameObject *obj)
     delete obj;
     all_objects.erase(it);
   }
+  LOGW("Remove object finished");
 }
 
 void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_addr, char *player_data, unsigned size)
@@ -148,11 +165,14 @@ void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_add
     GameObject *player = players[id];
     players.erase(players.find(id));
     RemoveGameObject(player);
+    //TODO: set any important player info in db
   }
   LOG("New player id = " << id);
   //this should be done using a player archtype
   players[id] = CreateGameObject();
   ADDCOMP(players[id], TransformComponent);
+  ADDCOMP(players[id], MovementComponent);//default speed 1 is good for now
+  ADDCOMP(players[id], InteractiveComponent)->interaction_range = 1;
   ADDCOMP(players[id], ColliderComponent);
   GETCOMP(players[id], ColliderComponent)->shape = new Circle();
   ((Circle*)GETCOMP(players[id], ColliderComponent)->shape)->radius = 0.5;
@@ -165,7 +185,7 @@ void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_add
   if (size == sizeof(double)*2)
   {
     GETCOMP(players[id], TransformComponent)->position = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
-    GETCOMP(players[id], PlayerControllerComponent)->destination = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
+    GETCOMP(players[id], MovementComponent)->destination = Eigen::Vector2d(*reinterpret_cast<double*>(player_data), *reinterpret_cast<double*>(player_data+sizeof(double)));
   }
   else
   {

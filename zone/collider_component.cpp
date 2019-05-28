@@ -43,13 +43,17 @@ void ColliderComponent::Load(std::istream &stream)
 void ColliderComponent::Write(std::ostream &stream)
 {
   stream << shape->GetType();
+  stream << "\n";
   switch(shape->GetType())
   {
     case 0:
     {
       stream << ((Circle*)shape)->radius;
+      stream << "\n";
     }
   }
+  stream << collision_group;
+  stream << "\n";
 }
 
 void ColliderComponent::Init()

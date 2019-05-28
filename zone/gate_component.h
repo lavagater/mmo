@@ -6,12 +6,9 @@
 class GateComponent : public Component
 {
 public:
-  void Init();
-  void OnTeleport(char *buffer, unsigned n, sockaddr_in *addr);
-  void OnCollision(GameObject *other);
-  void OnPlayerMoved();
+  void Load(std::istream &stream);
+  void Write(std::ostream &stream);
 
   Eigen::Vector2d destination;
-  Connection player_move_connection;
-  Connection teleport_connection;
+  std::string zone;
 };

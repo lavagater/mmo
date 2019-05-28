@@ -63,6 +63,7 @@ LoadBalancer::LoadBalancer(Config &config)
   network_signals.signals[protocol.LookUp("Relay")].Connect(std::bind(&LoadBalancer::Relay, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&LoadBalancer::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Forward")].Connect(std::bind(&LoadBalancer::ForwardResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+  network_signals.signals[protocol.LookUp("ZoneChange")].Connect(std::bind(&LoadBalancer::ZoneChange, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   stack.disconnected.Connect(std::bind(&LoadBalancer::OnClientDisconnect, this, std::placeholders::_1));
 
   account_manager.SetUp(this);
@@ -103,6 +104,28 @@ void LoadBalancer::Relay(char *buffer, unsigned n, sockaddr_in *addr)
   }
 }
 
+void LoadBalancer::ZoneChange(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  //make sure this came from a zone server
+  if (zones.count(*addr) == 0)
+  {
+    LOGW("non-zone sending zone change message");
+    return;
+  }
+  if (n < sizeof(MessageType) + sizeof(unsigned) + 1)
+  {
+    LOGW("Incorrect size n =" << n);
+    return;
+  }
+  unsigned id = *reinterpret_cast<unsigned*>(buffer + sizeof(MessageType));
+  std::string new_zone(buffer+sizeof(MessageType) + sizeof(unsigned));
+  LOG("player id " << id << " moving to zone " << new_zone);
+  clients_by_id[id].zone = new_zone;
+
+  //send login message to the new zone, so it makes the new player
+  //TODO send message to client that he has changed zones
+  account_manager.SendLoginMessageQuery(id, new_zone);
+}
 
 void LoadBalancer::ForwardResponse(char *buffer, unsigned n, const sockaddr_in *addr, BitArray<HEADERSIZE> sent_flags)
 {
@@ -121,7 +144,6 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, const sockaddr_in *
     }
     //the forward message came from the zone so the address to send to is a client
     unsigned id = *reinterpret_cast<unsigned*>(buffer + sizeof(MessageType));
-    LOGW("Forward Message to client with id " << id);
     addr = &clients_by_id[id].addr;
     //move the buffer past the forward message to send the actual message
     buffer += sizeof(MessageType) + sizeof(unsigned);
@@ -135,6 +157,7 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, const sockaddr_in *
     //get the zone that the player is in
     std::string zone = clients_by_id[clients[*addr]].zone;
     addr = &GetZone(zone);
+    LOGW("Forward message to zone " << zone);
     buffer += sizeof(MessageType);
     n -= sizeof(MessageType);
   }
@@ -224,12 +247,17 @@ void LoadBalancer::OnClientDisconnect(const sockaddr_in *addr)
 }
 void LoadBalancer::RemoveClient(sockaddr_in addr)
 {
-  if (clients.find(addr) != clients.end())
+  auto it1 = clients.find(addr);
+  if (it1 != clients.end())
   {
     unsigned id = clients[addr];
     LOG("Removing client " << id);
-    clients.erase(clients.find(addr));
-    clients_by_id.erase(clients_by_id.find(id));
+    clients.erase(it1);
+    auto it2 = clients_by_id.find(id);
+    if (it2 != clients_by_id.end())
+    {
+      clients_by_id.erase(clients_by_id.find(id));
+    }
   }
 }
 void LoadBalancer::run()

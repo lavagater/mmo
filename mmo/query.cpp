@@ -287,6 +287,7 @@ Value print(std::vector<Value> args)
 
 int Query::PackValue(char *buffer, Value value)
 {
+	LOG("PACK VALUE type = " << value.type);
 	int ret = 0;
 
 	switch(value.type)
@@ -416,8 +417,10 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	interpreter->functions["delete"] = std::bind(&Query::DeleteDatabase, this, std::placeholders::_1);
 	interpreter->functions["find"] = std::bind(&Query::FindDatabase, this, std::placeholders::_1, std::ref(*interpreter));
 	interpreter->Visit(node);
+	LOG("Code Finished");
 	//set the return value
 	returnValue = interpreter->returnValue;
+	LOG("return value set type = " << returnValue.type);
 	//dont delete the interpreter so it stays alive in case the return value is pointing to memory inside the interpreter
 	return true;
 }

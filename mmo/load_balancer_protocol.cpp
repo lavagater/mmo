@@ -60,6 +60,5 @@ void CreateForwardMessage(ProtocolLoader &protocol, char *data, unsigned &size, 
     *reinterpret_cast<MessageType*>(output) = protocol.LookUp("Forward");
     output += sizeof(MessageType);
     *reinterpret_cast<unsigned*>(output) = id;
-    LOGW("Creating forward message to id " << id);
     size += sizeof(MessageType) + sizeof(unsigned);
 }

@@ -60,11 +60,11 @@ public:
 	float m_float = 0;
 	double m_double = 0;
 	std::string m_string;
-	std::vector<Value> *m_vector;
-	std::unordered_map<Value, Value, ValueHash> *m_map;
+	std::vector<Value> *m_vector = 0;
+	std::unordered_map<Value, Value, ValueHash> *m_map = 0;
 	char *data = 0;
 	unsigned size = 0;
-	Types type;
+	Types type = Types::Blob;
 	//this is for variables/namereferences in the interpreter to be able to modify 
 	//the value that 
 	Value *pointer = 0;

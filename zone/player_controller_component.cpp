@@ -11,16 +11,87 @@
 #include "bounce_component.h"
 #include "static_object_component.h"
 #include "terrain_component.h"
+#include "gate_component.h"
+#include "movement_component.h"
+#include "interactive_component.h"
 
 void PlayerControllerComponent::Init()
 {
-  update_connection = game_object->zone->update_signal.Connect(std::bind(&PlayerControllerComponent::onUpdate, this, std::placeholders::_1));
+  //when the gameobject moves call the function to tell the client
+  move_connection = GETCOMP(game_object, MovementComponent)->moved_signal.Connect(std::bind(&PlayerControllerComponent::SendMoveMessage, this));
   player_disconnected = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("Disconnected")].Connect(std::bind(&PlayerControllerComponent::OnDisconnected, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   player_move_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("PlayerMove")].Connect(std::bind(&PlayerControllerComponent::OnMove, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   shoot_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("Shoot")].Connect(std::bind(&PlayerControllerComponent::OnShoot, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   collision_started_connection = GETCOMP(game_object, ColliderComponent)->collision_started_signal.Connect(std::bind(&PlayerControllerComponent::OnCollision, this, std::placeholders::_1));
   collision_persisted_connection = GETCOMP(game_object, ColliderComponent)->collision_persisted_signal.Connect(std::bind(&PlayerControllerComponent::OnCollision, this, std::placeholders::_1));
-  player_joined_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("UpdatePosition")].Connect(std::bind(&PlayerControllerComponent::OnPlayerJoined, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  position_update_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("UpdatePosition")].Connect(std::bind(&PlayerControllerComponent::OnPositionUpdate, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  player_joined_connection = game_object->zone->player_joined_signal.Connect(std::bind(&PlayerControllerComponent::OnPlayerJoined, this,  std::placeholders::_1));
+  teleport_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("Teleport")].Connect(std::bind(&PlayerControllerComponent::OnTeleport, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+void PlayerControllerComponent::Teleport(Eigen::Vector2d destination, std::string zone_name)
+{
+  LOGW("Teleporting");
+  char query[MAXPACKETSIZE];
+  int len = CreateQueryMessage(game_object->zone->protocol, -1, query, STRINGIZE(
+  main(unsigned id, double x_pos, double y_pos, string zone)
+  {
+    vector res = find(0, id);
+    if (Size(res) == 0)
+    {
+      print("player not found... account ", id);
+      return;
+    }
+    print("player id ", id, " going to zone ", zone);
+    set(res[0], 1, zone);
+    set(res[0], 2, x_pos);
+    set(res[0], 3, y_pos);
+    return;
+  }
+  ), id, destination.x(), destination.y(), zone_name);
+  game_object->zone->stack.Send(query, len, &game_object->zone->players_database, game_object->zone->flags[game_object->zone->players_database]);
+
+  //send a message to the other players that the player was removed from this zone
+  game_object->SendDeleteMessage();
+  //dispatch that this object should be removed
+  game_object->zone->dispatcher.Dispatch(std::bind(&Zone::RemoveGameObject, game_object->zone, game_object));
+  //remove the player from the player map
+  game_object->zone->players.erase(game_object->zone->players.find(id));
+
+  //TODO Move this to its own zone change function
+  //send load balancer a message saying this client
+  int size = 0;
+  *reinterpret_cast<MessageType*>(&query[size]) = game_object->zone->protocol.LookUp("ZoneChange");
+  size += sizeof(MessageType);
+  *reinterpret_cast<unsigned*>(&query[size]) = id;
+  size += sizeof(unsigned);
+  memcpy(&query[size], zone_name.data(), zone_name.length()+1);
+  //plus one for null terminator
+  size += zone_name.length()+1;
+  game_object->zone->stack.Send(query, size, &lb_addr, game_object->zone->flags[lb_addr]);
+}
+
+void PlayerControllerComponent::OnTeleport(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  (void)(addr);
+  if (n < sizeof(MessageType) + sizeof(unsigned) + sizeof(unsigned))
+  {
+    LOGW("teleport message wrong size n = " << n);
+    return;
+  }
+  buffer += sizeof(MessageType);
+  unsigned player_id = *reinterpret_cast<unsigned*>(buffer);
+  buffer += sizeof(unsigned);
+  unsigned portal_id = *reinterpret_cast<unsigned*>(buffer);
+  if (id != player_id)
+  {
+    return;
+  }
+  //TODO retrieve the destination from the portal object
+  Eigen::Vector2d new_pos = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->destination;
+  std::string zone_name = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->zone;
+
+  GETCOMP(game_object, InteractiveComponent)->Interact(game_object->zone->object_by_id[portal_id], std::bind(&PlayerControllerComponent::Teleport, this, new_pos, zone_name));
 }
 
 void PlayerControllerComponent::SendPlayerInfo(GameObject *reciever)
@@ -47,7 +118,16 @@ void PlayerControllerComponent::SendPlayerInfo(GameObject *reciever)
   LOG("Sent " << len << " bytes");
 }
 
-void PlayerControllerComponent::OnPlayerJoined(char *buffer, unsigned n, sockaddr_in *addr)
+void PlayerControllerComponent::OnPlayerJoined(GameObject *new_player)
+{
+  //dont send myself my info
+  if (new_player != game_object)
+  {
+    GETCOMP(new_player, PlayerControllerComponent)->SendPlayerInfo(game_object);
+  }
+}
+
+void PlayerControllerComponent::OnPositionUpdate(char *buffer, unsigned n, sockaddr_in *addr)
 {
   (void)addr;
   if (n < sizeof(MessageType) + sizeof(unsigned) + sizeof(sockaddr_in))
@@ -66,11 +146,6 @@ void PlayerControllerComponent::OnPlayerJoined(char *buffer, unsigned n, sockadd
   {
     //send the new player my info
     SendPlayerInfo(player);
-    if (game_object != player)
-    {
-      //also send me the new players info
-      GETCOMP(player, PlayerControllerComponent)->SendPlayerInfo(game_object);
-    }
   }
 }
 
@@ -102,7 +177,6 @@ void PlayerControllerComponent::OnDisconnected(char *buffer, unsigned n, sockadd
   LOG("Player Disconnected");
   (void)(n);
   (void)(addr);
-  //set the new destination
   buffer += sizeof(MessageType);
   sockaddr_in d_addr = *reinterpret_cast<sockaddr_in*>(buffer);
   if (client_addr == d_addr)
@@ -142,21 +216,11 @@ void PlayerControllerComponent::OnCollision(GameObject *other)
   TerrainComponent *terrain = GETCOMP(other, TerrainComponent);
   if (terrain)
   {
+    MovementComponent *move = GETCOMP(game_object, MovementComponent);
     //stop moving
-    destination = last_pos;
-    GETCOMP(game_object, TransformComponent)->position = last_pos;
-    //send message with new destination
-    SendMoveMessage();
+    move->MoveTo(move->last_pos);
+    GETCOMP(game_object, TransformComponent)->position = move->last_pos;
   }
-}
-
-void PlayerControllerComponent::onUpdate(double dt)
-{
-  //get the new player position
-  Eigen::Vector2d new_pos = GETCOMP(game_object, TransformComponent)->position + (destination - GETCOMP(game_object, TransformComponent)->position).normalized() * dt;
-  //save last position in case of a collision
-  last_pos = GETCOMP(game_object, TransformComponent)->position;
-  GETCOMP(game_object, TransformComponent)->position = new_pos;
 }
 
 void PlayerControllerComponent::OnShoot(char *buffer, unsigned n, sockaddr_in *addr)
@@ -173,7 +237,6 @@ void PlayerControllerComponent::OnShoot(char *buffer, unsigned n, sockaddr_in *a
   {
     return;
   }
-  //set the new destination
   buffer += sizeof(MessageType);
   unsigned id = *reinterpret_cast<unsigned*>(buffer);
   if (id != this->id)
@@ -212,12 +275,13 @@ void PlayerControllerComponent::OnMove(char *buffer, unsigned n, sockaddr_in *ad
       return;
   }
   buffer += sizeof(unsigned);
+  Eigen::Vector2d destination;
   destination.x() = *reinterpret_cast<double*>(buffer);
   buffer += sizeof(double);
   destination.y() = *reinterpret_cast<double*>(buffer);
   buffer += sizeof(double);
   LOG("Got move message from player " << id);
-  SendMoveMessage();
+  GETCOMP(game_object, MovementComponent)->MoveTo(destination);
 }
 
 void PlayerControllerComponent::SendMoveMessage()
@@ -228,9 +292,9 @@ void PlayerControllerComponent::SendMoveMessage()
   buffer += sizeof(MessageType);
   *reinterpret_cast<unsigned*>(buffer) = id;
   buffer += sizeof(unsigned);
-  *reinterpret_cast<double*>(buffer) = destination.x();
+  *reinterpret_cast<double*>(buffer) = GETCOMP(game_object, MovementComponent)->destination.x();
   buffer += sizeof(double);
-  *reinterpret_cast<double*>(buffer) = destination.y();
+  *reinterpret_cast<double*>(buffer) = GETCOMP(game_object, MovementComponent)->destination.y();
   buffer += sizeof(double);
   //tell each player about the new destination
   *reinterpret_cast<double*>(buffer) = GETCOMP(game_object, TransformComponent)->position.x();

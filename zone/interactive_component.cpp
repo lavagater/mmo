@@ -43,12 +43,12 @@ void InteractiveComponent::OnTimer()
     else
     {
       //if not in range yet (the destination is moving), try interacting with it again
-      Interact(interactable_object, interaction_callback, other_range);
+      InteractAux(interactable_object, interaction_callback, other_range);
     }
   }
 }
 
-void InteractiveComponent::Interact(GameObject *interactable, std::function<void()> interaction, double range)
+void InteractiveComponent::InteractAux(GameObject *interactable, std::function<void()> interaction, double range)
 {
   other_range = range;
   interaction_callback = interaction;
@@ -58,6 +58,15 @@ void InteractiveComponent::Interact(GameObject *interactable, std::function<void
   arrive_connection = GETCOMP(game_object, MovementComponent)->arrived_signal.Connect(std::bind(&InteractiveComponent::OnTimer, this));
   //disconnect this so moving wont reset everything
   move_connection.Disconnect();
-  GETCOMP(game_object, MovementComponent)->MoveTo(GETCOMP(interactable, TransformComponent)->position);
+  Eigen::Vector2d direction = GETCOMP(interactable, TransformComponent)->position - GETCOMP(game_object, TransformComponent)->position;
+  GETCOMP(game_object, MovementComponent)->MoveTo(GETCOMP(interactable, TransformComponent)->position - direction.normalized() *(range));
   move_connection = GETCOMP(game_object, MovementComponent)->moved_signal.Connect(std::bind(&InteractiveComponent::OnMove, this));
+}
+
+void InteractiveComponent::Interact(GameObject *interactable, std::function<void()> interaction, double range)
+{
+  other_range = range;
+  interaction_callback = interaction;
+  interactable_object = interactable;
+  OnTimer();
 }

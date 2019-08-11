@@ -16,6 +16,7 @@ public:
    * @brief Moves the player withen interaction range of the other object then calls the function.
    */
   void Interact(GameObject *interactable, std::function<void()> interaction, double range = 0);
+  void InteractAux(GameObject *interactable, std::function<void()> interaction, double range = 0);
   void OnTimer();
 
   //minimum range that this object can interact

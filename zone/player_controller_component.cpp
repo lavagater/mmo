@@ -31,7 +31,6 @@ void PlayerControllerComponent::Init()
 
 void PlayerControllerComponent::Teleport(Eigen::Vector2d destination, std::string zone_name)
 {
-  LOGW("Teleporting");
   char query[MAXPACKETSIZE];
   int len = CreateQueryMessage(game_object->zone->protocol, -1, query, STRINGIZE(
   main(unsigned id, double x_pos, double y_pos, string zone)
@@ -91,7 +90,7 @@ void PlayerControllerComponent::OnTeleport(char *buffer, unsigned n, sockaddr_in
   Eigen::Vector2d new_pos = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->destination;
   std::string zone_name = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->zone;
 
-  GETCOMP(game_object, InteractiveComponent)->Interact(game_object->zone->object_by_id[portal_id], std::bind(&PlayerControllerComponent::Teleport, this, new_pos, zone_name));
+  GETCOMP(game_object, InteractiveComponent)->Interact(game_object->zone->object_by_id[portal_id], std::bind(&PlayerControllerComponent::Teleport, this, new_pos, zone_name), 1);
 }
 
 void PlayerControllerComponent::SendPlayerInfo(GameObject *reciever)
@@ -162,7 +161,7 @@ void PlayerControllerComponent::Shoot(Eigen::Vector2d velocity)
   GETCOMP(bullet, ColliderComponent)->shape->object = bullet;
   BounceComponent *bounce = ADDCOMP(bullet, BounceComponent);
   bounce->velocity = velocity;
-  trans->position = GETCOMP(game_object, TransformComponent)->position + bounce->velocity.normalized() * 0.75;
+  trans->position = GETCOMP(game_object, TransformComponent)->position + bounce->velocity.normalized();
   StaticObjectComponent *stat = ADDCOMP(bullet, StaticObjectComponent);
   //tell all the players about my new object
   for (auto it = game_object->zone->players.begin(); it != game_object->zone->players.end(); ++it)

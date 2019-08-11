@@ -34,6 +34,16 @@ void ColliderComponent::Load(std::istream &stream)
       shape = circle;
       break;
     }
+    case 1:
+    {
+      Line *line = new Line();
+      stream >> line->start.x();
+      stream >> line->start.y();
+      stream >> line->end.x();
+      stream >> line->end.y();
+      shape = line;
+      break;
+    }
     default:
       LOGW("Collider with shape " << shape_type);
   }

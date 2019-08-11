@@ -11,7 +11,6 @@
 
 GameObject::~GameObject()
 {
-  LOGW("Destroying game object");
   destroy_signal(this);
   for (auto it = components.begin(); it != components.end(); ++it)
   {

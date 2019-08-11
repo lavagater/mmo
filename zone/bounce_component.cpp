@@ -20,29 +20,20 @@ void BounceComponent::OnUpdate(double dt)
 }
 void BounceComponent::OnCollision(GameObject *other)
 {
-  BounceComponent *bounce = GETCOMP(other, BounceComponent);
-  if (bounce && 0)
+  if (bounces >= 2)
   {
-    //bouncing off another bouncy thing
+    game_object->SendDeleteMessage();
+    //dispatch that this object should be removed
+    game_object->zone->dispatcher.Dispatch(std::bind(&Zone::RemoveGameObject, game_object->zone, game_object));
+    return;
   }
-  else
-  {
-    if (bounces >= 2)
-    {
-      game_object->SendDeleteMessage();
-      //dispatch that this object should be removed
-      game_object->zone->dispatcher.Dispatch(std::bind(&Zone::RemoveGameObject, game_object->zone, game_object));
-      return;
-    }
-    bounces += 1;
-    //bouncing off a non bouncy thing 
-    //try to find a normal ish direction
-    Eigen::Vector2d normal = (GETCOMP(game_object, TransformComponent)->position - GETCOMP(other, TransformComponent)->position).normalized();
-    //mirror the velocity about the normal
-    velocity = 2*normal*-velocity.dot(normal)+velocity;
-    //the velocity has changed so tell the clients
-    SendMoveMessage();
-  }
+  bounces += 1;
+  //try to find a normal ish direction
+  Eigen::Vector2d normal = (GETCOMP(game_object, TransformComponent)->position - GETCOMP(other, TransformComponent)->position).normalized();
+  //mirror the velocity about the normal
+  velocity = 2*normal*-velocity.dot(normal)+velocity;
+  //the velocity has changed so tell the clients
+  SendMoveMessage(); 
 }
 
 void BounceComponent::SendMoveMessage()

@@ -29,6 +29,16 @@ public:
   std::vector<std::pair<int,int>> GetGridOccupation();
 };
 
+class Line : public Shape
+{
+public:
+  Eigen::Vector2d start;
+  Eigen::Vector2d end;
+  int GetType() {return 1;}
+  std::vector<std::pair<int,int>> GetGridOccupation();
+};
+
 bool CircleToCircle(Shape *, Shape *);
+bool CircleToLine(Shape *, Shape *);
 
 #endif

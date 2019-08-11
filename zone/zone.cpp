@@ -140,7 +140,6 @@ GameObject *Zone::CreateGameObject()
 
 void Zone::RemoveGameObject(GameObject *obj)
 {
-  LOGW("Remove object");
   //remove object from map
   auto map_it = object_by_id.find(obj->id);
   if (map_it != object_by_id.end())
@@ -155,7 +154,6 @@ void Zone::RemoveGameObject(GameObject *obj)
     delete obj;
     all_objects.erase(it);
   }
-  LOGW("Remove object finished");
 }
 
 void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_addr, char *player_data, unsigned size)

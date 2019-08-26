@@ -1,18 +1,81 @@
+#include <unordered_set>
+#include <functional>
+
 #include "entity.h"
 #include "logger.h"
 
-void (*actions[Actions::total])(Effect &, Entity &, Entity &, double &) = 
+//the entities used in UseSpell, its global because im lazy...
+static std::unordered_set<Entity*> involved_entities;
+
+void (*actions[Actions::total_actions])(Effect &, Entity &, Entity &, double &) = 
 {
-NoEffect,
-Damage,
-Heal,
-RecoverMana,
-SpendMana,
-DamageModifier,
-HealModifier,
-RecoverManaModifier,
-SpendManaModifier
+NoEffect, //none
+Damage, //damage
+Heal, //heal
+RecoverMana, //recover_mana
+SpendMana, //spend_mana
+DamageModifier, //damage_modifier
+HealModifier, //heal_modifier
+RecoverManaModifier, //recover_mana_modifier
+SpendManaModifier, //spend_mana_modifier
+NoEffect, //scalars
+NoEffect, //scale_caster_current_hp
+NoEffect, //scale_caster_max_hp
+NoEffect, //scale_caster_current_mana
+NoEffect, //scale_caster_max_mana
+NoEffect, //scale_caster_strength
+NoEffect, //scale_caster_intelligence
+NoEffect, //scale_caster_armour
+NoEffect, //scale_caster_defense
+NoEffect, //scale_caster_cooldown_reduction
+NoEffect, //scale_caster_end
+NoEffect, //scale_target_current_hp
+NoEffect, //scale_target_max_hp
+NoEffect, //scale_target_current_mana
+NoEffect, //scale_target_max_mana
+NoEffect, //scale_target_strength
+NoEffect, //scale_target_intelligence
+NoEffect, //scale_target_armour
+NoEffect, //scale_target_defense
+NoEffect //scale_target_cooldown_reduction
 };
+
+Entity::~Entity()
+{
+  //make sure there are people that care if i die, if not then i am probablky a copy(infinite death loop)
+  if (destroyed)
+  {
+    //make a copy of this entity
+    std::shared_ptr<Entity> fake(new Entity);
+    //make the fake
+    *fake.get() = *this;
+    //fake will not have the signals saying it took damage/healed/etc
+    fake->damage.Clear();
+    fake->heal.Clear();
+    fake->spend_mana.Clear();
+    fake->recover_mana.Clear();
+    fake->destroyed.Clear();
+    //tell people who care that i have died and to use my clone
+    destroyed(this, fake);
+  }
+}
+
+void Entity::EntityDestroyed(Entity *entity, std::shared_ptr<Entity> fake)
+{
+  bool add_fake = false;
+  for (unsigned i = 0; i < buffs.size(); ++i)
+  {
+    if (buffs[i].second == entity)
+    {
+      add_fake = true;
+      buffs[i].second = fake.get();
+    }
+  }
+  if (add_fake)
+  {
+    fake_entities.push_back(fake);
+  }
+}
 
 void Entity::resetDeltas()
 {
@@ -69,25 +132,32 @@ void Entity::Update(double dt)
   for (unsigned i =0; i < buffs.size(); ++i)
   {
     //apply over time effects
-    if (buffs[i].self_activator == none && buffs[i].remote_activator == none)
+    if (buffs[i].first.self_activator == none && buffs[i].first.remote_activator == none)
     {
       resetDeltas();
+      buffs[i].second->resetDeltas();
+      involved_entities.clear();
+      involved_entities.insert(this);
+      involved_entities.insert(buffs[i].second);
       //apply buff
       double zero = 0;
       //the amount is a per second, but could be a decimal so for the last second it might only be a partial damage
       double time_scale = dt;
-      if (buffs[i].duration - dt < 0)
+      if (buffs[i].first.duration - dt < 0)
       {
-        time_scale = buffs[i].duration;
+        time_scale = buffs[i].first.duration;
       }
       //multiply by dt because the amount is a per second amount
-      double amount = get_amount(buffs[i], *others[i], *this, zero) * time_scale;
-      actions[buffs[i].action](buffs[i], *this, *this, amount);
-      updateDeltas();
+      double amount = get_amount(buffs[i].first, *buffs[i].second, *this, zero) * time_scale;
+      actions[buffs[i].first.action](buffs[i].first, *buffs[i].second, *this, amount);
+      for (auto it = involved_entities.begin(); it != involved_entities.end(); ++it)
+      {
+        (*it)->updateDeltas();
+      }
     }
     //check if buff has expired
-    buffs[i].duration -= dt;
-    if (buffs[i].duration <= 0)
+    buffs[i].first.duration -= dt;
+    if (buffs[i].first.duration <= 0)
     {
       remove_list.push_back(i);
     }
@@ -95,8 +165,20 @@ void Entity::Update(double dt)
   //remove the expired buffs
   for (int i = remove_list.size() - 1; i >= 0; --i)
   {
-    buffs.erase(buffs.begin()+remove_list[i]);
-    others.erase(remove_list[i]);
+    auto buf_to_remove = buffs.begin()+remove_list[i];
+    Entity *buffer_entity = buf_to_remove->second;
+    buffs.erase(buf_to_remove);
+    bool can_disconnect = true;
+    //stop listening for the death of the buffer if there are no other buffs from that caster
+    for (unsigned i = 0; i < buffs.size(); ++i)
+    {
+      if (buffs[i].second == buffer_entity)
+      {
+        can_disconnect = false;
+      }
+    }
+    if (can_disconnect)
+      destroyed_connections[buffer_entity].Disconnect();
   }
 }
 
@@ -107,26 +189,32 @@ void ApplyEffect(Effect &effect, Entity &caster, Entity &target)
   {
     double zero = 0;
     double amount;
-    if (effect.self_cast)
+    if (effect.target_type == buffer) //self cast
     {
       amount = get_amount(effect, caster, caster, zero);
       actions[effect.action](effect, caster, caster, amount);
       //if the effect is over time add it as a buff
       if (effect.duration > 0)
       {
-        caster.buffs.push_back(effect);
-        caster.others[caster.buffs.size()-1] = &caster;
+        caster.buffs.push_back(std::make_pair(effect, &caster));
+        if (caster.destroyed_connections.find(&caster) == caster.destroyed_connections.end())
+        {
+          caster.destroyed_connections[&caster] = caster.destroyed.Connect(std::bind(&Entity::EntityDestroyed, &caster, std::placeholders::_1, std::placeholders::_2));
+        }
       }
     }
-    else
+    else //buffed and caster are both non-self cast
     {
       amount = get_amount(effect, caster, target, zero);      
       actions[effect.action](effect, caster, target, amount);
       //if the effect is over time add it as a buff
       if (effect.duration > 0)
       {
-        target.buffs.push_back(effect);
-        target.others[target.buffs.size()-1] = &target;
+        target.buffs.push_back(std::make_pair(effect, &caster));
+        if (target.destroyed_connections.find(&caster) == target.destroyed_connections.end())
+        {
+          target.destroyed_connections[&caster] = caster.destroyed.Connect(std::bind(&Entity::EntityDestroyed, &target, std::placeholders::_1, std::placeholders::_2));
+        }
       }
     }
 
@@ -135,8 +223,12 @@ void ApplyEffect(Effect &effect, Entity &caster, Entity &target)
   {
     LOG("Addding new buff to " << &target);
     //add the buff to the target, self cast applies to the buf
-    target.buffs.push_back(effect);
-    target.current_buffs.push_back(effect);
+    target.buffs.push_back(std::make_pair(effect, &caster));
+    target.current_buffs.push_back(std::make_pair(effect, &caster));
+    if (target.destroyed_connections.find(&caster) == target.destroyed_connections.end())
+    {
+      target.destroyed_connections[&caster] = caster.destroyed.Connect(std::bind(&Entity::EntityDestroyed, &target, std::placeholders::_1, std::placeholders::_2));
+    }
   }
 }
 
@@ -147,8 +239,11 @@ void UseSpell(Spell &spell, Entity &caster, Entity &target)
   {
     return;
   }
+  involved_entities.clear();
   caster.resetDeltas();
   target.resetDeltas();
+  involved_entities.insert(&caster);
+  involved_entities.insert(&target);
   //spen the mana for the spell
   double amount = spell.mana_cost;
   Effect mana_cost;
@@ -159,17 +254,60 @@ void UseSpell(Spell &spell, Entity &caster, Entity &target)
 	mana_cost.value = amount;
 	mana_cost.duration = 0;
 	mana_cost.time = 0;
-	mana_cost.self_cast = true;
-  actions[Actions::spend_mana](mana_cost, caster, caster, amount);
+	mana_cost.target_type = buffer;
 
+  ApplyEffect(mana_cost, caster, caster);
   ApplyEffect(spell.effect1, caster, target);
   ApplyEffect(spell.effect2, caster, target);
 
-  caster.updateDeltas();
-  //dont update the the same entity twice if the caster is targeting itself
-  if (&caster != &target)
+  for (auto it = involved_entities.begin(); it != involved_entities.end(); ++it)
   {
-    target.updateDeltas();
+    (*it)->updateDeltas();
+  }
+}
+
+double get_stat(int stat, Entity &entity)
+{
+  switch(stat)
+  {
+    case scale_caster_current_hp:
+    case scale_target_current_hp:
+      return entity.current_hp;
+      break;
+    case scale_caster_max_hp:
+    case scale_target_max_hp:
+      return entity.max_hp;
+      break;
+    case scale_caster_current_mana:
+    case scale_target_current_mana:
+      return entity.current_mana;
+      break;
+    case scale_caster_max_mana:
+    case scale_target_max_mana:
+      return entity.max_mana;
+      break;
+    case scale_caster_strength:
+    case scale_target_strength:
+      return entity.strength;
+      break;
+    case scale_caster_intelligence:
+    case scale_target_intelligence:
+      return entity.intelligence;
+      break;
+    case scale_caster_armour:
+    case scale_target_armour:
+      return entity.armour;
+      break;
+    case scale_caster_defense:
+    case scale_target_defense:
+      return entity.defense;
+      break;
+    case scale_caster_cooldown_reduction:
+    case scale_target_cooldown_reduction:
+      return entity.cool_down_reduction;
+      break;
+    default:
+      return 0;
   }
 }
 
@@ -178,41 +316,69 @@ double get_amount(Effect &effect, Entity &caster, Entity &target, double &activa
   double ret = effect.value;
   if (effect.scalar != Actions::none)
   {
-    if (effect.scalar == effect.self_activator || effect.scalar == effect.remote_activator)
+    //if the scalar is an action then scale with the activation amount
+    if (effect.scalar < scalars)
     {
       ret *= activation_amount;
     }
     else
     {
-      //scalar is a stat, and that not supported yet ):
-      (void)(caster);
-      (void)(target);
+      double stat = 0;
+      //if the scalar is scaling with caster stats
+      if (effect.scalar < scale_caster_end)
+      {
+        stat = get_stat(effect.scalar, caster);
+        LOG("Caster " << &caster << " stat, " << effect.scalar << " = " << stat);
+        //apply the buffs that effect that stat
+        CheckBuffs(effect.scalar, caster, caster, stat);
+      }
+      else
+      {
+        //get stat will do the conversion of scalar
+        stat = get_stat(effect.scalar, target);
+        LOG("Target " << &target << " stat, " << effect.scalar << " = " << stat);
+        //apply the buffs that effect that stat
+        CheckBuffs(effect.scalar, target, target, stat);
+      }
+
+      ret *= stat;
     }
   }
   return ret;
 }
 
-void CheckBuffs(Effect &effect, Entity &caster, Entity &target, double &amount)
+void CheckBuffs(int action, Entity &caster, Entity &target, double &amount)
 {
   for (unsigned i = 0; i < target.current_buffs.size(); ++i)
   {
     //get the buff
-    Effect buf = target.current_buffs[i];
-    if (buf.self_activator == effect.action)
+    std::pair<Effect, Entity*> save = target.current_buffs[i];
+    Effect &buf = save.first;
+    if (buf.self_activator == action)
     {
+      //add buffer to the involved entities
+      if (involved_entities.find(save.second) == involved_entities.end())
+      {
+        save.second->resetDeltas();
+        involved_entities.insert(save.second);
+      }
       //remove the buff
       target.current_buffs.erase(target.current_buffs.begin()+i);
-      //apply the buff, the target is now the caster
-      if (buf.self_cast)
+      //apply the buff, the buffer is the caster
+      if (buf.target_type == buffer)
       {
-        actions[buf.action](buf, target, target, amount);
+        actions[buf.action](buf, *save.second, *save.second, amount);
+      }
+      else if (buf.target_type == buffed)
+      {
+        actions[buf.action](buf, *save.second, target, amount);
       }
       else
       {
-        actions[buf.action](buf, target, caster, amount);
+        actions[buf.action](buf, *save.second, caster, amount);
       }
       //add the buff back on
-      target.current_buffs.insert(target.current_buffs.begin()+i, buf);
+      target.current_buffs.insert(target.current_buffs.begin()+i, save);
     }
   }
 }
@@ -221,7 +387,7 @@ double EffectHelper(Effect &effect, Entity &caster, Entity &target, double &acti
 {
   double amount = get_amount(effect, caster, target, activation_amount);
 
-  CheckBuffs(effect, caster, target, amount);
+  CheckBuffs(effect.action, caster, target, amount);
 
   return amount;
 }
@@ -268,7 +434,7 @@ void DamageModifier(Effect &effect, Entity &caster, Entity &target, double &dama
   //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
-  CheckBuffs(effect, caster, target, amount);
+  CheckBuffs(effect.action, caster, target, amount);
 
   //change the damage
   damage += amount;
@@ -289,7 +455,7 @@ void HealModifier(Effect &effect, Entity &caster, Entity &target, double &heal)
   //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
-  CheckBuffs(effect, caster, target, amount);
+  CheckBuffs(effect.action, caster, target, amount);
 
   //change the heal
   heal += amount;
@@ -309,7 +475,7 @@ void RecoverManaModifier(Effect &effect, Entity &caster, Entity &target, double 
   //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
-  CheckBuffs(effect, caster, target, amount);
+  CheckBuffs(effect.action, caster, target, amount);
 
   //change the mana
   mana += amount;
@@ -329,7 +495,7 @@ void SpendManaModifier(Effect &effect, Entity &caster, Entity &target, double &m
   //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
-  CheckBuffs(effect, caster, target, amount);
+  CheckBuffs(effect.action, caster, target, amount);
 
   //change the mana
   mana -= amount;

@@ -48,14 +48,42 @@ class Signals : public SignalBase
 {
 public:
   ~Signals();
+  Signals(){}
+  Signals<Args...> &operator=(const Signals<Args...>&);
+  Signals(const Signals<Args...>&);
+  void Copy(const Signals<Args...>&);
   ConnectionProxy Connect(std::function<void(Args...)> slot);
   void Clear();
   void operator()(Args... p);
+  operator bool();
 
 private:
   std::unordered_map<InternalConnection*, std::function<void(Args...)> > slots;
   void Disconnect(InternalConnection *connection);
 };
+
+template<typename... Args>
+void Signals<Args...>::Copy(const Signals<Args...>&rhs)
+{
+  //add all the old signals connections
+  for (auto it = rhs.slots.begin(); it != rhs.slots.end(); ++it)
+  {
+    Connect(it->second);
+  }
+}
+
+template<typename... Args>
+Signals<Args...>& Signals<Args...>::operator=(const Signals<Args...>&rhs)
+{
+  Copy(rhs);
+  return *this;
+}
+
+template<typename... Args>
+Signals<Args...>::Signals(const Signals<Args...>&rhs)
+{
+  Copy(rhs);
+}
 
 template<typename... Args>
 Signals<Args...>::~Signals()
@@ -71,6 +99,12 @@ void Signals<Args...>::Clear()
   it->first->Disconnect();
  }
  slots.clear();
+}
+
+template<typename... Args>
+Signals<Args...>::operator bool()
+{
+ return slots.size() > 0;
 }
 
 template<typename... Args>

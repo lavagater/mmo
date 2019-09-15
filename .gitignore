@@ -43,6 +43,7 @@
 *.ipch
 *.idb
 *.exp
+*.gdb_history
 
 # Executables
 *.exe

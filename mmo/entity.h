@@ -13,34 +13,27 @@
 class Effect
 {
 public:
-  int self_activator;//activator for when something happens to me
-  int remote_activator;//activator for when i do something to someone
-  int action;
-  int scalar;
-  double value;
-  double time;
-  double duration;
-  int target_type;
-};
-
-//the types of targets
-enum
-{
-  buffer,
-  buffed,
-  caster
+  int self_activator=0;//activator for when something happens to me
+  int remote_activator=0;//activator for when i do something to someone
+  int action=0;
+  int scalar=0;
+  double value=0;
+  double duration=0;
+  int target_type=0;
 };
 
 class Spell
 {
 public:
-  int type; //this is the target type and the art
+  short visual=0; //this is the target type and the art
+  char cc=0;//what type of crowd control does this spell have
+  double cc_duration=0;//the duration of said crowd control
   Effect effect1;
   Effect effect2;
-  double mana_cost;
-  double cool_down;
-  double cast_time;
-  double range;//does not effect anything internally
+  double mana_cost=0;
+  double cool_down=0;
+  double cast_time=0;
+  double range=0;//does not effect anything internally
 };
 
 class Entity
@@ -61,7 +54,8 @@ public:
   double intelligence;
   double defense;
   double armour;
-  double cool_down_reduction;//percentage
+  double cool_down_reduction;
+  double life_steal;
 
   //deltas
   double total_damage_taken;

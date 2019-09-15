@@ -28,6 +28,7 @@ NoEffect, //scale_caster_intelligence
 NoEffect, //scale_caster_armour
 NoEffect, //scale_caster_defense
 NoEffect, //scale_caster_cooldown_reduction
+NoEffect, //scale_caster_life_steal
 NoEffect, //scale_caster_end
 NoEffect, //scale_target_current_hp
 NoEffect, //scale_target_max_hp
@@ -37,7 +38,8 @@ NoEffect, //scale_target_strength
 NoEffect, //scale_target_intelligence
 NoEffect, //scale_target_armour
 NoEffect, //scale_target_defense
-NoEffect //scale_target_cooldown_reduction
+NoEffect, //scale_target_cooldown_reduction
+NoEffect //scale_target_life_steal
 };
 
 Entity::~Entity()
@@ -99,9 +101,15 @@ void Entity::updateDeltas()
   {
     current_hp += total_healing_recieved;
     LOG(this << " healed " << total_healing_recieved << " damage");
-    if (current_hp > max_hp)
+    //check for buffs that change hp, current hp cant be changes by buffs
+    Effect hp_getter;
+    hp_getter.scalar = scale_caster_max_hp;
+    hp_getter.value = 1;
+    double buffed_hp = get_amount(hp_getter, *this, *this, max_hp);
+    LOG(this << " hp =  " << current_hp << " / " << buffed_hp);
+    if (current_hp > buffed_hp)
     {
-      current_hp = max_hp;
+      current_hp = buffed_hp;
     }
   }
   if (total_mana_spent != 0)
@@ -117,9 +125,14 @@ void Entity::updateDeltas()
   {
     current_mana += total_mana_recovered;
     LOG(this << " recovered " << total_mana_recovered << " mana");
-    if (current_mana > max_mana)
+    //check for buffs that change mana
+    Effect mp_getter;
+    mp_getter.scalar = scale_caster_max_mana;
+    mp_getter.value = 1;
+    double buffed_mp = get_amount(mp_getter, *this, *this, max_hp);
+    if (current_mana > buffed_mp)
     {
-      current_mana = max_mana;
+      current_mana = buffed_mp;
     }
   }
 }
@@ -253,7 +266,6 @@ void UseSpell(Spell &spell, Entity &caster, Entity &target)
 	mana_cost.scalar = none;
 	mana_cost.value = amount;
 	mana_cost.duration = 0;
-	mana_cost.time = 0;
 	mana_cost.target_type = buffer;
 
   ApplyEffect(mana_cost, caster, caster);
@@ -306,8 +318,24 @@ double get_stat(int stat, Entity &entity)
     case scale_target_cooldown_reduction:
       return entity.cool_down_reduction;
       break;
+    case scale_caster_life_steal:
+    case scale_target_life_steal:
+      return entity.cool_down_reduction;
+      break;
     default:
       return 0;
+  }
+}
+
+void ModifyStat(Effect& effect, Entity &caster, Entity &target, double &stat)
+{
+  double amount = get_amount(effect, caster, target, stat);
+
+  //change the stat
+  stat += amount;
+  if (stat < 0)
+  {
+    stat = 0;
   }
 }
 
@@ -328,17 +356,39 @@ double get_amount(Effect &effect, Entity &caster, Entity &target, double &activa
       if (effect.scalar < scale_caster_end)
       {
         stat = get_stat(effect.scalar, caster);
+        //check for buffs that deal with this stat
+        for (unsigned i = 0; i < caster.current_buffs.size(); ++i)
+        {
+          if (caster.current_buffs[i].first.self_activator == effect.scalar || caster.current_buffs[i].first.remote_activator == effect.scalar)
+          {
+            std::pair<Effect, Entity*> save = caster.current_buffs[i];
+            //remove the buff
+            caster.current_buffs.erase(caster.current_buffs.begin()+i);
+            ModifyStat(save.first, caster, caster, stat);
+            //add the buff back on
+            caster.current_buffs.insert(caster.current_buffs.begin()+i, save);
+          }
+        }
         LOG("Caster " << &caster << " stat, " << effect.scalar << " = " << stat);
-        //apply the buffs that effect that stat
-        CheckBuffs(effect.scalar, caster, caster, stat);
       }
       else
       {
         //get stat will do the conversion of scalar
         stat = get_stat(effect.scalar, target);
-        LOG("Target " << &target << " stat, " << effect.scalar << " = " << stat);
         //apply the buffs that effect that stat
-        CheckBuffs(effect.scalar, target, target, stat);
+        for (unsigned i = 0; i < target.current_buffs.size(); ++i)
+        {
+          if (target.current_buffs[i].first.self_activator == effect.scalar || target.current_buffs[i].first.remote_activator == effect.scalar)
+          {
+            std::pair<Effect, Entity*> save = target.current_buffs[i];
+            //remove the buff
+            target.current_buffs.erase(target.current_buffs.begin()+i);
+            ModifyStat(save.first, target, target, stat);
+            //add the buff back on
+            target.current_buffs.insert(target.current_buffs.begin()+i, save);
+          }
+        }
+        LOG("Target " << &target << " stat, " << effect.scalar << " = " << stat);
       }
 
       ret *= stat;
@@ -349,6 +399,41 @@ double get_amount(Effect &effect, Entity &caster, Entity &target, double &activa
 
 void CheckBuffs(int action, Entity &caster, Entity &target, double &amount)
 {
+  //check caster for buffs
+  for (unsigned i = 0; i < caster.current_buffs.size(); ++i)
+  {
+    //get the buff
+    std::pair<Effect, Entity*> save = caster.current_buffs[i];
+    Effect &buf = save.first;
+    //for the caster need to check the remote activator
+    if (buf.remote_activator == action)
+    {
+      //add buffer to the involved entities
+      if (involved_entities.find(save.second) == involved_entities.end())
+      {
+        save.second->resetDeltas();
+        involved_entities.insert(save.second);
+      }
+      //remove the buff
+      caster.current_buffs.erase(caster.current_buffs.begin()+i);
+      //apply the buff, the buffer is the caster
+      if (buf.target_type == buffer)
+      {
+        actions[buf.action](buf, *save.second, *save.second, amount);
+      }
+      else if (buf.target_type == buffed)
+      {
+        actions[buf.action](buf, *save.second, caster, amount);
+      }
+      else
+      {
+        actions[buf.action](buf, *save.second, target, amount);
+      }
+      //add the buff back on
+      caster.current_buffs.insert(caster.current_buffs.begin()+i, save);
+    }
+  }
+  //check target for buffs
   for (unsigned i = 0; i < target.current_buffs.size(); ++i)
   {
     //get the buff
@@ -425,13 +510,12 @@ void NoEffect(Effect &effect, Entity &caster, Entity &target, double &activation
 
 void DamageModifier(Effect &effect, Entity &caster, Entity &target, double &damage)
 {
-  double amount = effect.value;
+  double amount = get_amount(effect, caster, target, damage);
   //check if its a percent modifier
   if (effect.scalar == Actions::damage_modifier)
   {
-    amount *= damage;
+    amount = damage * effect.value;
   }
-  //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
   CheckBuffs(effect.action, caster, target, amount);
@@ -446,13 +530,12 @@ void DamageModifier(Effect &effect, Entity &caster, Entity &target, double &dama
 
 void HealModifier(Effect &effect, Entity &caster, Entity &target, double &heal)
 {
-  double amount = effect.value;
+  double amount = get_amount(effect, caster, target, heal);
   //check if its a percent modifier
   if (effect.scalar == Actions::heal_modifier)
   {
-    amount *= heal;
+    amount = heal * effect.value;
   }
-  //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
   CheckBuffs(effect.action, caster, target, amount);
@@ -466,13 +549,12 @@ void HealModifier(Effect &effect, Entity &caster, Entity &target, double &heal)
 }
 void RecoverManaModifier(Effect &effect, Entity &caster, Entity &target, double &mana)
 {
-  double amount = effect.value;
+  double amount = get_amount(effect, caster, target, mana);
   //check if its a percent modifier
   if (effect.scalar == Actions::recover_mana_modifier)
   {
-    amount *= mana;
+    amount = mana * effect.value;
   }
-  //need check for stat scaling
   
   //send the reduction through the buffs(looking for)
   CheckBuffs(effect.action, caster, target, amount);
@@ -486,13 +568,13 @@ void RecoverManaModifier(Effect &effect, Entity &caster, Entity &target, double 
 }
 void SpendManaModifier(Effect &effect, Entity &caster, Entity &target, double &mana)
 {
-  double amount = effect.value;
+  double amount = get_amount(effect, caster, target, mana);
   //check if its a percent modifier
   if (effect.scalar == Actions::spend_mana_modifier)
   {
-    amount *= mana;
+    amount = mana * effect.value;
   }
-  //need check for stat scaling
+  
   
   //send the reduction through the buffs(looking for)
   CheckBuffs(effect.action, caster, target, amount);

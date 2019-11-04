@@ -12,42 +12,42 @@
 /**
  * @brief Shortest range a spell can have
  */
-extern double short_range;
+extern float short_range;
 
 /**
  * @brief Longest range a spell can have
  */
-extern double long_range;
+extern float long_range;
 
 /**
  * @brief shortest possible cast time
  */
-extern double short_cast;
+extern float short_cast;
 
 /**
  * @brief longest possible cast time
  */
-extern double long_cast;
+extern float long_cast;
 
 /**
  * @brief longest possible cooldown
  */
-extern double cool_down;
+extern float cool_down;
 
 /**
  * @brief For scaling spells I need a score that is considered average.
  */
-extern double average_score;
+extern float average_score;
 
 /**
  * @brief Maximum duration for spells/buffs.
  */
-extern double max_duration;
+extern float max_duration;
 
 /**
  * @brief Minimum duration for spells/buffs.
  */
-extern double min_duration;
+extern float min_duration;
 
 /**
  * @brief Creates a random spell with a score close to the desired score.

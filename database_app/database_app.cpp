@@ -48,7 +48,7 @@ void DatabaseApp::QueryCall(char *buffer, int n, sockaddr_in *addr)
   std::string script;
   unsigned id;
   std::vector<Value> parameters;
-  ParseQueryMessage(buffer, n, id, script, parameters);
+  ParseQueryMessage(buffer, n, id, script, parameters, query.data);
   LOG("id = " << id);
   LOG("Script = " << script);
   //execute the script

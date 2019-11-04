@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <functional>
+#include <vector>
 
 class InternalConnection;
 
@@ -120,9 +121,20 @@ ConnectionProxy Signals<Args...>::Connect(std::function<void(Args...)> slot)
 template<typename... Args>
 void Signals<Args...>::operator()(Args... p)
 {
+  //get all the connections in one loop
+  std::vector<InternalConnection*> connections;
   for (auto it = slots.begin(); it != slots.end(); ++it)
   {
-    it->second(p...);
+    connections.push_back(it->first);
+  }
+  //now loop through the connections since the connections vector wont change during the loop
+  //this solves the problem of the signal or slot being modified during this function
+  for (unsigned i = 0; i < connections.size(); ++i)
+  {
+    if (slots.find(connections[i]) != slots.end())
+    {
+      slots[connections[i]](p...);
+    }
   }
 }
 

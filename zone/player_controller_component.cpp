@@ -14,6 +14,8 @@
 #include "gate_component.h"
 #include "movement_component.h"
 #include "interactive_component.h"
+#include "entity_component.h"
+#include "spell_generator.h"
 
 void PlayerControllerComponent::Init()
 {
@@ -27,6 +29,7 @@ void PlayerControllerComponent::Init()
   position_update_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("UpdatePosition")].Connect(std::bind(&PlayerControllerComponent::OnPositionUpdate, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   player_joined_connection = game_object->zone->player_joined_signal.Connect(std::bind(&PlayerControllerComponent::OnPlayerJoined, this,  std::placeholders::_1));
   teleport_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("Teleport")].Connect(std::bind(&PlayerControllerComponent::OnTeleport, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  spell_connection = game_object->zone->network_signals.signals[game_object->zone->protocol.LookUp("CastSpell")].Connect(std::bind(&PlayerControllerComponent::OnSpell, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void PlayerControllerComponent::Teleport(Eigen::Vector2d destination, std::string zone_name)
@@ -250,6 +253,46 @@ void PlayerControllerComponent::OnShoot(char *buffer, unsigned n, sockaddr_in *a
   buffer += sizeof(double);
   LOG("Got shoot message from player " << id);
   Shoot(vel.normalized() * 10);
+}
+
+void PlayerControllerComponent::OnSpell(char *buffer, unsigned n, sockaddr_in *addr)
+{
+  if (n < sizeof(MessageType) + sizeof(int) + sizeof(int))
+  {
+    LOG("Player controller cast spell invalid size");
+    return;
+  }
+  (void)addr;
+  //make sure the sender is the player casting the spell
+  if ((*reinterpret_cast<sockaddr_in*>(buffer+n-sizeof(sockaddr_in)) == client_addr) == false)
+  {
+    return;
+  }
+  buffer += sizeof(MessageType);
+  int target_id = *reinterpret_cast<int*>(buffer);
+  buffer += sizeof(int);
+  if (game_object->zone->object_by_id.find(target_id) == game_object->zone->object_by_id.end())
+  {
+    LOG("Target does not exist target_id = " << target_id);
+    return;
+  }
+  //make sure target is an entity
+  if (GETCOMP(game_object->zone->object_by_id[target_id], EntityComponent) == 0)
+  {
+    LOG("Target is not an entity target_id = " << target_id);
+    return;
+  }
+
+  //todo at somepoint we will use this to determine which of the players spells to use
+  int which_spell = *reinterpret_cast<int*>(buffer);
+
+  LOG("Got spell message from player " << game_object->name << " spell = " << which_spell);
+  //cast the spell
+  EntityComponent *entity = GETCOMP(game_object, EntityComponent);
+  if (entity)
+  {
+    entity->UseSpell(which_spell, game_object->zone->object_by_id[target_id]);
+  }
 }
 
 void PlayerControllerComponent::OnMove(char *buffer, unsigned n, sockaddr_in *addr)

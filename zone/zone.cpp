@@ -23,6 +23,7 @@
 #include "gate_component.h"
 #include "movement_component.h"
 #include "interactive_component.h"
+#include "entity_component.h"
 
 Zone::Zone(Config &config)
   :config(config),
@@ -37,6 +38,8 @@ Zone::Zone(Config &config)
   flags[players_database].SetBit(ReliableFlag);
   CreateAddress(static_cast<std::string>(config.properties["players_db_ip"]).c_str(),static_cast<int>(config.properties["players_db_port"]),&players_database);
   flags[account_database].SetBit(ReliableFlag);
+  CreateAddress(static_cast<std::string>(config.properties["spells_db_ip"]).c_str(),static_cast<int>(config.properties["spells_db_port"]),&spells_database);
+  flags[spells_database].SetBit(ReliableFlag);
   Bind(sock, &local);
   SetNonBlocking(sock);
   Channel *channel = new Channel();
@@ -140,6 +143,8 @@ GameObject *Zone::CreateGameObject()
 
 void Zone::RemoveGameObject(GameObject *obj)
 {
+  //make sure the game object does not have any messages in the dispatcher
+  dispatcher.RemoveMessageById(obj);
   //remove object from map
   auto map_it = object_by_id.find(obj->id);
   if (map_it != object_by_id.end())
@@ -179,6 +184,8 @@ void Zone::PlayerJoined(unsigned id, sockaddr_in client_addr, sockaddr_in lb_add
   GETCOMP(players[id], PlayerControllerComponent)->lb_addr = lb_addr;
   GETCOMP(players[id], PlayerControllerComponent)->client_addr = client_addr;
   GETCOMP(players[id], PlayerControllerComponent)->id = id;
+  //add entity after player controller so it can do db query on init
+  ADDCOMP(players[id], EntityComponent);
   players[id]->name = "player" + std::to_string(id);
   if (size == sizeof(double)*2)
   {

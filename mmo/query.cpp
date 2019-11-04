@@ -203,6 +203,175 @@ Value Query::FindDatabase(std::vector<Value> args, Interpreter &interpreter)
 	return ret;
 }
 
+//c-style definition
+//vector findRange(vector<unsigned> rows, vector<value> min, vector<value> max, int numResults = -1, bool sort_by_smallest = true);
+Value Query::FindRangeDatabase(std::vector<Value> args, Interpreter &interpreter)
+{
+	LOG("Looking for shit in a database");
+	Value ret;
+	if (args.size() < 3)
+	{
+		LOGW("findRange with too few arguments");
+		return ret;
+	}
+	if (args[0].type != Types::Vector || args[1].type != Types::Vector || args[2].type != Types::Vector)
+	{
+		LOGW("findRange arguments not vectors");
+		return ret;
+	}
+	if (args[0].m_vector->size() == 0 || args[0].m_vector->size() != args[1].m_vector->size() || args[1].m_vector->size() != args[2].m_vector->size())
+	{
+		LOGW("findRange vector size wrong");
+		return ret;
+	}
+	//need to convert vector ov values into a vector of unsigned
+	std::vector<unsigned> rows;
+	for (unsigned i = 0; i < args[0].m_vector->size(); ++i)
+	{
+		rows.push_back(Interpreter::ToUnsigned(Interpreter::ToVector((*args[0].m_vector)[i])).m_unsigned);
+	}
+
+	std::vector<char *> min;
+	std::vector<char *> max;
+	//need to keep the temporary values around until the end of the function because we save pointers to their data in min
+	std::vector<Value> temp(rows.size());
+	//also one for max
+	std::vector<Value> temp2(rows.size());
+	for (unsigned i = 0; i < rows.size(); ++i)
+	{
+		temp[i] = (*args[1].m_vector)[i];
+		char *buffer = 0;
+		switch ((Types)db.types[rows[i]])
+		{
+		case Char:
+			temp[i] = Interpreter::ToChar(Interpreter::ToVector(temp[i]));
+			buffer = &temp[i].m_char;
+			break;
+		case Integer:
+			temp[i] = Interpreter::ToInt(Interpreter::ToVector(temp[i]));
+			buffer = (char*)&temp[i].m_int;
+			break;
+		case Unsigned:
+			temp[i] = Interpreter::ToUnsigned(Interpreter::ToVector(temp[i]));
+			buffer = (char*)&temp[i].m_unsigned;
+			break;
+		case Short:
+			temp[i] = Interpreter::ToShort(Interpreter::ToVector(temp[i]));
+			buffer = (char*)&temp[i].m_short;
+			break;
+		case Float:
+			temp[i] = Interpreter::ToFloat(Interpreter::ToVector(temp[i]));
+			buffer = (char*)&temp[i].m_float;
+			break;
+		case Double:
+			temp[i] = Interpreter::ToDouble(Interpreter::ToVector(temp[i]));
+			buffer = (char*)&temp[i].m_double;
+			break;
+		case String:
+			temp[i] = Interpreter::ToString(Interpreter::ToVector(temp[i]));
+			buffer = new char[db.rows[rows[i]]];
+			memset(buffer, 0, db.rows[rows[i]]);
+			data.push_back(buffer);
+			memcpy(buffer, temp[i].m_string.c_str(), temp[i].m_string.length());
+			break;
+		case Blob:
+			if (temp[i].type != Blob)
+			{
+				LOGW("Passing type " << temp[i].type << " to function taking blob");
+			}
+			buffer = new char[db.rows[rows[i]]];
+			memset(buffer, 0, db.rows[rows[i]]);
+			data.push_back(buffer);
+			memcpy(buffer, temp[i].data, temp[i].size);
+			break;
+		default:
+			LOGW("trying to find wrong type");
+			return temp[i];
+		break;
+		}
+		min.push_back(buffer);
+	}
+	//now do max values
+	for (unsigned i = 0; i < rows.size(); ++i)
+	{
+		temp2[i] = (*args[2].m_vector)[i];
+		char *buffer = 0;
+		switch ((Types)db.types[rows[i]])
+		{
+		case Char:
+			temp2[i] = Interpreter::ToChar(Interpreter::ToVector(temp2[i]));
+			buffer = &temp2[i].m_char;
+			break;
+		case Integer:
+			temp2[i] = Interpreter::ToInt(Interpreter::ToVector(temp2[i]));
+			buffer = (char*)&temp2[i].m_int;
+			break;
+		case Unsigned:
+			temp2[i] = Interpreter::ToUnsigned(Interpreter::ToVector(temp2[i]));
+			buffer = (char*)&temp2[i].m_unsigned;
+			break;
+		case Short:
+			temp2[i] = Interpreter::ToShort(Interpreter::ToVector(temp2[i]));
+			buffer = (char*)&temp2[i].m_short;
+			break;
+		case Float:
+			temp2[i] = Interpreter::ToFloat(Interpreter::ToVector(temp2[i]));
+			buffer = (char*)&temp2[i].m_float;
+			break;
+		case Double:
+			temp2[i] = Interpreter::ToDouble(Interpreter::ToVector(temp2[i]));
+			buffer = (char*)&temp2[i].m_double;
+			break;
+		case String:
+			temp2[i] = Interpreter::ToString(Interpreter::ToVector(temp2[i]));
+			buffer = new char[db.rows[rows[i]]];
+			memset(buffer, 0, db.rows[rows[i]]);
+			data.push_back(buffer);
+			memcpy(buffer, temp2[i].m_string.c_str(), temp2[i].m_string.length());
+			break;
+		case Blob:
+			if (temp2[i].type != Blob)
+			{
+				LOGW("Passing type " << temp2[i].type << " to function taking blob");
+			}
+			buffer = new char[db.rows[rows[i]]];
+			memset(buffer, 0, db.rows[rows[i]]);
+			data.push_back(buffer);
+			memcpy(buffer, temp2[i].data, temp2[i].size);
+			break;
+		default:
+			LOGW("trying to find wrong type");
+			return temp2[i];
+		break;
+		}
+		max.push_back(buffer);
+	}
+	//number of results
+	int num_results = -1;
+	if (args.size() > 3)
+	{
+		num_results = Interpreter::ToUnsigned(Interpreter::ToVector(args[3])).m_int;
+	}
+	bool smallest = true;
+	if (args.size() > 4)
+	{
+		num_results = Interpreter::ToUnsigned(Interpreter::ToVector(args[4])).m_int != 0;
+	}
+	std::vector<unsigned> results = db.Find(rows, min, max, num_results, smallest);
+	LOG("Find Range num results = " << results.size());
+	ret.type = Vector;
+	ret.m_vector = new std::vector<Value>;
+	interpreter.vectors.push_back(ret.m_vector);
+	for (unsigned i = 0; i < results.size(); ++i)
+	{
+		Value entry;
+		entry.type = Unsigned;
+		entry.m_unsigned = results[i];
+		ret.m_vector->push_back(entry);
+	}
+	return ret;
+}
+
 //return and parameters in c-style
 //Value get(unsigned id, unsigned row)
 Value Query::GetDatabase(std::vector<Value> args)
@@ -254,6 +423,48 @@ Value Query::GetDatabase(std::vector<Value> args)
 	return ret;
 }
 
+//return and parameters in c-style
+//void* get(unsigned id, unsigned start_row, unsigned end_row)
+Value Query::GetDatabaseRange(std::vector<Value> args)
+{
+	Value ret;
+	if (args.size() != 3)
+	{
+		LOGW("Database get range with incorrect number of arguments");
+		return ret;
+	}
+	unsigned id = Interpreter::ToUnsigned(Interpreter::ToVector(args[0])).m_unsigned;
+	unsigned minrow = Interpreter::ToUnsigned(Interpreter::ToVector(args[1])).m_unsigned;
+	unsigned maxrow = Interpreter::ToUnsigned(Interpreter::ToVector(args[2])).m_unsigned;
+	ret.type = Types::Blob;
+	ret.size = db.Get(id, minrow, maxrow, ret.data);
+	data.push_back(ret.data);
+	return ret;
+}
+
+
+//return and parameters in c-style
+//void set(unsigned id, unsigned start_row, unsigned end_row, void *data)
+Value Query::SetDatabaseRange(std::vector<Value> args)
+{
+	Value ret;
+	if (args.size() != 4)
+	{
+		LOGW("Database set range with incorrect number of arguments");
+		return ret;
+	}
+	if (args[3].type != Types::Blob)
+	{
+		LOGW("Set range data is not blob");
+		return ret;
+	}
+	unsigned id = Interpreter::ToUnsigned(Interpreter::ToVector(args[0])).m_unsigned;
+	unsigned minrow = Interpreter::ToUnsigned(Interpreter::ToVector(args[1])).m_unsigned;
+	unsigned maxrow = Interpreter::ToUnsigned(Interpreter::ToVector(args[2])).m_unsigned;
+	db.Set(id, minrow, maxrow, args[3].data);
+	return ret;
+}
+
 Value print(std::vector<Value> args)
 {
 	LOG("Print called with " << args.size() << " elements");
@@ -295,6 +506,7 @@ int Query::PackValue(char *buffer, Value value)
 		case Types::Blob:
 		//blobs are easy just copy data
 		memcpy(buffer, value.data,value.size);
+		std::cout << "Pack blob " << ToHexString(value.data, value.size) << std::endl;
 		ret += value.size;
 		break;
 		case Types::Char:
@@ -328,6 +540,7 @@ int Query::PackValue(char *buffer, Value value)
 		break;
 		case Types::Vector:
 		{
+			LOG("Pack vector size, " << value.m_vector->size());
 			for (unsigned i = 0; i < value.m_vector->size(); ++i)
 			{
 				ret += PackValue(buffer+ret, (*value.m_vector)[i]);
@@ -413,14 +626,21 @@ bool Query::Compile(std::string code, std::vector<Value> &parameters, Value &ret
 	interpreter->functions["print"] = &print;
 	interpreter->functions["get"] = std::bind(&Query::GetDatabase, this, std::placeholders::_1);
 	interpreter->functions["set"] = std::bind(&Query::SetDatabase, this, std::placeholders::_1);
+	interpreter->functions["getRange"] = std::bind(&Query::GetDatabaseRange, this, std::placeholders::_1);
+	interpreter->functions["setRange"] = std::bind(&Query::SetDatabaseRange, this, std::placeholders::_1);
 	interpreter->functions["create"] = std::bind(&Query::CreateDatabase, this, std::placeholders::_1);
 	interpreter->functions["delete"] = std::bind(&Query::DeleteDatabase, this, std::placeholders::_1);
 	interpreter->functions["find"] = std::bind(&Query::FindDatabase, this, std::placeholders::_1, std::ref(*interpreter));
+	interpreter->functions["findRange"] = std::bind(&Query::FindRangeDatabase, this, std::placeholders::_1, std::ref(*interpreter));
 	interpreter->Visit(node);
 	LOG("Code Finished");
 	//set the return value
 	returnValue = interpreter->returnValue;
 	LOG("return value set type = " << returnValue.type);
+	if (returnValue.type == Types::Vector)
+	{
+		LOG("Return vector with " << returnValue.m_vector->size() << " elements");
+	}
 	//dont delete the interpreter so it stays alive in case the return value is pointing to memory inside the interpreter
 	return true;
 }

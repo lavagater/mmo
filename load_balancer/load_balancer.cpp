@@ -28,7 +28,11 @@ LoadBalancer::LoadBalancer(Config &config)
   sockaddr_in local;
   CreateAddress(0,static_cast<int>(config.properties["port"]),&local);
   CreateAddress(static_cast<std::string>(config.properties["account_db_ip"]).c_str(),static_cast<int>(config.properties["account_db_port"]),&account_database);
+  flags[account_database].SetBit(ReliableFlag);
   CreateAddress(static_cast<std::string>(config.properties["players_db_ip"]).c_str(),static_cast<int>(config.properties["players_db_port"]),&players_database);
+  flags[players_database].SetBit(ReliableFlag);
+  CreateAddress(static_cast<std::string>(config.properties["spells_db_ip"]).c_str(),static_cast<int>(config.properties["spells_db_port"]),&spells_database);
+  flags[spells_database].SetBit(ReliableFlag);
   //add zones from config to the zones
   LOG("reading zones from config");
   unsigned zone_id = 0;
@@ -67,6 +71,7 @@ LoadBalancer::LoadBalancer(Config &config)
   stack.disconnected.Connect(std::bind(&LoadBalancer::OnClientDisconnect, this, std::placeholders::_1));
 
   account_manager.SetUp(this);
+  inventory_manager.SetUp(this);
 }
 //addr and from are going to be the same
 void LoadBalancer::EncryptionKey(char *buffer, unsigned n, sockaddr_in *addr)
@@ -157,7 +162,7 @@ void LoadBalancer::ForwardResponse(char *buffer, unsigned n, const sockaddr_in *
     //get the zone that the player is in
     std::string zone = clients_by_id[clients[*addr]].zone;
     addr = &GetZone(zone);
-    LOGW("Forward message to zone " << zone);
+    LOG("Forward message to zone " << zone);
     buffer += sizeof(MessageType);
     n -= sizeof(MessageType);
   }

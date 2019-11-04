@@ -19,6 +19,7 @@ public:
   void OnDisconnected(char *buffer, unsigned n, sockaddr_in *addr);
   void OnMove(char *buffer, unsigned n, sockaddr_in *addr);
   void OnShoot(char *buffer, unsigned n, sockaddr_in *addr);
+  void OnSpell(char *buffer, unsigned n, sockaddr_in *addr);
   void Teleport(Eigen::Vector2d destination, std::string zone_name);
   void OnTeleport(char *buffer, unsigned n, sockaddr_in *addr);
   void SendMoveMessage();
@@ -38,4 +39,5 @@ public:
   Connection position_update_connection;
   Connection player_joined_connection;
   Connection teleport_connection;
+  Connection spell_connection;
 };

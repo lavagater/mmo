@@ -3,12 +3,13 @@
 #include "database_protocol.h"
 #include "query.h"
 
-int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
+int ReadValue(char *buffer, int size, std::vector<Value> &parameters, std::vector<char*> memory)
 {
   LOG("Read value");
   (void)size; //fuck safety
   Types type = (Types)buffer[0];
   LOG("Type = " << type);
+  std::cout << "Type = " << type << std::endl;
   buffer += 1;
   parameters.emplace_back(Value());
   Value &ret = parameters.back();
@@ -37,7 +38,11 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
     case Blob:
     {
       ret.size = *reinterpret_cast<unsigned*>(buffer);
-      ret.data = buffer + sizeof(unsigned);
+      ret.data = new char[ret.size];
+      //to prevent memory leak
+      memory.push_back(ret.data);
+      memcpy(ret.data, buffer + sizeof(unsigned), ret.size);
+      std::cout << "Read value " << ToHexString(ret.data, ret.size) << std::endl;
       return 1+ret.size+sizeof(unsigned); 
     }
 		case String:
@@ -53,6 +58,7 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
 		}
 		default:
     {
+      LOGW("Read value bad type " << type);
       return -1;
     }
 		}
@@ -60,7 +66,7 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters)
 }
 
 
-bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &script, std::vector<Value> &parameters)
+bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &script, std::vector<Value> &parameters, std::vector<char*> memory)
 {
     if (size < sizeof(MessageType) + sizeof(short))
     {
@@ -88,7 +94,7 @@ bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &s
     int remaining = (int)size - (sizeof(MessageType) + sizeof(short) + sizeof(unsigned) + length);
     while (remaining > 0)
     {
-      int ret = ReadValue(buffer, remaining, parameters);
+      int ret = ReadValue(buffer, remaining, parameters, memory);
       LOG("Read paramater ret = " << ret);
       if (ret<0)
       {

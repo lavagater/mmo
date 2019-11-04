@@ -30,7 +30,6 @@
 #include "protocol.h"
 #include "signals.h"
 #include "entity.h"
-#include "spell_generator.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -56,7 +55,7 @@ bool TestEncryptionLayer();//11
 bool TestDatabase();//12
 bool TestEventSystem();//13
 bool TestDatabaseCreate();//14
-bool TestDatabaseGetAndSet();//15
+bool TestDatabaseGetAndSetRange();//15
 bool TestDatabaseFind();//16
 bool TestDatabaseDelete();//17
 bool TestProtocol();//18
@@ -70,10 +69,11 @@ bool TestEntityRemoteActivator();//25
 bool TestEntityModifyHp();//26
 bool TestEntityModificationsExtra();//27
 
+
 bool (*tests[])() = { 
     TestInferType, TestStringToValue, TestConfig, TestHashFunction, TestFrameRate, TestBlowFish,
     TestNetworkLayer, TestBitArray, TestReliability, TestBandwidth, TestPriority, TestEncryptionLayer,
-    TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSet, TestDatabaseFind,
+    TestDatabase, TestEventSystem, TestDatabaseCreate, TestDatabaseGetAndSetRange, TestDatabaseFind,
     TestDatabaseDelete, TestProtocol, TestSignal, TestSignalNoConnection, TestEntity, TestEntityModifications,
 		TestEntityStats, TestEntityThreeEntities, TestEntityRemoteActivator, TestEntityModifyHp, TestEntityModificationsExtra
 }; 
@@ -1299,12 +1299,138 @@ bool TestDatabaseCreate()
 {
 	return true;
 }
-bool TestDatabaseGetAndSet()
+bool TestDatabaseGetAndSetRange()
 {
+	std::vector<unsigned> rows = {16,8,8,2,1,4};
+	std::vector<unsigned> types = { Types::String, Types::Double, Types::Double, 
+		                              Types::Short, Types::Char, Types::Integer };
+  std::vector<unsigned> sorted = {1, 1, 1, 1, 1, 1};
+	//makes a new table replacing the old one
+	Database db("generated/test_table.tbl", rows, types, sorted);
+	char buffer[16+8+8+2+1+4] = {0};
+	unsigned num_elements = 100;
+	//add random things to the database
+	for (unsigned i = 0; i < num_elements; ++i)
+	{
+		//randomise the buffer
+		for (unsigned j = 0; j < sizeof(buffer) / sizeof(buffer[0]); ++j)
+		{
+			buffer[j] = rand();
+		}
+		int id = db.Create();
+		db.Set(id, 0, buffer);
+		db.Set(id, 1, buffer+16);
+		db.Set(id, 2, buffer+16+8);
+		db.Set(id, 3, buffer+16+8+8);
+		db.Set(id, 4, buffer+16+8+8+2);
+		db.Set(id, 5, buffer+16+8+8+1+1);
+	}
+
+	//set a value using set then get the value using get range and make sure its correct
+	int id = 69;
+	double value = 6.9;
+	db.Set(id, 2, &value);
+	//not use get range to get some rows
+	db.Get(id, 1, 3, buffer, 32);
+	//make sure the value at row 2 is correct
+	if (*reinterpret_cast<double*>(buffer+8) != 6.9)
+	{
+		PRINT_ERROR();
+		std::cout << *reinterpret_cast<double*>(buffer+8) << std::endl;
+		return false;
+	}
+
+	//do a range set and then check the value
+	*reinterpret_cast<int*>(buffer+3) = 69;
+	db.Set(id, 3, 5, buffer);
+	db.Get(id, 5, &buffer[0], 4);
+	if (*reinterpret_cast<int*>(buffer) != 69)
+	{
+		PRINT_ERROR();
+		std::cout << *reinterpret_cast<int*>(buffer) << std::endl;
+		return false;
+	}
+
 	return true;
 }
 bool TestDatabaseFind()
 {
+	std::vector<unsigned> rows = {16,8,8,2,1,4};
+	std::vector<unsigned> types = { Types::String, Types::Double, Types::Double, 
+		                              Types::Short, Types::Char, Types::Integer };
+  std::vector<unsigned> sorted = {1, 1, 1, 1, 1, 1};
+	//makes a new table replacing the old one
+	Database db("generated/test_table.tbl", rows, types, sorted);
+	char buffer[16+8+8+2+1+4] = {0};
+	unsigned num_elements = 100;
+	//add random things to the database
+	for (unsigned i = 0; i < num_elements; ++i)
+	{
+		//randomise the buffer
+		for (unsigned j = 0; j < sizeof(buffer) / sizeof(buffer[0]); ++j)
+		{
+			buffer[j] = rand();
+		}
+		int id = db.Create();
+		db.Set(id, 0, buffer);
+		db.Set(id, 1, buffer+16);
+		db.Set(id, 2, buffer+16+8);
+		db.Set(id, 3, buffer+16+8+8);
+		db.Set(id, 4, buffer+16+8+8+2);
+		db.Set(id, 5, buffer+16+8+8+1+1);
+	}
+
+	{
+		//set a value to find
+		unsigned id = 69;
+		double value = 6.9;
+		db.Set(id, 2, &value);
+		char value2 = 69;
+		db.Set(id, 4, &value2);
+		//now try to find the element
+		std::vector<unsigned> searchRows = {2, 4};
+		std::vector<char *> values = {(char*)&value, &value2};
+		std::vector<unsigned> res = db.Find(searchRows, values, values, -1, true);
+		//the results must have the id we set
+		bool hasId = false;
+		for (unsigned i = 0; i < res.size(); ++i)
+		{
+			if (res[i] == id)
+			{
+				hasId = true;
+				break;
+			}
+		}
+		if (!hasId)
+		{
+			PRINT_ERROR();
+			std::cout << res.size() << std::endl;
+			return false;
+		}
+	}
+
+	//test case where nothing matches find
+	char value = 69;
+	double min = 69;
+	unsigned max_id = db.FindLargest(2);
+	double max;
+	db.Get(max_id, 2, (char*)&max, sizeof(max));
+	std::vector<unsigned> res = db.Find(2, (char*)&min, (char*)&max, 2, true);
+  db.Get(res[0], 2, (char*)&min, sizeof(min));
+  db.Get(res[1], 2, (char*)&max, sizeof(max));
+	//take the average to get a value not in the database
+	double new_value = (min+max)/2;
+	std::vector<unsigned> searchRows = {4, 2};
+	std::vector<char *> values = {&value, (char*)&new_value};
+	res = db.Find(searchRows, values, values, -1, true);
+	//no items in the database has these results
+	if (res.size() > 0)
+	{
+		PRINT_ERROR();
+		std::cout << res.size() << std::endl;
+		return false;
+	}
+
 	return true;
 }
 bool TestDatabaseDelete()
@@ -1443,10 +1569,10 @@ bool TestSignalNoConnection()
 bool TestEntity()
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
+	base.stats[Entity::max_hp] = 100;
+	base.stats[Entity::Entity::current_hp] = 50;
+	base.stats[Entity::Entity::max_mana] = 100;
+	base.stats[Entity::Entity::current_mana] = 50;
 	Entity target = base;
 	Entity caster = base;
 
@@ -1454,27 +1580,27 @@ bool TestEntity()
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = heal;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::heal;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 50;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = heal;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::heal;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, target);
 
-  if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 10 || target.current_mana != 50)
+  if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 10 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1484,29 +1610,29 @@ bool TestEntity()
 	//this spell will apply the effects, heal self for damage taken, and damage self for 25 damage
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = damage;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::damage;
 	spell.effect1.value = 1; //100%
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 25;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffer;                        
+	spell.effect2.target_type = TargetType::buffer;                        
 
 	UseSpell(spell, target, target);
 
-	std::cout << "caster hp = " << caster.current_hp << " mana = " << caster.current_mana << std::endl;
-	std::cout << "target hp = " << target.current_hp << " mana = " << target.current_mana << std::endl;
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp > 0 || target.current_mana != 40)
+	std::cout << "caster hp = " << caster.stats[Entity::current_hp] << " mana = " << caster.stats[Entity::current_mana] << std::endl;
+	std::cout << "target hp = " << target.stats[Entity::current_hp] << " mana = " << target.stats[Entity::current_mana] << std::endl;
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] > 0 || target.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1515,31 +1641,31 @@ bool TestEntity()
 	//test damage over time
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;
 	spell.effect1.duration = 3;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
 	//useless spell recover 0 mana
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffer;
+	spell.effect2.target_type = TargetType::buffer;
 
 	caster = base;
 	target = base;
 
 	UseSpell(spell, caster, target);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 40 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 40 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1548,7 +1674,7 @@ bool TestEntity()
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 30 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 30 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1557,7 +1683,7 @@ bool TestEntity()
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 20 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 20 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1567,24 +1693,24 @@ bool TestEntity()
 	spell.mana_cost = 10;
 	spell.visual = 0;
 	//buff heals for half damage recieved
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = damage;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::damage;
 	spell.effect1.value = 0.5;
 	spell.effect1.duration = 3; //make sure buff duration lasts the whole damage over time
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
 	//same deal 10 damage every seconds for 3 seconds
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 3;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 
 	caster = base;
@@ -1592,7 +1718,7 @@ bool TestEntity()
 
 	UseSpell(spell, caster, target);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 45 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 45 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1601,7 +1727,7 @@ bool TestEntity()
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 40 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 40 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1610,7 +1736,7 @@ bool TestEntity()
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 35 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 35 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1622,10 +1748,10 @@ bool TestEntity()
 bool TestEntityModifications()//22
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
+	base.stats[Entity::Entity::Entity::max_hp] = 100;
+	base.stats[Entity::Entity::current_hp] = 50;
+	base.stats[Entity::Entity::max_mana] = 100;
+	base.stats[Entity::Entity::current_mana] = 50;
 	Entity target = base;
 	Entity caster = base;
 
@@ -1633,27 +1759,27 @@ bool TestEntityModifications()//22
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage_modifier;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage_modifier;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = -50;
 	spell.effect1.duration = 10;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1667,7 +1793,7 @@ bool TestEntityModifications()//22
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 40 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 40 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1675,13 +1801,13 @@ bool TestEntityModifications()//22
 
 	//percentage damage reduction
 	spell.effect1.value = -0.5;
-	spell.effect1.scalar = damage_modifier;
+	spell.effect1.scalar = Actions::damage_modifier;
 
 	caster = base;
 	target = base;
 
 	UseSpell(spell, caster, caster);
-	if (caster.current_hp != 20 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 20 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1691,27 +1817,27 @@ bool TestEntityModifications()//22
 	//this spell will apply a buff that heals for 25 when damage is modified(reduced or increased)
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage_modifier;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::damage_modifier;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 25;
 	spell.effect1.duration = 10;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 40 || caster.current_mana != 30 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 40 || caster.stats[Entity::current_mana] != 30 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1723,14 +1849,14 @@ bool TestEntityModifications()//22
 bool TestEntityStats()
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
-	base.strength = 10;
-	base.intelligence = 10;
-	base.armour = 10;
-	base.defense = 10;
+	base.stats[Entity::Entity::max_hp] = 100;
+	base.stats[Entity::current_hp] = 50;
+	base.stats[Entity::max_mana] = 100;
+	base.stats[Entity::current_mana] = 50;
+	base.stats[Entity::strength] = 10;
+	base.stats[Entity::intelligence] = 10;
+	base.stats[Entity::armor] = 10;
+	base.stats[Entity::defense] = 10;
 	Entity target = base;
 	Entity caster = base;
 
@@ -1738,28 +1864,28 @@ bool TestEntityStats()
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = scale_caster_strength;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::total_actions+Entity::strength;
 	spell.effect1.value = 1;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //second spell does nothing
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, target);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 40 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 40 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1769,31 +1895,31 @@ bool TestEntityStats()
 	//this spell will deal 10% current hp per second
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = scale_target_current_hp;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::total_actions+Entity::current_hp + Entity::num_stats;//scale with targets hp
 	spell.effect1.value = 0.1;
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //second spell does nothing still
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 	target = base;
 
 	UseSpell(spell, caster, target);
 
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 45 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 45 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1801,40 +1927,42 @@ bool TestEntityStats()
 
 	target.Update(1);
 	
-	if (caster.current_hp != 50 || caster.current_mana != 40 || target.current_hp != 40.5 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 40.5 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
+		std::cout << "caster hp = " << caster.stats[Entity::current_hp] << " mana = " << caster.stats[Entity::current_mana] << std::endl;
+		std::cout << "target hp = " << target.stats[Entity::current_hp] << " mana = " << target.stats[Entity::current_mana] << std::endl;
 		return false;
 	}
 
 	//create a buff that modifys a stat
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = scale_caster_armour;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = none;//action is not used with these, since the action is always stats modify
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::total_actions+Entity::armor;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::none;//action is not used with these, since the action is always stats modify
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;//should make the armor 20
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //deal damage equal to armor
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = scale_caster_armour;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::total_actions+Entity::armor;
 	spell.effect2.value = 1;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 	target = base;
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 30 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 30 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1843,31 +1971,31 @@ bool TestEntityStats()
 	//create a buff that modifys a stat
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = scale_caster_armour;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = none;//action is not used with these, since the action is always stats modify
-	spell.effect1.scalar = scale_caster_armour;
+	spell.effect1.self_activator = Actions::total_actions+Entity::armor;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::none;//action is not used with these, since the action is always stats modify
+	spell.effect1.scalar = Actions::total_actions+Entity::armor;
 	spell.effect1.value = 0.1;//increase armor by ten percent, should be 11
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //deal damage equal to armor
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = scale_caster_armour;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::total_actions+Entity::armor;
 	spell.effect2.value = 1;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 	target = base;
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 39 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 39 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1875,24 +2003,24 @@ bool TestEntityStats()
 
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = scale_caster_intelligence;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = none;//action is not used with these, since the action is always stats modify
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::total_actions+Entity::intelligence;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::none;//action is not used with these, since the action is always stats modify
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 50;
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //another buff
-	spell.effect2.self_activator = scale_caster_intelligence;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = none;
-	spell.effect2.scalar = scale_caster_strength;
+	spell.effect2.self_activator = Actions::total_actions+Entity::intelligence;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::none;
+	spell.effect2.scalar = Actions::total_actions+Entity::strength + Entity::num_stats;//scale with the targets stats
 	spell.effect2.value = 1;
 	spell.effect2.duration = 2;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 	target = base;
@@ -1901,30 +2029,30 @@ bool TestEntityStats()
 
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = scale_caster_strength;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = none;//action is not used with these, since the action is always stats modify
-	spell.effect1.scalar = scale_caster_intelligence;
+	spell.effect1.self_activator = Actions::total_actions+Entity::strength;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::none;//action is not used with these, since the action is always stats modify
+	spell.effect1.scalar = Actions::total_actions+Entity::intelligence + Entity::num_stats;//scale with the targets stats
 	spell.effect1.value = 1;
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //use the buffs
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = scale_caster_intelligence;
-	spell.effect2.value = 0.1; //should be 8
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::total_actions+Entity::intelligence + Entity::num_stats;//scale with the targets stats
+	spell.effect2.value = 0.1; //should be 13
 	spell.effect2.duration = 2;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, caster);
 
-	std::cout << "caster hp = " << caster.current_hp << " mana = " << caster.current_mana << std::endl;
-	std::cout << "target hp = " << target.current_hp << " mana = " << target.current_mana << std::endl;
-	if (caster.current_hp != 42 || caster.current_mana != 30 || target.current_hp != 50 || target.current_mana != 50)
+	std::cout << "caster hp = " << caster.stats[Entity::current_hp] << " mana = " << caster.stats[Entity::current_mana] << std::endl;
+	std::cout << "target hp = " << target.stats[Entity::current_hp] << " mana = " << target.stats[Entity::current_mana] << std::endl;
+	if (caster.stats[Entity::current_hp] != 37 || caster.stats[Entity::current_mana] != 30 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -1936,14 +2064,14 @@ bool TestEntityStats()
 bool TestEntityThreeEntities()//24
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
-	base.strength = 10;
-	base.intelligence = 10;
-	base.armour = 10;
-	base.defense = 10;
+	base.stats[Entity::Entity::max_hp] = 100;
+	base.stats[Entity::current_hp] = 50;
+	base.stats[Entity::max_mana] = 100;
+	base.stats[Entity::current_mana] = 50;
+	base.stats[Entity::strength] = 10;
+	base.stats[Entity::intelligence] = 10;
+	base.stats[Entity::armor] = 10;
+	base.stats[Entity::defense] = 10;
 	Entity* buffer_entity = new Entity(base);
 	Entity* target = new Entity(base);
 	Entity* caster = new Entity(base);
@@ -1953,54 +2081,54 @@ bool TestEntityThreeEntities()//24
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = damage;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::damage;
 	spell.effect1.value = 1;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
   //second spell does nothing
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, *buffer_entity, *target);
 
 	// now make a simple damage spell
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //second spell does nothing
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, *caster, *target);
 
-	if (caster->current_hp != 50 || caster->current_mana != 40 ||
-	    target->current_hp != 40 || target->current_mana != 50 ||
-	    buffer_entity->current_hp != 60 || buffer_entity->current_mana != 40)
+	if (caster->stats[Entity::current_hp] != 50 || caster->stats[Entity::current_mana] != 40 ||
+	    target->stats[Entity::current_hp] != 40 || target->stats[Entity::current_mana] != 50 ||
+	    buffer_entity->stats[Entity::current_hp] != 60 || buffer_entity->stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2011,8 +2139,8 @@ bool TestEntityThreeEntities()//24
 
 	UseSpell(spell, *caster, *target);
 
-	if (caster->current_hp != 50 || caster->current_mana != 30 ||
-	    target->current_hp != 30 || target->current_mana != 50)
+	if (caster->stats[Entity::current_hp] != 50 || caster->stats[Entity::current_mana] != 30 ||
+	    target->stats[Entity::current_hp] != 30 || target->stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2027,24 +2155,24 @@ bool TestEntityThreeEntities()//24
 	//the key here is going to be the damage is based on the buffers stats
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = heal;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::heal;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 25;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
   //heals when healed
-	spell.effect2.self_activator = heal;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = scale_caster_current_hp;
+	spell.effect2.self_activator = Actions::heal;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::total_actions+Entity::current_hp;
 	spell.effect2.value = 0.1;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, *buffer_entity, *target);
 
@@ -2053,30 +2181,30 @@ bool TestEntityThreeEntities()//24
 	//now make a heal spell to use on target
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //second spell does nothing
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 
 	UseSpell(spell, *caster, *target);
 
-	if (caster->current_hp != 50 || caster->current_mana != 40 ||
-	    target->current_hp != 60 || target->current_mana != 55)
+	if (caster->stats[Entity::current_hp] != 50 || caster->stats[Entity::current_mana] != 40 ||
+	    target->stats[Entity::current_hp] != 60 || target->stats[Entity::current_mana] != 55)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2084,8 +2212,8 @@ bool TestEntityThreeEntities()//24
 
 	UseSpell(spell, *caster, *target);
 
-	if (caster->current_hp != 50 || caster->current_mana != 30 ||
-	    target->current_hp != 70 || target->current_mana != 57.5)
+	if (caster->stats[Entity::current_hp] != 50 || caster->stats[Entity::current_mana] != 30 ||
+	    target->stats[Entity::current_hp] != 70 || target->stats[Entity::current_mana] != 57.5)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2100,10 +2228,10 @@ bool TestEntityThreeEntities()//24
 bool TestEntityRemoteActivator()//25
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
+	base.stats[Entity::Entity::max_hp] = 100;
+	base.stats[Entity::current_hp] = 50;
+	base.stats[Entity::max_mana] = 100;
+	base.stats[Entity::current_mana] = 50;
 	Entity target = base;
 	Entity caster = base;
 
@@ -2111,27 +2239,27 @@ bool TestEntityRemoteActivator()//25
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = heal;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::heal;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 50;
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = heal;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::heal;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, target, target);
 
-  if (caster.current_hp != 50 || caster.current_mana != 50 || target.current_hp != 10 || target.current_mana != 40)
+  if (caster.stats[Entity::current_hp] != 50 || caster.stats[Entity::current_mana] != 50 || target.stats[Entity::current_hp] != 10 || target.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2141,27 +2269,27 @@ bool TestEntityRemoteActivator()//25
 	//this spell will apply the effects, heal self for damage taken, and damage self for 25 damage
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = damage;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::damage;
 	spell.effect1.value = 1; //100%
 	spell.effect1.duration = 0;
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 25;
 	spell.effect2.duration = 0;
 
-	spell.effect2.target_type = buffed;                      
+	spell.effect2.target_type = TargetType::buffed;                      
 
 	UseSpell(spell, caster, target);
 
-	if (caster.current_hp != 75 || caster.current_mana != 40 || target.current_hp > 0 || target.current_mana != 40)
+	if (caster.stats[Entity::current_hp] != 75 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] > 0 || target.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2169,24 +2297,24 @@ bool TestEntityRemoteActivator()//25
 
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;
 	spell.effect1.duration = 5;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
 	//effect 2 wont be used for this test
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = recover_mana;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::recover_mana;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 0;
 	spell.effect2.duration = 5;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 	target = base;
@@ -2197,14 +2325,14 @@ bool TestEntityRemoteActivator()//25
 	spell.mana_cost = 10;
 	spell.visual = 0;
 	//buff heals for half damage recieved
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = heal;
-	spell.effect1.action = heal;
-	spell.effect1.scalar = heal;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::heal;
+	spell.effect1.action = Actions::heal;
+	spell.effect1.scalar = Actions::heal;
 	spell.effect1.value = 1;
 	spell.effect1.duration = 5; //make sure buff duration lasts the whole damage over time
 
-	spell.effect1.target_type = buffer;
+	spell.effect1.target_type = TargetType::buffer;
 
 	UseSpell(spell, caster, caster);
 
@@ -2212,23 +2340,23 @@ bool TestEntityRemoteActivator()//25
 	spell.mana_cost = 10;
 	spell.visual = 0;
 	//buff heals for half damage recieved
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 15;
 	spell.effect1.duration = 3;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 	
 	//add a third person
 	Entity new_guy = base;
 
 	UseSpell(spell, new_guy, target);
 
-	if (caster.current_hp != 60 || caster.current_mana != 30 || 
-	    target.current_hp != 45 || target.current_mana != 50 || 
-	    new_guy.current_hp != 50 || new_guy.current_mana != 40)
+	if (caster.stats[Entity::current_hp] != 60 || caster.stats[Entity::current_mana] != 30 || 
+	    target.stats[Entity::current_hp] != 45 || target.stats[Entity::current_mana] != 50 || 
+	    new_guy.stats[Entity::current_hp] != 50 || new_guy.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2237,9 +2365,9 @@ bool TestEntityRemoteActivator()//25
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 70 || caster.current_mana != 30 || 
-	    target.current_hp != 40 || target.current_mana != 50 || 
-	    new_guy.current_hp != 50 || new_guy.current_mana != 40)
+	if (caster.stats[Entity::current_hp] != 70 || caster.stats[Entity::current_mana] != 30 || 
+	    target.stats[Entity::current_hp] != 40 || target.stats[Entity::current_mana] != 50 || 
+	    new_guy.stats[Entity::current_hp] != 50 || new_guy.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2248,9 +2376,9 @@ bool TestEntityRemoteActivator()//25
   //advance a tick of damage
 	target.Update(1);
 
-	if (caster.current_hp != 80 || caster.current_mana != 30 || 
-	    target.current_hp != 35 || target.current_mana != 50 || 
-	    new_guy.current_hp != 50 || new_guy.current_mana != 40)
+	if (caster.stats[Entity::current_hp] != 80 || caster.stats[Entity::current_mana] != 30 || 
+	    target.stats[Entity::current_hp] != 35 || target.stats[Entity::current_mana] != 50 || 
+	    new_guy.stats[Entity::current_hp] != 50 || new_guy.stats[Entity::current_mana] != 40)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2262,10 +2390,10 @@ bool TestEntityRemoteActivator()//25
 bool TestEntityModifyHp() //26
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
+	base.stats[Entity::Entity::max_hp] = 100;
+	base.stats[Entity::current_hp] = 50;
+	base.stats[Entity::max_mana] = 100;
+	base.stats[Entity::current_mana] = 50;
 	Entity target = base;
 	Entity caster = base;
 
@@ -2273,28 +2401,28 @@ bool TestEntityModifyHp() //26
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = scale_caster_max_hp;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = none;//action is not used with these, since the action is always stats modify
-	spell.effect1.scalar = scale_caster_max_hp;
+	spell.effect1.self_activator = Actions::total_actions+Entity::max_hp;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::none;//action is not used with these, since the action is always stats modify
+	spell.effect1.scalar = Actions::total_actions+Entity::max_hp;
 	spell.effect1.value = 1;//1 is 100% increase which is double
 	spell.effect1.duration = 2;
 
-	spell.effect1.target_type = buffed;
+	spell.effect1.target_type = TargetType::buffed;
 
   //use the buffs
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = heal;
-	spell.effect2.scalar = scale_caster_max_hp;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::heal;
+	spell.effect2.scalar = Actions::total_actions+Entity::max_hp;
 	spell.effect2.value = 0.5;
 	spell.effect2.duration = 2;
 
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 150 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 150 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2303,7 +2431,7 @@ bool TestEntityModifyHp() //26
 	//use the skill again to make sure the current hp does not go over the cap
 	UseSpell(spell, caster, caster);
 
-	if (caster.current_hp != 400 || caster.current_mana != 30 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 400 || caster.stats[Entity::current_mana] != 30 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2312,7 +2440,7 @@ bool TestEntityModifyHp() //26
 	//the heal happened to be an overtime heal so let it tick once(note the buff was applied twice)
 	caster.Update(1);
 
-	if (caster.current_hp != 500 || caster.current_mana != 30 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 500 || caster.stats[Entity::current_mana] != 30 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2325,7 +2453,7 @@ bool TestEntityModifyHp() //26
 	caster.total_healing_recieved = 1000000;
 	caster.updateDeltas();
 
-	if (caster.current_hp != 100 || caster.current_mana != 30 || target.current_hp != 50 || target.current_mana != 50)
+	if (caster.stats[Entity::current_hp] != 100 || caster.stats[Entity::current_mana] != 30 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2337,11 +2465,11 @@ bool TestEntityModifyHp() //26
 bool TestEntityModificationsExtra()//27
 {
 	Entity base;
-	base.max_hp = 100;
-	base.current_hp = 50;
-	base.max_mana = 100;
-	base.current_mana = 50;
-	base.intelligence = 10;
+	base.stats[Entity::max_hp] = 100;
+	base.stats[Entity::current_hp] = 50;
+	base.stats[Entity::max_mana] = 100;
+	base.stats[Entity::current_mana] = 50;
+	base.stats[Entity::intelligence] = 10;
 	Entity target = base;
 	Entity caster = base;
 
@@ -2350,27 +2478,27 @@ bool TestEntityModificationsExtra()//27
 	Spell spell;
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = none;
-	spell.effect1.remote_activator = damage;
-	spell.effect1.action = damage_modifier;
-	spell.effect1.scalar = none;
+	spell.effect1.self_activator = Actions::none;
+	spell.effect1.remote_activator = Actions::damage;
+	spell.effect1.action = Actions::damage_modifier;
+	spell.effect1.scalar = Actions::none;
 	spell.effect1.value = 10;
 	spell.effect1.duration = 10;
-	spell.effect1.target_type = buffed;//only target type that makes sense for these
+	spell.effect1.target_type = TargetType::buffed;//only target type that makes sense for these
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	UseSpell(spell, caster, caster);
 
-	std::cout << "caster hp = " << caster.current_hp << " mana = " << caster.current_mana << std::endl;
-	std::cout << "target hp = " << target.current_hp << " mana = " << target.current_mana << std::endl;
-	if (caster.current_hp != 30 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	std::cout << "caster hp = " << caster.stats[Entity::current_hp] << " mana = " << caster.stats[Entity::current_mana] << std::endl;
+	std::cout << "target hp = " << target.stats[Entity::current_hp] << " mana = " << target.stats[Entity::current_mana] << std::endl;
+	if (caster.stats[Entity::current_hp] != 30 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
@@ -2379,51 +2507,32 @@ bool TestEntityModificationsExtra()//27
 	//increase damage by a scalar
 	spell.mana_cost = 10;
 	spell.visual = 0;
-	spell.effect1.self_activator = damage;
-	spell.effect1.remote_activator = none;
-	spell.effect1.action = damage_modifier;
-	spell.effect1.scalar = scale_caster_intelligence;
+	spell.effect1.self_activator = Actions::damage;
+	spell.effect1.remote_activator = Actions::none;
+	spell.effect1.action = Actions::damage_modifier;
+	spell.effect1.scalar = Actions::total_actions+Entity::intelligence;
 	spell.effect1.value = 0.1;
 	spell.effect1.duration = 10;
-	spell.effect1.target_type = buffed;//only target type that makes sense for these
+	spell.effect1.target_type = TargetType::buffed;//only target type that makes sense for these
 
-	spell.effect2.self_activator = none;
-	spell.effect2.remote_activator = none;
-	spell.effect2.action = damage;
-	spell.effect2.scalar = none;
+	spell.effect2.self_activator = Actions::none;
+	spell.effect2.remote_activator = Actions::none;
+	spell.effect2.action = Actions::damage;
+	spell.effect2.scalar = Actions::none;
 	spell.effect2.value = 10;
 	spell.effect2.duration = 0;
-	spell.effect2.target_type = buffed;
+	spell.effect2.target_type = TargetType::buffed;
 
 	caster = base;
 
 	UseSpell(spell, caster, caster);
 
-	std::cout << "caster hp = " << caster.current_hp << " mana = " << caster.current_mana << std::endl;
-	std::cout << "target hp = " << target.current_hp << " mana = " << target.current_mana << std::endl;
-	if (caster.current_hp != 39 || caster.current_mana != 40 || target.current_hp != 50 || target.current_mana != 50)
+	std::cout << "caster hp = " << caster.stats[Entity::current_hp] << " mana = " << caster.stats[Entity::current_mana] << std::endl;
+	std::cout << "target hp = " << target.stats[Entity::current_hp] << " mana = " << target.stats[Entity::current_mana] << std::endl;
+	if (caster.stats[Entity::current_hp] != 39 || caster.stats[Entity::current_mana] != 40 || target.stats[Entity::current_hp] != 50 || target.stats[Entity::current_mana] != 50)
 	{
 		PRINT_ERROR();
 		return false;
-	}
-
-
-	//not a test
-	int i = 1000;
-	while(1)
-	{
-		i += 10;
-		spell = Spell();
-		int power = CreateSpell(spell, i);
-		std::string desc = CreateDescription(spell);
-		std::string effect1 = CreateBuffDescription(spell.effect1);
-		std::string effect2 = CreateBuffDescription(spell.effect2);
-		std::cout << "****************" << std::endl;
-		std::cout << desc << std::endl;
-		std::cout << "****************" << std::endl;
-		std::cout << effect1 << std::endl;
-		std::cout << effect2 << std::endl;
-		std::cout << power << std::endl;
 	}
 
   return true;

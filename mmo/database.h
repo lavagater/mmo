@@ -79,6 +79,43 @@ public:
 	unsigned Get(unsigned id, unsigned row, char *&data);
 	/*!
 	\brief
+	Gets a speciic row from an object/column from the table, returns the data in a tightly packet format(no pad bytes)
+	\param id
+	which object/column in the database to get data from
+	\param row
+	the row in the table
+	\param data
+	a char pointer that is pre allocated
+	\param size
+	The max amount that can be written into data.
+	\return
+	the size of bytes put into data
+	*/
+	unsigned Get(unsigned id, unsigned row, char *data, unsigned size);
+	/*!
+	\brief
+	Gets a a range rows from an object/column from the table, returns the data in a tightly packet format(no pad bytes)
+	\param id
+	which object/column in the database to get data from
+	\param start_row
+	the first row in the table to get
+	\param end_row
+	the last row that gets get.(Inclusive)
+	\param data
+	a char pointer, will be pointed at new memory allocated with new and has to be deleted
+	\param size
+	Size of data passed in. If size is not big enough data will still be puty into data but 0 is returned.
+	\return
+	the size of bytes put into data
+	*/
+	unsigned Get(unsigned id, unsigned start_row, unsigned end_row, char *data, unsigned size);
+	/*!
+	\brief
+	same as above but allocates the memory for them
+	*/
+	unsigned Get(unsigned id, unsigned start_row, unsigned end_row, char *&data);
+	/*!
+	\brief
 	Sets the value of a row for a specific column
 	\param id
 	which object/column in the database
@@ -88,6 +125,19 @@ public:
 	raw data to copy into the database
 	*/
 	void Set(unsigned id, unsigned row, const void *data);
+  /*!
+	\brief
+	Sets the range of rows with the given data.
+	\param id
+	which object/column in the database
+	\param start_row
+	the first row in the table to set
+	/param end_row
+	the last row that gets set.(Inclusive)
+	\param data
+	raw data to copy into the database
+	*/
+	void Set(unsigned id, unsigned start_row, unsigned end_row, const void *data);
 	/*!
 	\brief
 	Reuse deleted object memory if exists otherwise will create a new spot in the database and increase the size.
@@ -134,6 +184,29 @@ public:
 	so the first index will be the smallest value if is_smallest is true, the first value will be the largest is false
 	*/
 	std::vector<unsigned> Find(unsigned row, char *min, char *max, int num_results, bool is_smallest);
+	/*!
+	\brief
+	Gets the id's of the items with the given value range for multiple rows int the db.
+	wont return objects that have been deleted, can only find sorted properties.
+	the results are sorted base on the first entry in the row vector
+	\remarks
+	Only the first row needs to be a sorted property. This method works best if the first row narrows the search the most.
+	\param row
+	The rows to search, only the first row has to be a sorted property
+	\param min
+	The minimum value to search for inclusive
+	\param max
+	The maximum value to search for inclusive
+	\param num_results
+	The number of hits to return, -1 is all
+	\param is_smallest
+	The direction to search from, if true we look for the top num_results smallest values
+	if false then we look for the largest num_result values. i.e first ten values is true, last ten values is false
+	\return
+	an array of num_results the id's that have the given value. the returned id's are sorted by the value searched for
+	so the first index will be the smallest value if is_smallest is true, the first value will be the largest is false
+	*/
+	std::vector<unsigned> Find(std::vector<unsigned> row, std::vector<char*> min, std::vector<char*> max, int num_results, bool is_smallest);
 	/*!
 	\brief
 	Finds the object with the largest value in the given row

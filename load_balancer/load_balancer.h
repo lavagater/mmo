@@ -17,6 +17,7 @@
 #include "network_signals.h"
 #include "dispatcher.h"
 #include "account_manager.h"
+#include "inventory_manager.h"
 
 #include <memory>
 
@@ -61,10 +62,12 @@ public:
   sockaddr_in from;
   sockaddr_in players_database;
   sockaddr_in account_database;
+  sockaddr_in spells_database;
   AsymetricEncryption encryptor;
   ProtocolLoader protocol;
   NetworkSignals network_signals;
   AccountManager account_manager;
+  InventoryManager inventory_manager;
 };
 
 #endif

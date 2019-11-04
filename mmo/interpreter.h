@@ -346,6 +346,7 @@ public:
 		functions["double"] = &ToDouble;
 		functions["string"] = &ToString;
 		functions["vector"] = std::bind(&Interpreter::CreateVector, this, std::placeholders::_1);
+		functions["vector_push"] = std::bind(&Interpreter::VectorPush, this, std::placeholders::_1);
 		functions["map"] = std::bind(&Interpreter::CreateMap, this, std::placeholders::_1);
 		functions["GetKeys"] = std::bind(&Interpreter::GetKeys, this, std::placeholders::_1);;
 		functions["Size"] = &VectorSize;
@@ -384,7 +385,6 @@ public:
 	{
 		for (unsigned i = 0; i < node->statements.size(); ++i)
 		{
-			LOG("Statement " << i);
 			node->statements[i]->Walk(this);
 			if (stopScope)
 			{
@@ -434,11 +434,6 @@ public:
 		if (lastValue.m_int)
 		{
 			node->scope->Walk(this);
-			//dont propegate any further, unless its a return
-			if (stopScope != 3)
-			{
-				stopScope = 0;
-			}
 		}
 		else if (node->elseIf)
 		{
@@ -1045,6 +1040,25 @@ public:
 		vectors.push_back(ret.m_vector);
 		return ret;
 	}
+	//adds the arguments to end of the vector
+	Value VectorPush(std::vector<Value> args)
+	{
+		Value ret;
+		if (args.size() <= 1)
+		{
+			return ret;
+		}
+		//first arg must be the vector
+		if (args[0].type != Vector)
+		{
+			return ret;
+		}
+		for (unsigned i = 1; i < args.size(); ++i)
+		{
+			args[0].m_vector->push_back(args[i]);
+		}
+		return ret;
+	}
 	static Value VectorSize(std::vector<Value> args)
 	{
 		Value ret;
@@ -1381,15 +1395,15 @@ public:
 				if (lhs.type == rhs.type)
 				{
 					lhs.type = Integer;
-					if (lhs.type == Vector)
+					if (rhs.type == Vector)
 					{
 						lhs.m_int = lhs.m_vector == rhs.m_vector;
 					}
-					else if (lhs.type == Map)
+					else if (rhs.type == Map)
 					{
 						lhs.m_int = lhs.m_map == rhs.m_map;
 					}
-					else if (lhs.type == Blob)
+					else if (rhs.type == Blob)
 					{
 						if (lhs.size == rhs.size)
 						{
@@ -1645,6 +1659,7 @@ public:
 		{
 			LOGW("Function " << funcName << " does not exist");
 		}
+		LOG("function = " << funcName << " finished");
 		return 0;
 	}
 	int Visit(IndexNode *node)

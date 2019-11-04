@@ -61,6 +61,7 @@ public:
   sockaddr_in from;
   sockaddr_in account_database;
   sockaddr_in players_database;
+  sockaddr_in spells_database;
   //set of the known addresses from start, i.e. databases
   std::unordered_set<sockaddr_in, SockAddrHash> known_addr;
   //set of load balancers

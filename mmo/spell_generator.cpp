@@ -2,17 +2,20 @@
 #include <cmath>
 #include <iostream>
 
-double short_range = 2;
-double long_range = 15;
-double short_cast = 0.5;
-double long_cast = 5;
-double cool_down = 300;
-double average_score = 10;
-double max_duration = 120;
-double min_duration = 5;
+float short_range = 2;
+float long_range = 15;
+float short_cast = 0.5;
+float long_cast = 15;
+float cool_down = 300;
+float average_score = 100;
+float max_duration = 120;
+float min_duration = 5;
 
 int CreateSpell(Spell &spell, int desired_score)
 {
+  //zero out spell values
+  spell = Spell();
+
   int saved = desired_score;
   double percentage;
   //visual completly random
@@ -23,12 +26,27 @@ int CreateSpell(Spell &spell, int desired_score)
   spell.range = (long_range-short_range)*percentage+short_range;
   saved *= std::max((1-percentage)*2, 0.5);
 
+  //cooldown
+  double desired_cooldown = cool_down;
+  if (desired_score < cool_down || rand()%10)
+  {
+    desired_cooldown = desired_score;
+  }
+  spell.cool_down = rand() % (int)desired_cooldown;
+  if (rand()%desired_score < average_score)
+  {
+    //for spells with scores closer to average make the cooldown shorter
+    percentage = rand() / (double)(RAND_MAX);
+    spell.cool_down *= percentage;
+  }
+  saved *= std::sqrt(spell.cool_down) / 2;
+
   //figure out what kind of cc the spell should do
   percentage = rand() / (double)(RAND_MAX);
   //the smaller saved is(i.e. the stronger the current buff) the less likely to hav cc
   if (percentage < saved / (double)(saved+desired_score))
   {
-    for (unsigned i = CrowdControls::no_cc+1; i < CrowdControls::num_cc; ++i)
+    for (unsigned i = CrowdControl::no_cc+1; i < CrowdControl::num_cc; ++i)
     {
       percentage = rand() / (double)(RAND_MAX);
       //now the chance is increased if the save is higher to increase the chance of getting a weaker cc
@@ -37,20 +55,20 @@ int CreateSpell(Spell &spell, int desired_score)
         spell.cc = i;
         //random the duration(make it more likely to be smaller the stronger the cc is is)
         percentage = rand() / (double)(RAND_MAX);
-        for (unsigned j = 0; j < rand() % (CrowdControls::num_cc - i); ++j)
+        for (unsigned j = 0; j < rand() % (CrowdControl::num_cc - i); ++j)
         {
           percentage += rand() / (double)(RAND_MAX);
         }
         spell.cc_duration = rand()%10;
         spell.cc_duration *= percentage;
-        if (rand()%(CrowdControls::num_cc - i))
+        if (rand()%(CrowdControl::num_cc - i))
         {
           spell.cc_duration += rand() % 15;
         }
         if (spell.cc_duration < 5)
           spell.cc_duration = 5;
 
-        saved *= 1-spell.cc / CrowdControls::num_cc;
+        saved *= 1-spell.cc / CrowdControl::num_cc;
         saved /= spell.cc_duration;
         break;
       }
@@ -71,7 +89,7 @@ int CreateSpell(Spell &spell, int desired_score)
     spell.cast_time = short_cast;
 
   //min cast time the score is 0.05(0.5s) - 0.5(1sec) - 3(2sec) - 22(5 sec)
-  saved *= (spell.cast_time - short_cast+0.1) * (spell.cast_time);
+  saved *= (spell.cast_time - short_cast+0.1);
 
   percentage = rand() / (double)(RAND_MAX);
   int score = CreateEffect(spell.effect1, saved * (percentage));
@@ -104,30 +122,9 @@ int CreateSpell(Spell &spell, int desired_score)
     score *= percentage;
   }
   //prevent insane mana costs
-  spell.mana_cost = std::min(spell.mana_cost, (score + desired_score)*2.0);
+  spell.mana_cost = std::min(spell.mana_cost, (score + desired_score)*2.0f);
   //mana cost should not go below zero
-  spell.mana_cost = std::max(spell.mana_cost, 0.0);
-
-  //cooldown, dosent matter to much since cooldown reduction                                    /*so its not zero*/
-  double desired_cooldown = spell.effect1.duration + spell.effect2.duration + spell.cc_duration + rand()%10;
-  desired_cooldown *= score / desired_score;
-  percentage = rand() / (double)(RAND_MAX);
-  if (rand() / (double)(RAND_MAX) > score / (score+desired_score))
-  {
-    //make cool down smaller
-    percentage *= rand() / (double)(RAND_MAX);
-  }
-  else if (rand() / (double)(RAND_MAX) < score / (score+desired_score*2))
-  {
-    //we want cd to be bigger
-    spell.cool_down += rand()%(int)cool_down;
-  }
-  spell.cool_down += (desired_cooldown) * percentage;
-  score *= 1 + percentage/10;
-  score += desired_cooldown - spell.cool_down;
-  //prevent insane cooldown
-  spell.cool_down = std::min(spell.cool_down, cool_down);
-
+  spell.mana_cost = std::max(spell.mana_cost, 0.0f);
   
   return score;
 }
@@ -138,13 +135,13 @@ static int CreateActiveEffect(Effect &effect, int desired_score)
   int score = 0;
   int saved = desired_score;
   //damage, heal, recovermana, spend mana
-  effect.action = rand()%(Actions::spend_mana)+1;
+  effect.action = rand()%(Actions::spend_mana-1)+1;
 
   //is it selfcast
   double percentage = rand() / (double)(RAND_MAX);
   if (percentage > 0.8)
   {
-    effect.target_type = buffer;
+    effect.target_type = TargetType::buffer;
     //if we are hurting ourselfs then the score is much less
     if (effect.action == Actions::damage || effect.action == Actions::spend_mana)
     {
@@ -153,7 +150,7 @@ static int CreateActiveEffect(Effect &effect, int desired_score)
   }
   else
   {
-    effect.target_type = buffed;
+    effect.target_type = TargetType::buffed;
   }
 
   //is it over time?
@@ -172,18 +169,10 @@ static int CreateActiveEffect(Effect &effect, int desired_score)
   percentage = rand() / (double)(RAND_MAX);
   if (percentage > 0.5)
   {
-    do
-    {
-      effect.scalar = rand()%(Actions::total_actions-1)+1;
-      //if it scales with an action the scalar has to be the action
-      if (effect.scalar < Actions::scalars)
-      {
-        effect.scalar = effect.action;
-      }
-    }
-    while (effect.scalar <= Actions::scale_caster_end || effect.scalar == Actions::scalars);
+    
+    effect.scalar = rand()%(Entity::num_stats*2) + Actions::total_actions;
     //when scaling with the opponent stats that is stronger than your own so make the score bigger
-    if (effect.scalar > Actions::scale_caster_end)
+    if (effect.scalar > Actions::total_actions+Entity::num_stats)
     {
       saved /= 2;
     }
@@ -196,8 +185,8 @@ static int CreateActiveEffect(Effect &effect, int desired_score)
       {
         percentage += rand() / (double)(RAND_MAX);
       }
-      //0.1 is %10 that sounds pretty average
-      effect.value = 0.1 * sqrt(percentage);
+      //0.25 is %25 that sounds pretty average
+      effect.value = 0.25 * sqrt(percentage);
       if (effect.value < 0.01)
       {
         effect.value = 0.01;
@@ -213,8 +202,8 @@ static int CreateActiveEffect(Effect &effect, int desired_score)
       {
         percentage += rand() / (double)(RAND_MAX);
       }
-      //0.1 is %10 that sounds pretty average
-      effect.value = 0.1 / sqrt(percentage);
+      //0.25 is %25 that sounds pretty average
+      effect.value = 0.25 / sqrt(percentage);
       if (effect.value < 0.01)
       {
         effect.value = 0.01;
@@ -260,22 +249,23 @@ static int CreateBuffEffect(Effect &effect, int desired_score)
   }
   
   //damage, heal, recovermana, spend mana, modifiers
-  effect.action = rand()%(Actions::spend_mana_modifier)+1;
-  effect.self_activator = rand()%(Actions::total_actions-1)+1;
-  //deal with edge cases
-  while (effect.self_activator == Actions::scalars || effect.self_activator == Actions::scale_caster_end || (effect.self_activator >= damage_modifier && effect.self_activator <= spend_mana_modifier))
+  effect.action = rand()%(Actions::spend_mana_modifier-1)+1;
+  do
   {
-    effect.self_activator = rand()%(Actions::total_actions-1)+1;
+    effect.self_activator = rand()%(Actions::total_actions+Entity::num_stats*2-1)+1;
   }
+  while (effect.self_activator >= Actions::damage_modifier && effect.self_activator <= Actions::spend_mana_modifier);
   //if the action is a modifier the activator has to be what is being modified
-  if (effect.self_activator < scalars && effect.action >= damage_modifier && effect.action <= spend_mana_modifier)
+  if (effect.self_activator < Actions::total_actions && effect.action >= Actions::damage_modifier && effect.action <= Actions::spend_mana_modifier)
   {
-    effect.self_activator = effect.action - damage_modifier + damage;
+    effect.self_activator = effect.action - Actions::damage_modifier + Actions::damage;
   }
-  if (effect.self_activator > scalars)
+  if (effect.self_activator >= Actions::total_actions)
   {
-    effect.action = none;
+    effect.action = Actions::none;
   }
+  //save a temp so we dont have to check in the future if we are self or remote
+  int activator = effect.self_activator;
   //is the buff self or remote 25/75 split
   if (rand()%4)
   {
@@ -286,24 +276,24 @@ static int CreateBuffEffect(Effect &effect, int desired_score)
   //how long does the buff last
   effect.duration = rand() % (int)(max_duration-min_duration+0.5) + min_duration;
   effect.duration *= rand() / (double)(RAND_MAX);
+  if (effect.duration < 5)
+  {
+    effect.duration = 5;
+  }
   saved /= effect.duration;
 
   //scalar
   percentage = rand() / (double)(RAND_MAX);
-  if (percentage > 0.2)
+  if (percentage > 0.6)
   {
-    do
+    effect.scalar = rand()%(Entity::num_stats*2) + Actions::total_actions;
+    //check if it should scale with the activator(i.e. on heal do something with the heal amount)
+    if (rand()%2 && activator <= Actions::spend_mana)
     {
-      effect.scalar = rand()%(Actions::total_actions-1)+1;
-      //if it scales with an action the scalar has to be the action
-      if (effect.scalar < Actions::scalars)
-      {
-        effect.scalar = effect.action;
-      }
+      effect.scalar = activator;
     }
-    while (effect.scalar == Actions::scale_caster_end || effect.scalar == Actions::scalars || effect.scalar == Actions::none);
     //when scaling with the opponent stats that is stronger than your own so make the score bigger
-    if (effect.scalar > Actions::scale_caster_end)
+    if (effect.scalar > Actions::total_actions + Entity::num_stats)
     {
       saved /= 2;
     }
@@ -316,8 +306,8 @@ static int CreateBuffEffect(Effect &effect, int desired_score)
       {
         percentage += rand() / (double)(RAND_MAX);
       }
-      //0.1 is %10 that sounds pretty average
-      effect.value = 0.1 * sqrt(percentage);
+      //0.1 is %25 that sounds pretty average
+      effect.value = 0.25 * sqrt(percentage);
       score += percentage * average_score;
     }
     else
@@ -329,8 +319,8 @@ static int CreateBuffEffect(Effect &effect, int desired_score)
       {
         percentage += rand() / (double)(RAND_MAX);
       }
-      //0.1 is %10 that sounds pretty average
-      effect.value = 0.1 / sqrt(percentage);
+      //0.1 is %25 that sounds pretty average
+      effect.value = 0.25 / sqrt(percentage);
       score += average_score / percentage;
     }
   }
@@ -348,14 +338,14 @@ static int CreateBuffEffect(Effect &effect, int desired_score)
     score += effect.value;
   }
   //if the effect is a modifier, or a scalar then the value can be negative(debuf)
-  if (effect.action >= damage_modifier || effect.action == none)
+  if (effect.action >= Actions::damage_modifier || effect.action == Actions::none)
   {
     if (rand()%2)
     {
       effect.value *= -1;
     }
     //the target type has to be buffed, other ones dont make sense
-    effect.target_type = buffed;
+    effect.target_type = TargetType::buffed;
   }
   return score * desired_score/((double)saved+1);
 }
@@ -373,38 +363,41 @@ int CreateEffect(Effect &effect, int desired_score)
 std::string CreateDescription(Spell &spell)
 {
   std::string ret;
-  if (spell.cc != CrowdControls::no_cc)
+  if (spell.cc != CrowdControl::no_cc)
   {
     switch(spell.cc)
     {
-      case little_slow:
+      case CrowdControl::little_slow:
         ret = "Slow target by 33%";
         break;
-      case big_slow:
+      case CrowdControl::big_slow:
         ret = "Slow target by 66%";
         break;
-      case taunt:
+      case CrowdControl::taunt:
         ret = "Make all spells cast by the target hit you instead of the desired target";
         break;
-      case sleeping:
-        ret = "Puts target to sleep(will wake up when damaed)";
+      case CrowdControl::invert_walk:
+        ret = "Makes target walk backwards";
         break;
-      case silence:
-        ret = "Silences target making the target unable to cast spells and cancel any spell being cast";
+      case CrowdControl::sleeping:
+        ret = "Puts target to sleep(will wake up when damaged)";
         break;
-      case root:
+      case CrowdControl::silence:
+        ret = "Silences target canceling the spell they are casting and preventing them from casting spells";
+        break;
+      case CrowdControl::root:
         ret = "Root target";
         break;
-      case random_target:
+      case CrowdControl::random_target:
         ret = "Makes the target target randomly";
         break;
-      case stun:
+      case CrowdControl::stun:
         ret = "Stun target";
         break;
-      case target:
+      case CrowdControl::target:
         ret = "Make everyone target the target";
         break;
-      case cleanse:
+      case CrowdControl::cleanse:
         ret = "Remove all crowd control on target and prevents target from being crowed controlled";
         break;
     }
@@ -443,64 +436,64 @@ static std::string CreateAmountDescription(Effect &effect, bool is_spell)
       case Actions::spend_mana:
         amount_desc += " of mana lost";
         break;
-      case Actions::scale_caster_current_hp:
+      case Actions::total_actions + Entity::current_hp:
         amount_desc += " of "+me+" current hp";
         break;
-      case Actions::scale_caster_max_hp:
+      case Actions::total_actions + Entity::max_hp:
         amount_desc += " of "+me+" max hp";
         break;
-      case Actions::scale_target_current_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::current_hp:
         amount_desc += " of "+target+" current hp";
         break;
-      case Actions::scale_target_max_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::max_hp:
         amount_desc += " of "+target+" max hp";
         break;
-      case Actions::scale_caster_current_mana:
+      case Actions::total_actions + Entity::current_mana:
         amount_desc += " of "+me+" current mana";
         break;
-      case Actions::scale_caster_max_mana:
+      case Actions::total_actions + Entity::max_mana:
         amount_desc += " of "+me+" max mana";
         break;
-      case Actions::scale_target_current_mana:
+      case Actions::total_actions + Entity::num_stats+ Entity::current_mana:
         amount_desc += " of "+target+" current mana";
         break;
-      case Actions::scale_target_max_mana:
+      case Actions::total_actions + Entity::num_stats+ Entity::max_mana:
         amount_desc += " of "+target+" max mana";
         break;
-      case Actions::scale_caster_strength:
+      case Actions::total_actions + Entity::strength:
         amount_desc += " of "+me+" strength";
         break;
-      case Actions::scale_target_strength:
+      case Actions::total_actions + Entity::num_stats+ Entity::strength:
         amount_desc += " of "+target+" strength";
         break;
-      case Actions::scale_caster_intelligence:
+      case Actions::total_actions + Entity::intelligence:
         amount_desc += " of "+me+" intelligence";
         break;
-      case Actions::scale_target_intelligence:
+      case Actions::total_actions + Entity::num_stats+ Entity::intelligence:
         amount_desc += " of "+target+" intelligence";
         break;
-      case Actions::scale_caster_armour:
+      case Actions::total_actions + Entity::armor:
         amount_desc += " of "+me+" armor";
         break;
-      case Actions::scale_target_armour:
+      case Actions::total_actions + Entity::num_stats+ Entity::armor:
         amount_desc += " of "+target+" armor";
         break;
-      case Actions::scale_caster_defense:
+      case Actions::total_actions + Entity::defense:
         amount_desc += " of "+me+" defense";
         break;
-      case Actions::scale_target_defense:
+      case Actions::total_actions + Entity::num_stats+ Entity::defense:
         amount_desc += " of "+target+" defense";
         break;
-      case Actions::scale_caster_cooldown_reduction:
+      case Actions::total_actions + Entity::cdr:
         amount_desc += " of "+me+" cooldown reduction";
         break;
-      case Actions::scale_target_cooldown_reduction:
+      case Actions::total_actions + Entity::num_stats+ Entity::cdr:
         amount_desc += " of "+target+" cooldown reduction";
         break;
-      case Actions::scale_caster_life_steal:
+      case Actions::total_actions + Entity::life_steal:
         amount_desc += " of "+me+" life steal";
         break;
-      case Actions::scale_target_life_steal:
+      case Actions::total_actions + Entity::num_stats+ Entity::life_steal:
         amount_desc += " of "+target+" life steal";
         break;
     }
@@ -530,7 +523,7 @@ static std::string CreateActivationDescription(Effect &effect, std::string direc
   {
     activator = effect.remote_activator;
   }
-  if (activator > scalars)
+  if (activator >= Actions::total_actions)
   {
     if (is_spell)
     {
@@ -541,7 +534,7 @@ static std::string CreateActivationDescription(Effect &effect, std::string direc
       activation_desc = "your";
     }
   }
-  if (effect.self_activator != none)
+  if (effect.self_activator != Actions::none)
   {
     switch(activator)
     {
@@ -557,45 +550,45 @@ static std::string CreateActivationDescription(Effect &effect, std::string direc
       case Actions::spend_mana:
         activation_desc += " loses mana";
         break;
-      case Actions::scale_caster_current_hp:
-      case Actions::scale_caster_max_hp:
-      case Actions::scale_target_current_hp:
-      case Actions::scale_target_max_hp:
+      case Actions::total_actions + Entity::current_hp:
+      case Actions::total_actions + Entity::max_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::current_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::max_hp:
         activation_desc += " max hp is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_current_mana:
-      case Actions::scale_caster_max_mana:
-      case Actions::scale_target_current_mana:
-      case Actions::scale_target_max_mana:
+      case Actions::total_actions + Entity::current_mana:
+      case Actions::total_actions + Entity::max_mana:
+      case Actions::total_actions + Entity::num_stats + Entity::current_mana:
+      case Actions::total_actions + Entity::num_stats + Entity::max_mana:
         activation_desc += " max mana is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_strength:
-      case Actions::scale_target_strength:
+      case Actions::total_actions + Entity::strength:
+      case Actions::total_actions + Entity::num_stats + Entity::strength:
         activation_desc += " strength is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_intelligence:
-      case Actions::scale_target_intelligence:
+      case Actions::total_actions + Entity::intelligence:
+      case Actions::total_actions + Entity::num_stats + Entity::intelligence:
         activation_desc += " intelegence is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_armour:
-      case Actions::scale_target_armour:
+      case Actions::total_actions + Entity::armor:
+      case Actions::total_actions + Entity::num_stats + Entity::armor:
         activation_desc += " armor is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_defense:
-      case Actions::scale_target_defense:
+      case Actions::total_actions + Entity::defense:
+      case Actions::total_actions + Entity::num_stats + Entity::defense:
         activation_desc += " defense is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_cooldown_reduction:
-      case Actions::scale_target_cooldown_reduction:
+      case Actions::total_actions + Entity::cdr:
+      case Actions::total_actions + Entity::num_stats + Entity::cdr:
         activation_desc += " cooldown reduction is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_life_steal:
-      case Actions::scale_target_life_steal:
+      case Actions::total_actions + Entity::life_steal:
+      case Actions::total_actions + Entity::num_stats + Entity::life_steal:
         activation_desc += " life steal is " + direction + "d by"  + amount_desc;
         break;
     }
   }
-  else if (effect.remote_activator != none)
+  else if (effect.remote_activator != Actions::none)
   {
     switch(activator)
     {
@@ -611,40 +604,40 @@ static std::string CreateActivationDescription(Effect &effect, std::string direc
       case Actions::spend_mana:
         activation_desc += " drains someones mana";
         break;
-      case Actions::scale_caster_current_hp:
-      case Actions::scale_caster_max_hp:
-      case Actions::scale_target_current_hp:
-      case Actions::scale_target_max_hp:
+      case Actions::total_actions + Entity::current_hp:
+      case Actions::total_actions + Entity::max_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::current_hp:
+      case Actions::total_actions + Entity::num_stats + Entity::max_hp:
         activation_desc += " max hp is " + direction + "d by" +amount_desc;
         break;
-      case Actions::scale_caster_current_mana:
-      case Actions::scale_caster_max_mana:
-      case Actions::scale_target_current_mana:
-      case Actions::scale_target_max_mana:
+      case Actions::total_actions + Entity::current_mana:
+      case Actions::total_actions + Entity::max_mana:
+      case Actions::total_actions + Entity::num_stats + Entity::current_mana:
+      case Actions::total_actions + Entity::num_stats + Entity::max_mana:
         activation_desc += " max mana is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_strength:
-      case Actions::scale_target_strength:
+      case Actions::total_actions + Entity::strength:
+      case Actions::total_actions + Entity::num_stats + Entity::strength:
         activation_desc += " strength is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_intelligence:
-      case Actions::scale_target_intelligence:
+      case Actions::total_actions + Entity::intelligence:
+      case Actions::total_actions + Entity::num_stats + Entity::intelligence:
         activation_desc += " intelegence is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_armour:
-      case Actions::scale_target_armour:
+      case Actions::total_actions + Entity::armor:
+      case Actions::total_actions + Entity::num_stats + Entity::armor:
         activation_desc += " armor is " + direction + "d by" + amount_desc;
         break;
-      case Actions::scale_caster_defense:
-      case Actions::scale_target_defense:
+      case Actions::total_actions + Entity::defense:
+      case Actions::total_actions + Entity::num_stats + Entity::defense:
         activation_desc += " defense is " + direction + "d by" + amount_desc;
         break;
-      case Actions::scale_caster_cooldown_reduction:
-      case Actions::scale_target_cooldown_reduction:
+      case Actions::total_actions + Entity::cdr:
+      case Actions::total_actions + Entity::num_stats + Entity::cdr:
         activation_desc += " cooldown reduction is " + direction + "d by"  + amount_desc;
         break;
-      case Actions::scale_caster_life_steal:
-      case Actions::scale_target_life_steal:
+      case Actions::total_actions + Entity::life_steal:
+      case Actions::total_actions + Entity::num_stats + Entity::life_steal:
         activation_desc += " life steal is " + direction + "d by"  + amount_desc;
         break;
     }
@@ -662,11 +655,11 @@ static std::string CreateTargetDescription(Effect &effect)
 {
   std::string target_desc;
   int activator = effect.self_activator;
-  if (activator == none)
+  if (activator == Actions::none)
   {
     activator = effect.remote_activator;
   }
-  if (activator == none)
+  if (activator == Actions::none)
   {
     switch(effect.target_type)
     {
@@ -787,7 +780,7 @@ std::string CreateDescription(Effect &effect)
   std::string duration_desc;
   if (effect.duration > 0)
   {
-    if (effect.self_activator == none && effect.remote_activator == none)
+    if (effect.self_activator == Actions::none && effect.remote_activator == Actions::none)
     {
       duration_desc = " per second for " + std::to_string(effect.duration) + " seconds";
     }

@@ -213,16 +213,19 @@ unsigned Database::Get(unsigned id, char *&data)
 	return object_size;
 }
 
-unsigned Database::Get(unsigned id, unsigned row, char *&data)
+unsigned Database::Get(unsigned id, unsigned row, char *data, unsigned size)
 {
+	if (size < rows[row])
+	{
+		LOGW("Size not big enough");
+		return 0;
+	}
 	//find out how far into the object to get to the row we want
 	unsigned split_size = 0;
 	for (unsigned i = 0; i < row; ++i)
 	{
 		split_size += rows[i];
 	}
-	//allocate memory to return
-	data = new char[rows[row]];
 	//go to the spot in the file, (3 + rows.size()*3) * sizeof(unsigned) is the size of the header
 	file.seekg((3 + rows.size() * 3) * sizeof(unsigned) + id * object_size + split_size);
 	//read just the specified row
@@ -232,12 +235,42 @@ unsigned Database::Get(unsigned id, unsigned row, char *&data)
 	return rows[row];
 }
 
+unsigned Database::Get(unsigned id, unsigned row, char *&data)
+{
+	//allocate memory to return
+	data = new char[rows[row]];
+	return Get(id, row, data, rows[row]);
+}
+
+unsigned Database::Get(unsigned id, unsigned start_row, unsigned end_row, char *data, unsigned size)
+{
+	unsigned offset = 0;
+	for (unsigned i = start_row; i <= end_row; ++i)
+	{
+		Get(id, i, data + offset, size - offset);
+		offset += rows[i];
+	}
+	LOG("Database get faggot " << ToHexString(data, size) << std::endl);
+	return offset;
+}
+unsigned Database::Get(unsigned id, unsigned start_row, unsigned end_row, char *&data)
+{
+	unsigned size = 0;
+	for (unsigned i = start_row; i <= end_row; ++i)
+	{
+		size += rows[i];
+	}
+	data = new char[size];
+	return Get(id, start_row, end_row, data, size);
+}
+
 void Database::Set(unsigned id, unsigned row, const void *data)
 {
 	//find out how far into the object to get to the row we want
 	unsigned split_size = 0;
 	for (unsigned i = 0; i < row; ++i)
 	{
+		LOG(i);
 		split_size += rows[i];
 	}
 	//go to the spot in the file, (3 + rows.size()*3) * sizeof(unsigned) is the size of the header
@@ -252,13 +285,28 @@ void Database::Set(unsigned id, unsigned row, const void *data)
 	//update the skip list
 	if (sorted[row])
 	{
+		LOG("got here 1");
 		unsigned node = FindNode(row, old_data, id);
+		LOG("got here 2");
 		RemoveNode(node, row);
+		LOG("got here 3");
 		skip_lists[row].seekp(node + sizeof(unsigned));
 		skip_lists[row].write(reinterpret_cast<const char*>(data), rows[row]);
 		InsertNode(node, row, reinterpret_cast<const char*>(data), id);
+		LOG("got here 4");
 	}
 	delete[] old_data;
+}
+void Database::Set(unsigned id, unsigned start_row, unsigned end_row, const void *data)
+{
+	unsigned offset = 0;
+	for (unsigned i = start_row; i <= end_row; ++i)
+	{
+	  LOG(i);
+		Set(id, i, (char*)data + offset);
+		offset += rows[i];
+	}
+	LOG("Database set faggot " << ToHexString((char*)data, offset) << std::endl);
 }
 unsigned Database::Create()
 {
@@ -357,6 +405,7 @@ std::vector<unsigned> Database::Find(unsigned row, char *min, char *max, int num
 		LOGW("Trying to find a non sorted value");
 		return res;
 	}
+	char *buffer = new char[rows[row]];
 	//getting the smallest we start at the smallest element and walk forward through the list
 	if (is_smallest)
 	{
@@ -365,7 +414,6 @@ std::vector<unsigned> Database::Find(unsigned row, char *min, char *max, int num
 		skip_lists[row].seekg(start + sizeof(unsigned) * 2 + sizeof(int) + rows[row]);
 		skip_lists[row].read(reinterpret_cast<char*>(&start), sizeof(start));
 		//walk list until the value is bigger than max or reach num_results
-		char *buffer = new char[rows[row]];
 		unsigned id;
 		unsigned next;
 		skip_lists[row].seekg(start);
@@ -397,7 +445,6 @@ std::vector<unsigned> Database::Find(unsigned row, char *min, char *max, int num
 		//find the last node
 		unsigned end = FindNode(row, max, unsigned(-2));
 		//walk list backwards until the value is smaller than min or reach num_results
-		char *buffer = new char[rows[row]];
 		unsigned id;
 		unsigned prev;
 		skip_lists[row].seekg(end);
@@ -420,6 +467,129 @@ std::vector<unsigned> Database::Find(unsigned row, char *min, char *max, int num
 			}
 		}
 	}
+	delete [] buffer;
+	return res;
+}
+std::vector<unsigned> Database::Find(std::vector<unsigned> row, std::vector<char*> min, std::vector<char*> max, int num_results, bool is_smallest)
+{
+	LOG("Finding range");
+	std::vector<unsigned> res;
+	if (row.size() == 0 || row.size() != min.size() || min.size() != max.size())
+	{
+		LOGW("Trying to find with incorrect row amounts");
+		return res;
+	}
+	if (sorted[row[0]] == 0)
+	{
+		LOGW("Trying to find a non sorted value");
+		return res;
+	}
+	//create a buffer to store the row[0] data
+	char *buffer = new char[rows[row[0]]];
+	//getting the smallest we start at the smallest element and walk forward through the list
+	if (is_smallest)
+	{
+		//find the first node
+		unsigned start = FindNode(row[0], min[0], 0);
+		LOG("start node = " << start);
+		skip_lists[row[0]].seekg(start + sizeof(unsigned) * 2 + sizeof(int) + rows[row[0]]);
+		skip_lists[row[0]].read(reinterpret_cast<char*>(&start), sizeof(start));
+		//walk list until the value is bigger than max or reach num_results
+		unsigned id;
+		unsigned next;
+		skip_lists[row[0]].seekg(start);
+		skip_lists[row[0]].read(reinterpret_cast<char*>(&id), sizeof(id));
+		skip_lists[row[0]].read(buffer, rows[row[0]]);
+		skip_lists[row[0]].seekg(start + sizeof(unsigned) * 2 + sizeof(int) + rows[row[0]]);
+		skip_lists[row[0]].read(reinterpret_cast<char*>(&next), sizeof(next));
+		while (Compare(row[0], buffer, max[0]) <= 0 && next)
+		{
+			//need to make sure all the other rows are matched as well
+			bool isMatch = true;
+			for (unsigned i = 1; i < row.size(); ++i)
+			{
+				char *temp;
+				Get(id, row[i], temp);
+				if (Compare(row[i], temp, min[i]) < 0 || Compare(row[i], temp, max[i]) > 0)
+				{
+					delete [] temp;
+					LOG("match failed id = " << id << " row " << row[i] << " did not match");
+					isMatch = false;
+					break;
+				}
+				else
+				{
+					delete [] temp;
+				}
+			}
+			if (isMatch)
+			{
+				res.push_back(id);
+			}
+			start = next;
+			skip_lists[row[0]].seekg(start);
+			skip_lists[row[0]].read(reinterpret_cast<char*>(&id), sizeof(id));
+			skip_lists[row[0]].read(buffer, rows[row[0]]);
+			skip_lists[row[0]].seekg(start + sizeof(unsigned) * 2 + sizeof(int) + rows[row[0]]);
+			skip_lists[row[0]].read(reinterpret_cast<char*>(&next), sizeof(next));
+			unsigned temp;
+			skip_lists[row[0]].seekg(start + sizeof(unsigned) + sizeof(int) + rows[row[0]]);
+			skip_lists[row[0]].read(reinterpret_cast<char*>(&temp), sizeof(temp));
+			if (num_results > 0 && --num_results == 0)
+			{
+				break;
+			}
+		}
+	}
+	//is_smallest is false then we start at the biggest value and walk backwards
+	else
+	{
+		//find the last node
+		unsigned end = FindNode(row[0], max[0], unsigned(-2));
+		//walk list backwards until the value is smaller than min or reach num_results
+		unsigned id;
+		unsigned prev;
+		skip_lists[row[0]].seekg(end);
+		skip_lists[row[0]].read(reinterpret_cast<char*>(&id), sizeof(id));
+		skip_lists[row[0]].read(buffer, rows[row[0]]);
+		skip_lists[row[0]].seekg(end + sizeof(unsigned) + sizeof(int) + rows[row[0]]);
+		skip_lists[row[0]].read(reinterpret_cast<char*>(&prev), sizeof(prev));
+		while (Compare(row[0], buffer, min[0]) >= 0 && prev)
+		{
+			//need to make sure all the other rows are matched as well
+			bool isMatch = true;
+			for (unsigned i = 1; i < row.size(); ++i)
+			{
+				char *temp;
+				Get(id, row[i], temp);
+				if (Compare(row[i], temp, min[i]) < 0 || Compare(row[i], temp, max[i]) > 0)
+				{
+					delete [] temp;
+					isMatch = false;
+					break;
+				}
+				else
+				{
+					delete [] temp;
+				}
+			}
+			if (isMatch)
+			{
+				res.push_back(id);
+			}
+			end = prev;
+			skip_lists[row[0]].seekg(end);
+			skip_lists[row[0]].read(reinterpret_cast<char*>(&id), sizeof(id));
+			skip_lists[row[0]].read(buffer, rows[row[0]]);
+			skip_lists[row[0]].seekg(end + sizeof(unsigned) + sizeof(int) + rows[row[0]]);
+			skip_lists[row[0]].read(reinterpret_cast<char*>(&prev), sizeof(prev));
+			if (num_results > 0 && --num_results == 0)
+			{
+				break;
+			}
+		}
+	}
+	delete [] buffer;
 	return res;
 }
 unsigned Database::FindLargest(unsigned row)
@@ -842,6 +1012,7 @@ bool Database::InsertNode(unsigned node, unsigned row, const char *data, unsigne
 }
 unsigned Database::FindNode(unsigned row, const char *data, unsigned id)
 {
+	LOG("FindNode row = " << row << " data = " << ToHexString(data, rows[row]));
 	int level = max_level[row];
 	//set walker to the head
 	unsigned walker = sizeof(unsigned) * 3;
@@ -857,6 +1028,7 @@ unsigned Database::FindNode(unsigned row, const char *data, unsigned id)
 		unsigned id_n;
 		skip_lists[row].read(reinterpret_cast<char*>(&id_n), sizeof(id_n));
 		skip_lists[row].read(data_n, rows[row]);
+		LOG("new id = " << id_n << " new data = " << ToHexString(data_n, rows[row]));
 		//use compare function that looks at the type of data
 		int cmp = Compare(row, data_n, data);
 		if (cmp == 0)

@@ -24,10 +24,13 @@ public:
 	static int PackValue(char *buffer,Value value);
 	//functions for scripting language
 	Value GetDatabase(std::vector<Value> args);
+	Value GetDatabaseRange(std::vector<Value> args);
 	Value CreateDatabase(std::vector<Value> args);
 	Value FindDatabase(std::vector<Value> args, Interpreter &interpreter);
+	Value FindRangeDatabase(std::vector<Value> args, Interpreter &interpreter);
 	Value DeleteDatabase(std::vector<Value> args);
 	Value SetDatabase(std::vector<Value> args);
+	Value SetDatabaseRange(std::vector<Value> args);
 };
 
 #endif

@@ -20,6 +20,8 @@
 template<typename T>
 int FillValues(char *buffer, T value)
 {
+  //this actually give compiling warnings if its used which is nice
+
 	//if no specialization then ignore argument, and log a warning
 	LOGW("Creating query with a unexpected type of size  = " << sizeof(T));
 	return 0;
@@ -33,6 +35,7 @@ inline int FillValues<BlobStruct>(char *buffer, BlobStruct next)
 	buffer[0] = Types::Blob;
   *reinterpret_cast<unsigned*>(buffer+1) = next.size;
   memcpy(buffer + 1 + sizeof(unsigned), next.data, next.size);
+  std::cout << "Fill value blob " << ToHexString(next.data, next.size) << std::endl;
   return 1 + sizeof(unsigned) + next.size;
 }
 template<>
@@ -130,9 +133,9 @@ int CreateQueryMessage(ProtocolLoader &protocol, unsigned id, char *buffer, std:
 }
 
 //helper for the parse query message that reads a value out of the buffer
-int ReadValue(char *buffer, int size, std::vector<Value> &parameters);
+int ReadValue(char *buffer, int size, std::vector<Value> &parameters, std::vector<char*> memory);
 //returns false if the packet was made wrong(which should not happen)
-bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &script, std::vector<Value> &parameters);
+bool ParseQueryMessage(char *buffer, unsigned size, unsigned &id, std::string &script, std::vector<Value> &parameters, std::vector<char*> memory);
 //create a query response mesage
 int CreateQueryResponse(ProtocolLoader &protocol, unsigned id, char *buffer, Value returnValue);
 bool ParseQueryResponse(char *buffer, int length, unsigned &id, char *&data, unsigned &size);

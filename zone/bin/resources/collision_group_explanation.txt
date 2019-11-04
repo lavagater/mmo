@@ -1,0 +1,10 @@
+This is a file that has more detail on what the collision group means
+other collision group file is human readable but is just data to be read
+this file is only ment for humans to read and understand
+note the ones and zeros should be same as in collision_groups
+
+
+           players    projectiles   terrain
+players       1          1            1
+projectiles   1          0            1
+terrain       1          1            0

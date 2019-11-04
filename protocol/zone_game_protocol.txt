@@ -6,3 +6,7 @@ DeleteObject
 Movement
 Shoot
 CastSpell
+FireSpell
+HitSpell
+EntityStatChange
+Debug

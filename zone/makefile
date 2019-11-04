@@ -1,7 +1,7 @@
 INCLUDES+=-I../mmo
 
 CXX = g++
-CXX_FLAGS = -Wall -Wextra -Werror -ansi -pedantic --std=c++11 $(INCLUDES)
+CXX_FLAGS = -g -Wall -Wextra -Werror -ansi -pedantic --std=c++11 $(INCLUDES)
 
 # Final binary
 BIN = zone.out

@@ -1,3 +1,6 @@
+#ifndef GATE_COMP_H
+#define GATE_COMP_H
+
 #include "component.h"
 #include "signals.h"
 #include "wyatt_sock.h"
@@ -17,3 +20,5 @@ public:
 
   Connection collision_connection;
 };
+
+#endif

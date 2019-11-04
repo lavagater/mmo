@@ -532,3 +532,169 @@ void SpendManaModifier(Effect &effect, Entity &caster, Entity &target, float &ma
     mana = 0;
   }
 }
+
+unsigned SpellPacker(Spell &spell, char *data, unsigned size)
+{
+  //hand calculated size of spell
+  if (size < 79)
+  {
+    LOGW("SpellPacker size to small size = " << size);
+    return 0;
+  }
+  unsigned offset = 0;
+  //1 byte char spell visual, not sorted
+  *reinterpret_cast<char*>(data+offset) = spell.visual;
+  offset += 1;
+  //1 byte char spell type, sorted
+  *reinterpret_cast<char*>(data+offset) = spell.type;
+  offset += 1;
+  //1 byte char spell cc type, sorted
+  *reinterpret_cast<char*>(data+offset) = spell.cc;
+  offset += 1;
+  //4 bytes float cc duration, not sorted
+  *reinterpret_cast<float*>(data+offset) = spell.cc_duration;
+  offset += 4;
+  //4 bytes int the self activator, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect1.self_activator;
+  offset += 4;
+  //4 bytes int the remote activator, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect1.remote_activator;
+  offset += 4;
+  //4 bytes int spell action, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect1.action;
+  offset += 4;
+  //4 bytes int scalar, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect1.scalar;
+  offset += 4;
+  //4 bytes float spell value, not sorted
+  *reinterpret_cast<float*>(data+offset) = spell.effect1.value;
+  offset += 4;
+  //4 bytes float duration, not sorted
+  *reinterpret_cast<float*>(data+offset) = spell.effect1.duration;
+  offset += 4;
+  //4 bytes int target type, not sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect1.target_type;
+  offset += 4;
+  //4 bytes int the self activator, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect2.self_activator;
+  offset += 4;
+  //4 bytes int the remote activator, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect2.remote_activator;
+  offset += 4;
+  //4 bytes int spell action, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect2.action;
+  offset += 4;
+  //4 bytes int scalar, sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect2.scalar;
+  offset += 4;
+  //4 bytes float spell value, not sorted
+  *reinterpret_cast<float*>(data+offset) = spell.effect2.value;
+  offset += 4;
+  //4 bytes float duration, not sorted
+  *reinterpret_cast<float*>(data+offset) = spell.effect2.duration;
+  offset += 4;
+  //4 bytes int target type, not sorted
+  *reinterpret_cast<int*>(data+offset) = spell.effect2.target_type;
+  offset += 4;
+  //4 bytes float spell mana cost, sorted
+  *reinterpret_cast<float*>(data+offset) = spell.mana_cost;
+  offset += 4;
+  //4 bytes float spell cool down, sorted
+  *reinterpret_cast<float*>(data+offset) = spell.cool_down;
+  offset += 4;
+  //4 bytes float spell cast time, sorted
+  *reinterpret_cast<float*>(data+offset) = spell.cast_time;
+  offset += 4;
+  //4 bytes float spell range, sorted
+  *reinterpret_cast<float*>(data+offset) = spell.range;
+  offset += 4;
+  if (offset != 79)
+  {
+    LOGW("I did my math wrong or something");
+  }
+  LOG("Spell packed " << ToHexString(data, 79));
+  return offset;
+}
+Spell SpellUnpacker(char *data, unsigned size)
+{
+  Spell ret;
+  //hand calculated size of spell
+  if (size < 79)
+  {
+    LOGW("SpellUnpacker size to small size = " << size);
+    return ret;
+  }
+  LOG("unpacking spell " << ToHexString(data, 79));
+  unsigned offset = 0;
+  //1 byte char spell visual, not sorted
+  ret.visual = *reinterpret_cast<char*>(data+offset);
+  offset += 1;
+  //1 byte char spell type, sorted
+  ret.type = *reinterpret_cast<char*>(data+offset);
+  offset += 1;
+  //1 byte char spell cc type, sorted
+  ret.cc = *reinterpret_cast<char*>(data+offset);
+  offset += 1;
+  //4 bytes float cc duration, not sorted
+  ret.cc_duration = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes int the self activator, sorted
+  ret.effect1.self_activator = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int the remote activator, sorted
+  ret.effect1.remote_activator = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int spell action, sorted
+  ret.effect1.action = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int scalar, sorted
+  ret.effect1.scalar = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes float spell value, not sorted
+  ret.effect1.value = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes float duration, not sorted
+  ret.effect1.duration = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes int target type, not sorted
+  ret.effect1.target_type = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int the self activator, sorted
+  ret.effect2.self_activator = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int the remote activator, sorted
+  ret.effect2.remote_activator = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int spell action, sorted
+  ret.effect2.action = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes int scalar, sorted
+  ret.effect2.scalar = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes float spell value, not sorted
+  ret.effect2.value = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes float duration, not sorted
+  ret.effect2.duration = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes int target type, not sorted
+  ret.effect2.target_type = *reinterpret_cast<int*>(data+offset);
+  offset += 4;
+  //4 bytes float spell mana cost, sorted
+  ret.mana_cost = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes float spell cool down, sorted
+  ret.cool_down = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes float spell cast time, sorted
+  ret.cast_time = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  //4 bytes float spell range, sorted
+  ret.range = *reinterpret_cast<float*>(data+offset);
+  offset += 4;
+  if (offset != 79)
+  {
+    LOGW("I did my math wrong or something");
+  }
+  return ret;
+}

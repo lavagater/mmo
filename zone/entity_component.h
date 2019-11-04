@@ -17,10 +17,6 @@ public:
   void UseSpell(int spell, GameObject *target);
   void Interupt();
   void OnUpdate(double dt);
-  //packs the spell into data to be sent to db
-  unsigned SpellPacker(Spell &spell, char *data, unsigned size);
-  //unpacks spell from data sebt from db
-  Spell SpellUnpacker(char *data, unsigned size);
 
 private:
   void OnCastSpell(EntityComponent *target);

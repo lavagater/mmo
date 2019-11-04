@@ -37,6 +37,12 @@ public:
   float range=0;//does not effect anything internally
 };
 
+
+//packs the spell into data to be sent to db
+unsigned SpellPacker(Spell &spell, char *data, unsigned size);
+//unpacks spell from data sebt from db
+Spell SpellUnpacker(char *data, unsigned size);
+
 class Entity
 {
 public:

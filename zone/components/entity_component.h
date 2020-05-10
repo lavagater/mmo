@@ -7,6 +7,8 @@
 #include "component.h"
 #include "signals.h"
 #include "entity.h"
+#include "spell.h"
+#include "dispatcher.h"
 #include <Eigen/Dense>
 
 class EntityComponent : public Component
@@ -20,14 +22,14 @@ public:
 
 private:
   void OnCastSpell(EntityComponent *target);
-  void onProjectileCollision(GameObject * projectile, GameObject *other, Spell spell);
-  //callbacks for when my entity has taken damage, healed, ect
-  void OnDamaged(double damage);
-  void OnHealed(double heal);
-  void OnManaRecovered(double mana);
-  void OnManaDrained(double mana);
-  void SendHpChange(double hp);
-  void SendManaChange(double mana);
+  void onProjectileCollision(GameObject * projectile, GameObject *other, Spell *spell);
+  void SendHpChange();
+  void SendManaChange();
+  void SendNotEnoughMana();
+  void SendOutOfRange();
+  void SendOnCooldown();
+  void SendCantCast();
+  bool CheckCoolDown(int spell);
 
   //function to query the spell database to get the spell information for a given spell slot
   void SendSpellQuery(unsigned slot_num);
@@ -36,15 +38,15 @@ private:
   //database query responses
   void OnSpellDatabaseResponse(char *data, unsigned size, unsigned slot);
 public:
-  //all the spells the entity can cast
-  std::vector<Spell> spells;
-  //default spell if slot is empty
-  Spell basic_attack;
+  Entity entity;
   //each spell in spells has a corrisponding entry in cool_downs
   //the value in cool_downs is when the spell was last used 
   std::vector<double> cool_downs;
+  std::vector<Spell*> spells;
   //which spell is being casted right now, -1 if no spell
   int casting;
+  float previous_health;
+  float previous_mana;
   //the last place this entity was to calculate the direction its going
   Eigen::Vector2d previous_position;
   //direction the entity is/was moving
@@ -58,8 +60,6 @@ public:
   Connection entity_healed_connection;
   Connection entity_recover_mana_connection;
   Connection entity_lost_mana_connection;
-  //the entity
-  Entity entity;
 };
 
 #endif

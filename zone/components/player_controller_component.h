@@ -1,3 +1,6 @@
+#ifndef PLAYER_CONTROLLER_COMPONENT
+#define PLAYER_CONTROLLER_COMPONENT
+
 #include "component.h"
 #include "signals.h"
 #include "wyatt_sock.h"
@@ -41,3 +44,5 @@ public:
   Connection teleport_connection;
   Connection spell_connection;
 };
+
+#endif

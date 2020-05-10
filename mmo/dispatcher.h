@@ -16,7 +16,7 @@
 
 struct TimedMessage
 {
-  double start_time;
+  double start_time = 0;
   double wait_time;
   std::function<void(double)> message;
 };

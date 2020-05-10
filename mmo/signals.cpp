@@ -25,13 +25,19 @@ Connection::Connection(ConnectionProxy proxy)
 Connection::Connection(const Connection &rhs)
 {
   internal_connection = rhs.internal_connection;
-  internal_connection->ref_count += 1;
+  if (internal_connection)
+  {
+    internal_connection->ref_count += 1;
+  }
 }
 
 Connection &Connection::operator=(const Connection &rhs)
 {
   internal_connection = rhs.internal_connection;
-  internal_connection->ref_count += 1;
+  if (internal_connection)
+  {
+    internal_connection->ref_count += 1;
+  }
   return *this;
 }
 

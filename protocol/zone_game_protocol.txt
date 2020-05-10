@@ -6,7 +6,15 @@ DeleteObject
 Movement
 Shoot
 CastSpell
+ClientSpell
 FireSpell
 HitSpell
 EntityStatChange
 Debug
+NotEnoughMana
+OutOfRange
+OnCooldDown
+CantCast
+SpellInfo
+SpellLocation
+Status

@@ -9,7 +9,7 @@
 void InventoryManager::SetUp(LoadBalancer *load_balancer)
 {
   this->load_balancer = load_balancer;
-  //the life time of the account manager is assumed to be the life time of the program
+  //the life time of the account manager is the life time of the program
   load_balancer->network_signals.signals[load_balancer->protocol.LookUp("Spells")].Connect(std::bind(&InventoryManager::Spells, this, std::placeholders::_3));
 }
 
@@ -21,28 +21,7 @@ void InventoryManager::Spells(sockaddr_in *addr)
     LOG("Client does not exist");
     return;
   }
-  char buffer[MAXPACKETSIZE];
-  //need to figure out which zone the client is in
-  load_balancer->query_id += 1;
-  load_balancer->query_callbacks[load_balancer->query_id] = std::bind(&InventoryManager::SpellsResponse, this, *addr, std::placeholders::_1, std::placeholders::_2);
-  int len = CreateQueryMessage(load_balancer->protocol, load_balancer->query_id, &buffer[0], STRINGIZE(
-    main(unsigned id)
-    {
-      print("Getting Spells for player ", id, "\n");
-      vec res = find(22, id);
-      print("player has ", Size(res), " Spells\n");
-      vec ret = vector();
-      int i = 0;
-      while(i < Size(res))
-      {
-        vector_push(ret, getRange(res[i], 0, 25));
-        i += 1;
-      }
-      print("Returning vector with ", Size(ret), " elements\n");
-      return ret;
-    }
-  ), (unsigned)load_balancer->clients[*addr]);
-  load_balancer->stack.Send(&buffer[0], len, &load_balancer->spells_database, load_balancer->flags[load_balancer->spells_database]);
+  //todo need a way to send new spell stuff to client
 }
 void InventoryManager::SpellsResponse(sockaddr_in client_addr, char *buffer, unsigned size)
 {

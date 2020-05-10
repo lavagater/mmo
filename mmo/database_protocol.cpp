@@ -5,16 +5,12 @@
 
 int ReadValue(char *buffer, int size, std::vector<Value> &parameters, std::vector<char*> memory)
 {
-  LOG("Read value");
   (void)size; //fuck safety
   Types type = (Types)buffer[0];
-  LOG("Type = " << type);
-  std::cout << "Type = " << type << std::endl;
   buffer += 1;
   parameters.emplace_back(Value());
   Value &ret = parameters.back();
   ret.type = type;
-  LOG("Start switch");
   switch(type)
   {
 		case Char:
@@ -42,18 +38,14 @@ int ReadValue(char *buffer, int size, std::vector<Value> &parameters, std::vecto
       //to prevent memory leak
       memory.push_back(ret.data);
       memcpy(ret.data, buffer + sizeof(unsigned), ret.size);
-      std::cout << "Read value " << ToHexString(ret.data, ret.size) << std::endl;
       return 1+ret.size+sizeof(unsigned); 
     }
 		case String:
 		{
-      LOG("String switch");
       //read the length
       int length = buffer[0];
-      LOG("length of buffer = " << length);
       buffer += 1;
       ret.m_string = std::string(buffer, length);
-      LOG("string = " << ret.m_string);
       return 2 + length;
 		}
 		default:

@@ -15,7 +15,6 @@
 #include "movement_component.h"
 #include "interactive_component.h"
 #include "entity_component.h"
-#include "spell_generator.h"
 
 void PlayerControllerComponent::Init()
 {

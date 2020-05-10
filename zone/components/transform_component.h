@@ -1,3 +1,6 @@
+#ifndef TRANSFORM_COMPONENT
+#define TRANSFORM_COMPONENT
+
 #include "component.h"
 #include <Eigen/Dense>
 
@@ -8,3 +11,5 @@ public:
   void Write(std::ostream &stream);
   Eigen::Vector2d position;
 };
+
+#endif

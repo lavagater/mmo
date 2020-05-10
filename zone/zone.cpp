@@ -52,6 +52,16 @@ Zone::Zone(Config &config)
   network_signals.signals[protocol.LookUp("Query")].Connect(std::bind(&Zone::QueryResponse, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   network_signals.signals[protocol.LookUp("Login")].Connect(std::bind(&Zone::Login, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+  spell_data.zone = this;
+  spell_data.spell_factories.push_back(&fireball_factory);
+  fireball_factory.type = 0;//the type is the index that the factory is in the vector
+  spell_data.over_time_factories.push_back(&burn_factory);
+  burn_factory.type = 0;
+  spell_data.spell_value_factories.push_back(&stat_scale_factory);
+  stat_scale_factory.type = 0;
+  spell_data.spell_value_factories.push_back(&flat_factory);
+  flat_factory.type = 1;
+
   //setup collision groups
   std::fstream collision_grid("resources/collision_groups.txt");
   while(!collision_grid.eof())
@@ -263,6 +273,29 @@ void Zone::GameUpdate(double dt)
   //send the update signal
   update_signal(dt);
 }
+
+void Zone::SendToAllPlayers(Stream &stream)
+{
+  for (auto it = players.begin(); it != players.end(); ++it)
+  {
+    char msg[500];
+    unsigned message_size = stream.pos;
+    CreateForwardMessage(protocol, stream.data, message_size, it->first, msg);
+    stack.Send(msg, message_size, &GETCOMP(it->second, PlayerControllerComponent)->lb_addr, flags[GETCOMP(it->second, PlayerControllerComponent)->lb_addr]);
+  }
+}
+
+void Zone::SendTo(Stream &stream, unsigned int player_id)
+{
+  auto it = players.find(player_id);
+  if (it == players.end())
+    return;
+  char msg[500];
+  unsigned message_size = stream.pos;
+  CreateForwardMessage(protocol, stream.data, message_size, it->first, msg);
+  stack.Send(msg, message_size, &GETCOMP(it->second, PlayerControllerComponent)->lb_addr, flags[GETCOMP(it->second, PlayerControllerComponent)->lb_addr]);
+}
+
 void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr, BitArray<HEADERSIZE> sent_flags)
 {
   //if from is a new address at it to the load balancers
@@ -280,6 +313,37 @@ void Zone::OnRecieve(std::shared_ptr<char> data, unsigned size, sockaddr_in addr
   }
   network_signals.signals[type](data.get(), size, &addr, sent_flags);
 }
+
+std::unordered_set<GameObject*> Zone::getNearby(GameObject *object, float distance, int collision_group)
+{
+  std::unordered_set<GameObject*> ret;
+  Circle circle;
+  circle.radius = distance;
+  circle.object = object;
+  std::vector<std::pair<int,int>> grids = circle.GetGridOccupation();
+  for (unsigned i = 0; i < grids.size(); ++i)
+  {
+    for (unsigned j=0; j < collision_groups[collision_group].size(); ++j)
+    {
+      ret.insert(colliders[collision_groups[collision_group][j]][grids[i]].begin(), colliders[collision_groups[collision_group][j]][grids[i]].end());
+    }
+  }
+  //remove the ones that are not in range
+  std::vector<std::unordered_set<GameObject*>::iterator> to_remove;
+  for (auto it = ret.begin(); it != ret.end(); ++it)
+  {
+    if ((GETCOMP(*it, TransformComponent)->position - GETCOMP(object, TransformComponent)->position).squaredNorm() > distance * distance)
+    {
+      to_remove.push_back(it);
+    }
+  }
+  for (unsigned i = 0; i < to_remove.size(); ++i)
+  {
+    ret.erase(to_remove[i]);
+  }
+  return ret;
+}
+
 void Zone::run()
 {
   //main loop

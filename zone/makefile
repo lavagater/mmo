@@ -1,4 +1,4 @@
-INCLUDES+=-I../mmo
+INCLUDES+=-I../mmo -Icomponents -I./ -Ispells
 
 CXX = g++
 CXX_FLAGS = -g -Wall -Wextra -Werror -ansi -pedantic --std=c++11 $(INCLUDES)
@@ -10,7 +10,7 @@ BIN_DIR = bin
 BUILD_DIR = ../build
 
 # List of all .cpp source files.
-CPP = $(wildcard *.cpp) $(wildcard ../mmo/*.cpp)
+CPP = $(wildcard *.cpp) $(wildcard ../mmo/*.cpp) $(wildcard ./components/*.cpp) $(wildcard ./spells/*.cpp)
 
 # All .o files go to build dir.
 NO_DIR = $(notdir $(CPP))

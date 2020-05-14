@@ -1,10 +1,15 @@
+terrain_root
+1234
+TransformComponent
+0
+0
+TerrainComponent
+0
 terrain_(3)
 0
 TransformComponent
 7.51
 -1.41
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -14,8 +19,6 @@ terrain_(2)
 TransformComponent
 7.53
 -2.4
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -25,8 +28,6 @@ terrain_(1)
 TransformComponent
 7.53
 -3.44
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -36,8 +37,6 @@ terrain
 TransformComponent
 7.54
 -4.48
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -47,8 +46,6 @@ terrain_(8)
 TransformComponent
 7.49
 4.61
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -58,8 +55,6 @@ terrain_(9)
 TransformComponent
 7.51
 3.62
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -69,8 +64,6 @@ terrain_(10)
 TransformComponent
 7.51
 2.58
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -80,8 +73,6 @@ terrain_(11)
 TransformComponent
 7.52
 1.54
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -91,8 +82,6 @@ terrain_(12)
 TransformComponent
 6.54
 4.48
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -102,8 +91,6 @@ terrain_(13)
 TransformComponent
 5.54
 4.52
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -113,8 +100,6 @@ terrain_(14)
 TransformComponent
 4.5
 4.57
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -124,8 +109,6 @@ terrain_(15)
 TransformComponent
 3.55
 4.44
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -135,8 +118,6 @@ terrain_(16)
 TransformComponent
 2.55
 4.48
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -146,8 +127,6 @@ terrain_(17)
 TransformComponent
 1.51
 4.59
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -157,8 +136,6 @@ terrain_(18)
 TransformComponent
 0.5599999
 4.46
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -168,8 +145,6 @@ terrain_(19)
 TransformComponent
 -0.4400001
 4.5
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -179,8 +154,6 @@ terrain_(20)
 TransformComponent
 -1.49
 4.63
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -190,8 +163,6 @@ terrain_(21)
 TransformComponent
 -2.44
 4.5
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -201,8 +172,6 @@ terrain_(22)
 TransformComponent
 -3.44
 4.54
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -212,8 +181,6 @@ terrain_(23)
 TransformComponent
 -4.48
 4.59
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -223,8 +190,6 @@ terrain_(24)
 TransformComponent
 -5.429999
 4.46
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -234,8 +199,6 @@ terrain_(25)
 TransformComponent
 -6.429999
 4.5
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -245,8 +208,6 @@ terrain_(26)
 TransformComponent
 -7.469999
 4.61
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -256,8 +217,6 @@ terrain_(6)
 TransformComponent
 -7.530001
 -0.4899999
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -267,8 +226,6 @@ terrain_(7)
 TransformComponent
 -7.55
 -1.52
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -278,8 +235,6 @@ terrain_(27)
 TransformComponent
 -7.55
 -2.47
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -289,8 +244,6 @@ terrain_(28)
 TransformComponent
 -7.530001
 -3.46
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -300,8 +253,6 @@ terrain_(29)
 TransformComponent
 -7.530001
 -4.5
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -311,8 +262,6 @@ terrain_(31)
 TransformComponent
 -7.57
 3.55
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -322,8 +271,6 @@ terrain_(32)
 TransformComponent
 -7.55
 2.56
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -333,8 +280,6 @@ terrain_(33)
 TransformComponent
 -7.55
 1.52
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -344,8 +289,6 @@ terrain_(34)
 TransformComponent
 -7.540001
 0.48
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -355,8 +298,6 @@ terrain_(30)
 TransformComponent
 5.46
 -4.45
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -366,8 +307,6 @@ terrain_(35)
 TransformComponent
 4.42
 -4.4
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -377,8 +316,6 @@ terrain_(36)
 TransformComponent
 3.469999
 -4.53
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -388,8 +325,6 @@ terrain_(37)
 TransformComponent
 2.469999
 -4.49
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -399,8 +334,6 @@ terrain_(38)
 TransformComponent
 1.429999
 -4.38
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -410,8 +343,6 @@ terrain_(39)
 TransformComponent
 0.4799995
 -4.51
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -421,8 +352,6 @@ terrain_(40)
 TransformComponent
 -0.5200005
 -4.47
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -432,8 +361,6 @@ terrain_(41)
 TransformComponent
 -1.57
 -4.34
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -443,8 +370,6 @@ terrain_(42)
 TransformComponent
 -2.52
 -4.47
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -454,8 +379,6 @@ terrain_(43)
 TransformComponent
 -3.52
 -4.43
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -465,8 +388,6 @@ terrain_(44)
 TransformComponent
 -4.559999
 -4.38
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -476,8 +397,6 @@ terrain_(45)
 TransformComponent
 -5.51
 -4.51
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -487,8 +406,6 @@ terrain_(46)
 TransformComponent
 -6.51
 -4.47
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -498,8 +415,6 @@ terrain_(47)
 TransformComponent
 6.5
 -4.43
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -509,8 +424,6 @@ terrain_(48)
 TransformComponent
 -2.17
 -0.67
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -520,8 +433,6 @@ terrain_(49)
 TransformComponent
 4.05
 -1.43
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5
@@ -531,8 +442,6 @@ terrain_(50)
 TransformComponent
 -2.26
 2.31
-TerrainComponent
-StaticObjectComponent
 ColliderComponent
 0
 0.5

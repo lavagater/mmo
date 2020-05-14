@@ -88,6 +88,11 @@ void PlayerControllerComponent::OnTeleport(char *buffer, unsigned n, sockaddr_in
   {
     return;
   }
+  if (game_object->zone->object_by_id.find(portal_id) == game_object->zone->object_by_id.end())
+  {
+    LOGW("portal does no exist " << portal_id);
+    return;
+  }
   //TODO retrieve the destination from the portal object
   Eigen::Vector2d new_pos = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->destination;
   std::string zone_name = GETCOMP(game_object->zone->object_by_id[portal_id], GateComponent)->zone;
@@ -214,8 +219,8 @@ void PlayerControllerComponent::OnDisconnected(char *buffer, unsigned n, sockadd
 
 void PlayerControllerComponent::OnCollision(GameObject *other)
 {
-  TerrainComponent *terrain = GETCOMP(other, TerrainComponent);
-  if (terrain)
+  //zero is non changabled terrain
+  if (other->type == 0)
   {
     MovementComponent *move = GETCOMP(game_object, MovementComponent);
     //stop moving

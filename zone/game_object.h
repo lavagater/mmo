@@ -48,6 +48,7 @@ public:
   unsigned id;
   //a number that the client uses to determine what kind of object it is
   //its pretty much just a hard coded hack
+  //todo have a list of game object types
   unsigned type;
   //for debugging
   std::string name;
